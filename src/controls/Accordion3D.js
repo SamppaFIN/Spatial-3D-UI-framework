@@ -40,6 +40,9 @@ export class Accordion3D extends BaseControl3D {
         // Modals for each item
         this.itemModals = new Map(); // Map of itemIndex -> Modal3D
 
+        // Z-Pop properties
+        this.popOffset = 0.5; // Distance to pop forward when active
+
         // Callbacks
         this.onItemToggleCallback = config.onItemToggle || null;
 
@@ -105,6 +108,36 @@ export class Accordion3D extends BaseControl3D {
             }
         }
         return yPosition;
+    }
+
+    getContentTransform(item) {
+        // Calculate world transforms for content overlay
+        // Position: Centered in content area (below header)
+
+        const headerBottomY = item.headerMesh.position.y - this.itemHeight / 2;
+        const contentCenterY = headerBottomY - item.currentContentHeight / 2;
+
+        // Include item's current Z position (for pop effect)
+        // The item.headerMesh.position.z is animated in updateVisualState
+        const zPos = item.headerMesh.position.z + this.depth / 2 + 0.02;
+
+        const localPos = new THREE.Vector3(
+            0,
+            contentCenterY,
+            zPos
+        );
+
+        // Convert to world space
+        this.group.updateMatrixWorld(true);
+        const position = localPos.applyMatrix4(this.group.matrixWorld);
+
+        // Rotation
+        const rotation = new THREE.Euler().setFromQuaternion(this.group.getWorldQuaternion(new THREE.Quaternion()));
+
+        // Scale (multiply group scale by fixed tiny scale for HTML)
+        const scale = this.group.getWorldScale(new THREE.Vector3()).multiplyScalar(0.01);
+
+        return { position, rotation, scale };
     }
 
     createItem(itemConfig, index) {
@@ -225,15 +258,16 @@ export class Accordion3D extends BaseControl3D {
             const worldPosition = new THREE.Vector3();
             this.group.getWorldPosition(worldPosition);
 
-            const contentPosition = new THREE.Vector3(
-                worldPosition.x,
-                worldPosition.y + contentCenterY, // Content center below header
-                worldPosition.z + this.depth / 2 + 0.02
-            );
+            // Initial (dummy) position, will be updated by updateVisualState
+            const contentPosition = new THREE.Vector3(0, 0, 0);
 
-            htmlOverlay.createOverlay(contentOverlayId, contentElement, contentPosition, {
+            // Initial transform (will be updated in loop)
+            const rotation = this.group.rotation;
+
+            htmlOverlay.createOverlay(contentOverlayId, contentElement, new THREE.Vector3(0, 0, 0), {
                 className: 'spatial-text-display',
                 scale: [0.01, 0.01, 0.01],
+                rotation: [rotation.x, rotation.y, rotation.z],
                 styles: {
                     opacity: isOpen ? '1' : '0',
                     transition: 'opacity 0.3s ease-in-out'
@@ -254,6 +288,8 @@ export class Accordion3D extends BaseControl3D {
             htmlContentHeight, // Height for HTMLOverlay
             targetContentHeight: isOpen ? htmlContentHeight : 0, // Use htmlContentHeight for animation
             currentContentHeight: isOpen ? htmlContentHeight : 0, // Use htmlContentHeight for animation
+            targetZ: isOpen ? this.popOffset : 0, // Target Z position
+            currentZ: isOpen ? this.popOffset : 0, // Current Z position
             isOpen,
             contentOverlayId,
             config: itemConfig
@@ -379,10 +415,15 @@ export class Accordion3D extends BaseControl3D {
             const prevHeight = item.currentContentHeight;
             item.currentContentHeight += (item.targetContentHeight - item.currentContentHeight) * this.animationSpeed;
 
+            // Animate Z position
+            item.currentZ += (item.targetZ - item.currentZ) * this.animationSpeed;
+
             // Check if animation is complete (within small threshold)
-            const heightDiff = Math.abs(item.currentContentHeight - item.targetContentHeight);
-            if (heightDiff < 0.01) {
+            if (Math.abs(item.currentContentHeight - item.targetContentHeight) < 0.01) {
                 item.currentContentHeight = item.targetContentHeight; // Snap to target
+            }
+            if (Math.abs(item.currentZ - item.targetZ) < 0.01) {
+                item.currentZ = item.targetZ;
             }
         });
 
@@ -424,12 +465,17 @@ export class Accordion3D extends BaseControl3D {
                 item.contentMesh.visible = shouldBeVisible;
             }
 
+            // Update group Z positions based on pop effect
+            if (item.headerMesh) item.headerMesh.position.z = item.currentZ;
+            if (item.titleMesh) item.titleMesh.position.z = item.currentZ + this.depth / 2 + 0.01;
+
             // Update content group visibility and position
             if (item.contentGroup) {
                 item.contentGroup.visible = shouldBeVisible;
                 const headerBottomY = item.headerMesh.position.y - this.itemHeight / 2;
                 const contentTopY = headerBottomY; // Content top at header bottom
                 item.contentGroup.position.y = contentTopY - item.currentContentHeight / 2;
+                item.contentGroup.position.z = item.currentZ + this.depth / 2 + 0.01;
             }
 
             // Update text content overlay visibility and position
@@ -438,46 +484,32 @@ export class Accordion3D extends BaseControl3D {
                 const isVisible = item.currentContentHeight > 0.05; // Lower threshold
                 htmlOverlay.setVisible(item.contentOverlayId, isVisible);
 
-                // Update position - use world coordinates to align with content mesh
-                // Calculate world position for proper HTML overlay alignment
-                const worldPosition = new THREE.Vector3();
-                this.group.getWorldPosition(worldPosition);
+                if (isVisible) {
+                    const transform = this.getContentTransform(item);
 
-                const headerBottomY = item.headerMesh.position.y - this.itemHeight / 2;
-                const contentCenterY = headerBottomY - item.currentContentHeight / 2;
+                    // Helper to handle height animation on the element itself
+                    const overlay = htmlOverlay.objects.get(item.contentOverlayId);
+                    if (overlay && overlay.element) {
+                        // Animate opacity
+                        const opacity = item.htmlContentHeight > 0
+                            ? Math.min(1.0, item.currentContentHeight / item.htmlContentHeight)
+                            : 0;
+                        overlay.element.style.opacity = opacity.toString();
 
-                const contentPosition = new THREE.Vector3(
-                    worldPosition.x,
-                    worldPosition.y + contentCenterY, // Add local Y to world Y
-                    worldPosition.z + this.depth / 2 + 0.02
-                );
-                htmlOverlay.updatePosition(item.contentOverlayId, contentPosition);
+                        // Animate height
+                        const heightScale = item.htmlContentHeight > 0
+                            ? Math.max(0.01, item.currentContentHeight / item.htmlContentHeight)
+                            : 0;
+                        const originalHeight = item.htmlContentHeight * 0.8 * 100;
+                        overlay.element.style.height = `${originalHeight * heightScale}px`;
+                    }
 
-                const overlay = htmlOverlay.objects.get(item.contentOverlayId);
-                if (overlay && overlay.element) {
-                    const opacity = item.htmlContentHeight > 0
-                        ? Math.min(1.0, item.currentContentHeight / item.htmlContentHeight)
-                        : 0;
-                    overlay.element.style.opacity = opacity.toString();
-
-                    // Scale height based on animation progress
-                    const heightScale = item.htmlContentHeight > 0
-                        ? Math.max(0.01, item.currentContentHeight / item.htmlContentHeight)
-                        : 0;
-                    const originalHeight = item.htmlContentHeight * 0.8 * 100;
-                    overlay.element.style.height = `${originalHeight * heightScale}px`;
-
-                    // Update position - content center is BELOW header bottom
-                    const headerBottomY = item.headerMesh.position.y - this.itemHeight / 2;
-                    const currentHtmlHeight = item.htmlContentHeight * heightScale;
-                    const contentCenterY = headerBottomY - currentHtmlHeight / 2;
-
-                    const contentPosition = new THREE.Vector3(
-                        this.group.position.x,
-                        this.group.position.y + contentCenterY, // Add local Y to world Y
-                        this.group.position.z + this.depth / 2 + 0.02
+                    htmlOverlay.updateTransform(
+                        item.contentOverlayId,
+                        transform.position,
+                        transform.rotation,
+                        transform.scale
                     );
-                    htmlOverlay.updatePosition(item.contentOverlayId, contentPosition);
                 }
             }
         });

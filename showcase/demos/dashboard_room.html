@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orbital Defense Platform - Command</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Share+Tech+Mono&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../styles/showcase.css">
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050000;
+            color: #ff3333;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        #room-canvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+
+        .hud-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+            z-index: 10;
+            border-left: 4px solid #ff3333;
+            padding-left: 15px;
+        }
+
+        .hud-title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #ff3333;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin: 0;
+            text-shadow: 0 0 20px rgba(255, 51, 51, 0.8);
+            animation: glitch 3s infinite alternate;
+        }
+
+        .hud-subtitle {
+            font-family: 'Share Tech Mono', monospace;
+            color: rgba(255, 51, 51, 0.8);
+            font-size: 1.2rem;
+            margin-top: 5px;
+            text-transform: uppercase;
+        }
+
+        .alert-box {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid #ff0000;
+            padding: 10px 40px;
+            font-family: 'Share Tech Mono', monospace;
+            color: #ff0000;
+            font-size: 1.5rem;
+            font-weight: bold;
+            animation: blink 1s infinite;
+            pointer-events: none;
+        }
+
+        .controls-hint {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20, 0, 0, 0.8);
+            border: 1px solid rgba(255, 51, 51, 0.3);
+            padding: 10px 20px;
+            border-radius: 0;
+            /* Boxy tech look */
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.8rem;
+            color: rgba(255, 100, 100, 0.7);
+            pointer-events: none;
+        }
+
+        .back-nav {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 20;
+            pointer-events: auto;
+        }
+
+        .back-btn {
+            background: rgba(30, 0, 0, 0.9);
+            border: 1px solid #ff3333;
+            color: #ff3333;
+            padding: 8px 16px;
+            text-decoration: none;
+            font-family: 'Share Tech Mono', monospace;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .back-btn:hover {
+            background: #ff3333;
+            color: #000;
+            box-shadow: 0 0 20px rgba(255, 51, 51, 0.6);
+        }
+
+        /* Loading overlay */
+        #loader {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            transition: opacity 0.5s;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 51, 51, 0.3);
+            border-top-color: #ff3333;
+            border-radius: 50%;
+            /* Or zero for boxy? let's stick to circle spinner */
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+                border-color: #ff0000;
+                box-shadow: 0 0 10px #ff0000;
+            }
+
+            50% {
+                opacity: 0.5;
+                border-color: transparent;
+                box-shadow: none;
+            }
+        }
+
+        @keyframes glitch {
+            0% {
+                text-shadow: 4px 4px 0px rgba(255, 0, 0, 0.8);
+            }
+
+            100% {
+                text-shadow: -4px -4px 0px rgba(255, 0, 0, 0.8);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loader">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="hud-overlay">
+        <h1 class="hud-title">Orbital Defense</h1>
+        <div class="hud-subtitle">SECTOR 7G // ALERT LEVEL: RUBY</div>
+    </div>
+
+    <div class="alert-box">WARNING: DEBRIS STORM IMMINENT</div>
+
+    <nav class="back-nav">
+        <a href="../index.html" class="back-btn">← ABORT SIM</a>
+    </nav>
+
+    <div class="controls-hint">
+        COMMAND INTERFACE ACTIVE // INTERACT TO AUTHORIZE
+    </div>
+
+    <canvas id="room-canvas"></canvas>
+
+    <!-- SFX - Optional audio element if we wanted, but not doing sound yet -->
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { Chart3D } from '../../src/controls/Chart3D.js';
+        import { Toggle3D } from '../../src/controls/Toggle3D.js';
+        import { Button3D } from '../../src/controls/Button3D.js';
+        import { ControlRegistry } from '../../src/core/ControlRegistry.js';
+        import * as THREE from 'three';
+
+        // 1. Scene Setup
+        const canvas = document.getElementById('room-canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+        const controls = scene3D.getControls();
+
+        ControlRegistry.setOrbitControls(controls);
+
+        // Deep Space Aesthetics
+        scene.background = new THREE.Color(0x050000);
+        scene.fog = new THREE.FogExp2(0x050000, 0.015);
+
+        // Lighting - Stark, high contrast
+        const ambientLight = new THREE.AmbientLight(0xff0000, 0.2); // Red ambient
+        scene.add(ambientLight);
+
+        // Emergency Strobe Light
+        const strobeLight = new THREE.SpotLight(0xff0000, 20);
+        strobeLight.position.set(0, 10, 5);
+        strobeLight.angle = Math.PI / 4;
+        strobeLight.penumbra = 0.5;
+        strobeLight.castShadow = true;
+        scene.add(strobeLight);
+
+        // Cold monitor glow
+        const blueLight = new THREE.PointLight(0x00ffff, 2, 10);
+        blueLight.position.set(0, 2, -2);
+        scene.add(blueLight);
+
+        // Grid floor (Tactical Grid)
+        const gridHelper = new THREE.GridHelper(50, 50, 0xff0000, 0x330000);
+        gridHelper.position.y = -2;
+        scene.add(gridHelper);
+
+        // Camera init
+        camera.position.set(0, 1.6, 6.5);
+        controls.target.set(0, 1.5, 0);
+        controls.enableDamping = true;
+
+        // --- COMMAND CONSOLE ---
+
+        // Left Wing: Tactical Analysis
+        const leftWing = new THREE.Group();
+        leftWing.rotation.y = Math.PI / 6;
+        leftWing.position.set(-4.5, 0, -1);
+        scene.add(leftWing);
+
+        const chart1 = new Chart3D(scene, camera, [0, 2.5, 0], {
+            title: 'Impact Probability.est',
+            width: 3.5,
+            height: 2.0,
+            type: 'line', // Representing trajectory confidence
+            data: [10, 15, 25, 40, 85, 95, 99], // Rising danger
+            color: 0xff3333,
+            barColor: 0xff3333,
+            backgroundColor: 'rgba(50, 0, 0, 0.5)'
+        });
+        leftWing.add(chart1.group);
+
+        const chart2 = new Chart3D(scene, camera, [0, 0, 0], {
+            title: 'Shield Harmonic Output',
+            width: 3.5,
+            height: 2.0,
+            type: 'bar',
+            data: [80, 75, 60, 45, 30], // Failing shields
+            color: 0x00ffff, // Cyan for shields
+            barColor: 0x00ffff,
+            backgroundColor: 'rgba(0, 20, 30, 0.5)'
+        });
+        leftWing.add(chart2.group);
+
+
+        // Right Wing: Defense Grid Controls
+        const rightWing = new THREE.Group();
+        rightWing.rotation.y = -Math.PI / 6;
+        rightWing.position.set(4.5, 0, -1);
+        scene.add(rightWing);
+
+        // Panel Background
+        const panelGeo = new THREE.BoxGeometry(3.5, 4, 0.1);
+        const panelMat = new THREE.MeshStandardMaterial({
+            color: 0x220000,
+            metalness: 0.9,
+            roughness: 0.2,
+            emissive: 0x110000
+        });
+        const panel = new THREE.Mesh(panelGeo, panelMat);
+        panel.position.set(0, 1.25, 0); // Center the panel mesh within group
+        rightWing.add(panel);
+
+        // Toggles
+        const systems = ['AUTO-TARGET', 'POINT DEFENSE', 'REACTOR OVERDRIVE', 'BLAST SHIELDS'];
+        systems.forEach((sys, i) => {
+            const yPos = 2.4 - (i * 0.8);
+            const toggle = new Toggle3D(scene, camera, [-0.5, yPos, 0.1], {
+                label: sys,
+                initialState: i === 3, // Only shields up initially
+                color: 0xff3333 // Red toggles
+            });
+            // Adjust local pos relative to group center easier
+            toggle.group.position.set(0, 1.25 + (1.2 - i * 0.8), 0.1);
+            rightWing.add(toggle.group);
+        });
+
+        // Center Console: Emergency Actions
+        const centerConsole = new THREE.Group();
+        centerConsole.position.set(0, -0.5, 0);
+        centerConsole.rotation.x = -Math.PI / 8;
+        scene.add(centerConsole);
+
+        // Desk Surface
+        const deskGeo = new THREE.BoxGeometry(4.5, 1.8, 0.2);
+        const deskMat = new THREE.MeshStandardMaterial({
+            color: 0x111111,
+            metalness: 0.8,
+            roughness: 0.4,
+            wireframe: false // solid
+        });
+        const desk = new THREE.Mesh(deskGeo, deskMat);
+        centerConsole.add(desk);
+
+        // Wireframe overlay for "Holographic" feel
+        const deskWire = new THREE.Mesh(deskGeo, new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true, transparent: true, opacity: 0.2 }));
+        centerConsole.add(deskWire);
+
+        // Action Buttons
+        const button1 = new Button3D(scene, camera, [-1.2, 0.2, 0.2], {
+            label: 'VENT ATMOSPHERE',
+            color: 0xffaa00, // Warning Orange
+            width: 2.0,
+            scale: 0.8,
+            onClick: () => {
+                alertBox.textContent = 'ERROR: SAFETY LOCK ENGAGED';
+                setTimeout(() => alertBox.textContent = 'WARNING: DEBRIS STORM IMMINENT', 2000);
+            }
+        });
+        centerConsole.add(button1.group);
+
+        const button2 = new Button3D(scene, camera, [1.2, 0.2, 0.2], {
+            label: 'FIRE MAIN CANNON',
+            color: 0xff0000, // Danger Red
+            width: 2.0,
+            scale: 0.8,
+            onClick: () => {
+                // Visual feedback?
+                const flash = new THREE.PointLight(0xffffff, 50, 100);
+                flash.position.set(0, 5, 20);
+                scene.add(flash);
+                setTimeout(() => scene.remove(flash), 100);
+                console.log('FIRING');
+            }
+        });
+        centerConsole.add(button2.group);
+
+
+        // Floating debris (Asteroids) animation in background
+        const asteroids = [];
+        const asteroidGeo = new THREE.IcosahedronGeometry(0.5, 0);
+        const asteroidMat = new THREE.MeshStandardMaterial({ color: 0x555555, roughness: 0.9 });
+
+        for (let i = 0; i < 30; i++) {
+            const mesh = new THREE.Mesh(asteroidGeo, asteroidMat);
+            mesh.position.set(
+                (Math.random() - 0.5) * 40,
+                (Math.random() - 0.5) * 20 + 5,
+                (Math.random() - 0.5) * 20 - 20 // Far back
+            );
+            mesh.scale.setScalar(Math.random() * 2 + 0.5);
+            scene.add(mesh);
+            asteroids.push({
+                mesh: mesh,
+                rotSpeed: new THREE.Vector3(Math.random() * 0.02, Math.random() * 0.02, Math.random() * 0.02),
+                vel: new THREE.Vector3(0, 0, Math.random() * 0.1 + 0.05)
+            });
+        }
+
+
+        const alertBox = document.querySelector('.alert-box');
+
+        // Remove loader
+        document.getElementById('loader').style.opacity = '0';
+        setTimeout(() => document.getElementById('loader').remove(), 500);
+
+        // Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = Date.now() * 0.001;
+
+            // Pulse light
+            strobeLight.intensity = 10 + Math.sin(time * 5) * 5;
+
+            // Move asteroids
+            asteroids.forEach(ast => {
+                ast.mesh.rotation.x += ast.rotSpeed.x;
+                ast.mesh.rotation.y += ast.rotSpeed.y;
+                ast.mesh.position.z += ast.vel.z;
+                if (ast.mesh.position.z > 10) ast.mesh.position.z = -30; // Reset
+            });
+
+            if (chart1) chart1.update();
+            if (chart2) chart2.update();
+
+            scene3D.render();
+        }
+        animate();
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        });
+    </script>
+</body>
+
+</html>

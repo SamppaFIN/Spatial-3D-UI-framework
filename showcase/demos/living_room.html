@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neo-Tokyo Loft - Apt 404</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Montserrat:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../styles/showcase.css">
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050014;
+            color: #d800ff;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        #room-canvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+
+        .hud-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .hud-title {
+            font-family: 'Audiowide', cursive;
+            font-size: 2.5rem;
+            color: #fff;
+            text-transform: uppercase;
+            margin: 0;
+            text-shadow:
+                0 0 5px #fff,
+                0 0 10px #d800ff,
+                0 0 20px #d800ff;
+        }
+
+        .hud-subtitle {
+            color: #00ffff;
+            font-size: 1rem;
+            margin-top: 5px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px #00ffff;
+        }
+
+        .back-nav {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 20;
+            pointer-events: auto;
+        }
+
+        .back-btn {
+            background: rgba(20, 0, 40, 0.8);
+            border: 1px solid #d800ff;
+            color: #d800ff;
+            padding: 8px 16px;
+            border-radius: 4px;
+            /* Slightly rounded */
+            text-decoration: none;
+            font-weight: 700;
+            font-family: 'Audiowide', cursive;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 0 10px rgba(216, 0, 255, 0.2);
+        }
+
+        .back-btn:hover {
+            background: #d800ff;
+            color: #fff;
+            box-shadow: 0 0 20px rgba(216, 0, 255, 0.6);
+        }
+
+        /* Loading overlay */
+        #loader {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #050014;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            transition: opacity 0.5s;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(216, 0, 255, 0.3);
+            border-top-color: #d800ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loader">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="hud-overlay">
+        <h1 class="hud-title">APT 404</h1>
+        <div class="hud-subtitle">UNIT CONTROL // NEO-TOKYO</div>
+    </div>
+
+    <nav class="back-nav">
+        <a href="../index.html" class="back-btn">LOGOUT</a>
+    </nav>
+
+    <canvas id="room-canvas"></canvas>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { Slider3D } from '../../src/controls/Slider3D.js';
+        import { Toggle3D } from '../../src/controls/Toggle3D.js';
+        import { Button3D } from '../../src/controls/Button3D.js';
+        import { ControlRegistry } from '../../src/core/ControlRegistry.js';
+        import * as THREE from 'three';
+
+        // 1. Scene Setup
+        const canvas = document.getElementById('room-canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+        const controls = scene3D.getControls();
+
+        ControlRegistry.setOrbitControls(controls);
+
+        // Cyberpunk Aesthetics
+        scene.background = new THREE.Color(0x050014);
+        scene.fog = new THREE.FogExp2(0x050014, 0.02);
+
+        // Lighting - Neon Vibes
+        const ambientLight = new THREE.AmbientLight(0x220044, 0.5);
+        scene.add(ambientLight);
+
+        // Pink Neon Key
+        const pinkLight = new THREE.PointLight(0xd800ff, 5, 20);
+        pinkLight.position.set(5, 5, 5);
+        scene.add(pinkLight);
+
+        // Cyan Rim
+        const cyanLight = new THREE.PointLight(0x00ffff, 5, 10);
+        cyanLight.position.set(-5, 0, -5);
+        scene.add(cyanLight);
+
+        // Camera init
+        camera.position.set(0, 1.5, 5);
+        controls.target.set(0, 1.2, 0);
+        controls.enableDamping = true;
+
+        // --- APARTMENT PANEL ---
+
+        // Pseudo-Wall Grid
+        const gridGeo = new THREE.PlaneGeometry(20, 10, 20, 10);
+        const gridMat = new THREE.MeshBasicMaterial({ color: 0x220044, wireframe: true, transparent: true, opacity: 0.3 });
+        const grid = new THREE.Mesh(gridGeo, gridMat);
+        grid.position.z = -2;
+        scene.add(grid);
+
+        // Interface Board
+        const boardGroup = new THREE.Group();
+        boardGroup.position.set(0, 1.2, -1);
+        scene.add(boardGroup);
+
+        const boardGeo = new THREE.BoxGeometry(5, 3.5, 0.1);
+        const boardMat = new THREE.MeshStandardMaterial({
+            color: 0x111111,
+            metalness: 0.9,
+            roughness: 0.2,
+            emissive: 0x110022
+        });
+        const board = new THREE.Mesh(boardGeo, boardMat);
+        boardGroup.add(board);
+
+        // --- CONTROLS ---
+
+        const sliderColor = 0x00ffff; // Cyan
+        const toggleColor = 0xd800ff; // Pink
+
+        // 1. Environmental Sliders
+        const slider1 = new Slider3D(scene, camera, [-1.5, 0.8, 0.1], {
+            width: 1.8,
+            label: 'Window Tint',
+            min: 0, max: 100, value: 20,
+            color: sliderColor
+        });
+        boardGroup.add(slider1.group);
+
+        const slider2 = new Slider3D(scene, camera, [-1.5, -0.2, 0.1], {
+            width: 1.8,
+            label: 'Neon Saturation',
+            min: 0, max: 100, value: 85,
+            color: 0xff0099
+        });
+        boardGroup.add(slider2.group);
+
+
+        // 2. Systems Toggles
+        const sysPanel = new THREE.Group();
+        sysPanel.position.set(0.5, 0, 0);
+        boardGroup.add(sysPanel);
+
+        ['AIR PURIFIER', 'HOLOGRAMS', 'SOUND MASKING'].forEach((label, i) => {
+            const toggle = new Toggle3D(scene, camera, [0, 1.0 - i * 0.8, 0.1], {
+                label: label,
+                initialState: true,
+                color: toggleColor
+            });
+            sysPanel.add(toggle.group);
+        });
+
+
+        // 3. Mode Buttons
+        const btnColor = 0xffff00; // Yellow
+
+        const btn1 = new Button3D(scene, camera, [1.8, 0.8, 0.1], {
+            label: 'WORK MODE',
+            width: 1.2,
+            scale: 0.6,
+            color: btnColor,
+            onClick: () => {
+                // Change lighting to white/clean
+                pinkLight.color.setHex(0xffffff);
+                cyanLight.color.setHex(0xcccccc);
+            }
+        });
+        boardGroup.add(btn1.group);
+
+        const btn2 = new Button3D(scene, camera, [1.8, 0.0, 0.1], {
+            label: 'NIGHT CITY',
+            width: 1.2,
+            scale: 0.6,
+            color: 0x00ffff,
+            onClick: () => {
+                // Change lighting to pink/cyan
+                pinkLight.color.setHex(0xd800ff);
+                cyanLight.color.setHex(0x00ffff);
+            }
+        });
+        boardGroup.add(btn2.group);
+
+        const btn3 = new Button3D(scene, camera, [1.8, -0.8, 0.1], {
+            label: 'SLEEP',
+            width: 1.2,
+            scale: 0.6,
+            color: 0x555555,
+            onClick: () => {
+                // Dim everything
+                pinkLight.color.setHex(0x110022);
+                cyanLight.color.setHex(0x001122);
+            }
+        });
+        boardGroup.add(btn3.group);
+
+
+        // Rain effect (Simple particles falling)
+        const rainGeo = new THREE.BufferGeometry();
+        const rainCount = 1000;
+        const rainPos = new Float32Array(rainCount * 3);
+        const rainVel = [];
+
+        for (let i = 0; i < rainCount * 3; i += 3) {
+            rainPos[i] = (Math.random() - 0.5) * 20;
+            rainPos[i + 1] = Math.random() * 20;
+            rainPos[i + 2] = (Math.random() - 0.5) * 10 - 5; // Background rain
+            rainVel.push(Math.random() * 0.2 + 0.1);
+        }
+        rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
+        const rainMat = new THREE.PointsMaterial({
+            color: 0xaa00ff,
+            size: 0.05,
+            transparent: true,
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending
+        });
+        const rain = new THREE.Points(rainGeo, rainMat);
+        scene.add(rain);
+
+        // Remove loader
+        document.getElementById('loader').style.opacity = '0';
+        setTimeout(() => document.getElementById('loader').remove(), 500);
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Animate Rain
+            const pos = rain.geometry.attributes.position.array;
+            for (let i = 0; i < rainCount; i++) {
+                pos[i * 3 + 1] -= rainVel[i];
+                if (pos[i * 3 + 1] < -2) {
+                    pos[i * 3 + 1] = 15;
+                }
+            }
+            rain.geometry.attributes.position.needsUpdate = true;
+
+            // Updates
+            if (slider1) slider1.update();
+            if (slider2) slider2.update();
+
+            scene3D.render();
+        }
+        animate();
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        });
+    </script>
+</body>
+
+</html>

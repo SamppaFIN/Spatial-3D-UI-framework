@@ -19,6 +19,9 @@ export class Modal3D extends BaseControl3D {
         this.mode = config.mode || 0;
         this.modes = ['box', 'sphere', 'sacred'];
 
+        // NEW: Billboard mode
+        this.billboardMode = config.billboardMode || 'none'; // 'none', 'y-axis', 'full'
+
         // Modal state
         this.isOpen = config.isOpen !== undefined ? config.isOpen : false;
         this.isAnimating = false;
@@ -111,6 +114,7 @@ export class Modal3D extends BaseControl3D {
         this.backdropMesh = new THREE.Mesh(geometry, material);
         this.backdropMesh.position.set(0, 0, -this.depth / 2 - 0.1);
         this.backdropMesh.rotation.x = Math.PI / 2;
+        this.backdropMesh.renderOrder = 9998; // High priority, but behind modal
         this.backdropMesh.userData.isBackdrop = true;
         this.backdropMesh.userData.control = this;
 
@@ -152,6 +156,7 @@ export class Modal3D extends BaseControl3D {
         this.modalMesh = new THREE.Mesh(geometry, material);
         this.modalMesh.castShadow = true;
         this.modalMesh.receiveShadow = true;
+        this.modalMesh.renderOrder = 9999; // Highest priority
         this.modalMesh.userData.isModal = true;
         this.modalMesh.userData.control = this;
 
@@ -159,6 +164,18 @@ export class Modal3D extends BaseControl3D {
 
         // Add content group
         this.group.add(this.contentGroup);
+    }
+
+    getContentPosition() {
+        // Calculate world position for content (below title, centered)
+        // Takes into account group position, rotation, and SCALE
+        const startY = -0.3; // Offset below title
+        const zOffset = this.depth / 2 + 0.02; // Small offset from face
+        const localPos = new THREE.Vector3(0, startY, zOffset);
+
+        // Convert to world space
+        this.group.updateMatrixWorld(true);
+        return localPos.applyMatrix4(this.group.matrixWorld);
     }
 
     createTitle() {
@@ -193,6 +210,7 @@ export class Modal3D extends BaseControl3D {
         });
 
         this.titleMesh = new THREE.Mesh(geometry, material);
+        this.titleMesh.renderOrder = 10000; // Above modal
         this.titleMesh.position.set(0, this.height / 2 - 0.5, this.depth / 2 + 0.01);
 
         this.group.add(this.titleMesh);
@@ -217,6 +235,7 @@ export class Modal3D extends BaseControl3D {
         });
 
         this.closeButtonMesh = new THREE.Mesh(geometry, material);
+        this.closeButtonMesh.renderOrder = 10000; // Above modal
         this.closeButtonMesh.position.set(
             this.width / 2 - 0.3,
             this.height / 2 - 0.3,
@@ -279,15 +298,13 @@ export class Modal3D extends BaseControl3D {
         contentElement.style.overflowWrap = 'break-word';
 
         // Position content in modal (below title, centered)
-        const contentPosition = new THREE.Vector3(
-            this.group.position.x,
-            this.group.position.y - 0.3, // Below title
-            this.group.position.z + this.depth / 2 + 0.02
-        );
+        const contentPosition = this.getContentPosition();
+        const rotation = this.group.rotation;
 
         htmlOverlay.createOverlay(this.contentOverlayId, contentElement, contentPosition, {
             className: 'spatial-modal-content',
             scale: [0.01, 0.01, 0.01],
+            rotation: [rotation.x, rotation.y, rotation.z],
             styles: {
                 opacity: '1',
                 transition: 'opacity 0.3s ease-in-out'
@@ -419,6 +436,28 @@ export class Modal3D extends BaseControl3D {
             this.backdropMesh.material.opacity = this.currentOpacity * this.backdropOpacity;
         }
 
+        // Update HTML content transform
+        if (this.contentOverlayId) {
+            const htmlOverlay = getHTMLOverlay();
+            // We must update matrix world to get accurate world position including scale
+            this.group.updateMatrixWorld();
+
+            const position = this.getContentPosition();
+            const rotation = new THREE.Euler().setFromQuaternion(this.group.getWorldQuaternion(new THREE.Quaternion()));
+            const scale = this.group.getWorldScale(new THREE.Vector3()).multiplyScalar(0.01);
+
+            // Apply visibility based on opacity threshold
+            const visible = this.currentOpacity > 0.01;
+            htmlOverlay.setVisible(this.contentOverlayId, visible);
+
+            if (visible) {
+                htmlOverlay.updateTransform(this.contentOverlayId, position, rotation, scale);
+                // Also update opacity directly on element if needed, though CSS transition handles it well usually.
+                // We kept the transition in CSS, but we can force it here if we wanted strictly JS animation.
+                // For now, let's just stick to transform.
+            }
+        }
+
         // Check if animation is complete
         if (Math.abs(this.currentScale - this.targetScale) < 0.01) {
             this.isAnimating = false;
@@ -428,6 +467,21 @@ export class Modal3D extends BaseControl3D {
     }
 
     update() {
+        // Billboarding logic
+        if (this.billboardMode !== 'none' && this.camera) {
+            if (this.billboardMode === 'full') {
+                this.group.lookAt(this.camera.position);
+            } else if (this.billboardMode === 'y-axis') {
+                // Project camera position to same Y level as group
+                const target = new THREE.Vector3(
+                    this.camera.position.x,
+                    this.group.position.y,
+                    this.camera.position.z
+                );
+                this.group.lookAt(target);
+            }
+        }
+
         this.updateVisualState();
     }
 

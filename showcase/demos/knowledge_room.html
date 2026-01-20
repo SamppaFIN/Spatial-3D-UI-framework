@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xenobiology Lab - Archive</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../styles/showcase.css">
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000c14;
+            color: #00ffcc;
+            font-family: 'Rajdhani', sans-serif;
+        }
+
+        #room-canvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+
+        /* Overlay Container */
+        #html-overlay-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 5;
+        }
+
+        #html-overlay-container>* {
+            pointer-events: auto;
+        }
+
+        .hud-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .hud-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #00ffcc, #0088aa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin: 0;
+            filter: drop-shadow(0 0 5px rgba(0, 255, 204, 0.5));
+        }
+
+        .hud-subtitle {
+            color: rgba(0, 255, 204, 0.7);
+            font-size: 1.1rem;
+            margin-top: 5px;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(0, 255, 204, 0.3);
+            display: inline-block;
+            padding-bottom: 5px;
+        }
+
+        .back-nav {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 20;
+            pointer-events: auto;
+        }
+
+        .back-btn {
+            background: rgba(0, 20, 30, 0.8);
+            border: 1px solid #00ffcc;
+            color: #00ffcc;
+            padding: 8px 16px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Rajdhani', sans-serif;
+            text-transform: uppercase;
+        }
+
+        .back-btn:hover {
+            background: rgba(0, 255, 204, 0.2);
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
+        }
+
+        /* Loading overlay */
+        #loader {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000c14;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            transition: opacity 0.5s;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(0, 255, 204, 0.3);
+            border-top-color: #00ffcc;
+            border-radius: 50%;
+            animation: spin 1.5s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loader">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="hud-overlay">
+        <h1 class="hud-title">Xenobiology Lab</h1>
+        <div class="hud-subtitle">Specimen Archive // Alpha-9</div>
+    </div>
+
+    <nav class="back-nav">
+        <a href="../index.html" class="back-btn">EXIT ARCHIVE</a>
+    </nav>
+
+    <div id="html-overlay-container"></div>
+    <canvas id="room-canvas"></canvas>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { Accordion3D } from '../../src/controls/Accordion3D.js?v=2';
+        import { TextDisplay3D } from '../../src/controls/TextDisplay3D.js';
+        import { ControlRegistry } from '../../src/core/ControlRegistry.js';
+        import { getHTMLOverlay } from '../../src/utils/HTMLOverlay.js';
+        import * as THREE from 'three';
+
+        // 1. Scene Setup
+        const canvas = document.getElementById('room-canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+        const controls = scene3D.getControls();
+
+        ControlRegistry.setOrbitControls(controls);
+
+        // Initialize HTML Overlay
+        const htmlOverlay = getHTMLOverlay();
+        const overlayContainer = document.getElementById('html-overlay-container');
+        htmlOverlay.init(overlayContainer);
+
+        // Bio-lab Aesthetics (Dark blue/teal/green)
+        scene.background = new THREE.Color(0x000c14);
+        scene.fog = new THREE.FogExp2(0x000c14, 0.02);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x004455, 0.4);
+        scene.add(ambientLight);
+
+        // Specimen Tank Glow
+        const tankLight = new THREE.PointLight(0x00ffaa, 5, 10);
+        tankLight.position.set(0, 3, -2);
+        scene.add(tankLight);
+
+        // Accent lights
+        const purpleLight = new THREE.PointLight(0xaa00ff, 2, 10);
+        purpleLight.position.set(-5, 5, 0);
+        scene.add(purpleLight);
+
+        // Camera init
+        camera.position.set(0, 2, 7);
+        controls.target.set(0, 2, 0);
+        controls.enableDamping = true;
+
+        // --- SPECIMEN TANK (Visuals) ---
+        const tankGeo = new THREE.CylinderGeometry(1.5, 1.5, 4, 32);
+        const tankMat = new THREE.MeshPhysicalMaterial({
+            color: 0x88ffcc,
+            metalness: 0,
+            roughness: 0,
+            transmission: 0.9,
+            thickness: 1.0,
+            transparent: true,
+            opacity: 0.3
+        });
+        const tank = new THREE.Mesh(tankGeo, tankMat);
+        tank.position.set(0, 2, -3);
+        scene.add(tank);
+
+        // Bubbles inside tank
+        const particlesGeo = new THREE.BufferGeometry();
+        const particleCount = 200;
+        const posArray = new Float32Array(particleCount * 3);
+        for (let i = 0; i < particleCount * 3; i += 3) {
+            posArray[i] = (Math.random() - 0.5) * 2;   // x within tank
+            posArray[i + 1] = (Math.random() - 0.5) * 3 + 2; // y within tank
+            posArray[i + 2] = (Math.random() - 0.5) * 2 - 3; // z within tank
+        }
+        particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const particlesMat = new THREE.PointsMaterial({ color: 0xccffaa, size: 0.05, transparent: true, opacity: 0.6 });
+        const particles = new THREE.Points(particlesGeo, particlesMat);
+        scene.add(particles);
+
+
+        // --- DATA INTERFACE ---
+
+        // Main Accordion (Research Data)
+        const accordion = new Accordion3D(scene, camera, [-2.5, 4, -0.5], {
+            width: 3.0,
+            headerColor: 0x003344,
+            width: 3.5, // Wider for scientific data
+            itemSpacing: 0.2,
+            items: [
+                {
+                    title: 'Specimen X-99 (Chroma-Viper)',
+                    content: '<strong>Origin:</strong> Kepler-186f<br><strong>Trait:</strong> Bioluminescent epidermis capable of hypnotic pulsating patterns.<br><strong>Threat Level:</strong> <span style="color:red">HIGH</span>.',
+                    contentHeight: 3.5
+                },
+                {
+                    title: 'Containment Protocol',
+                    content: '<ul><li>Maintain humidity at 98%.</li><li>Filters must be cycled hourly.</li><li><strong>DO NOT TAP ON GLASS.</strong></li></ul>',
+                    contentHeight: 3.0
+                },
+                {
+                    title: 'Genetic Analysis',
+                    content: 'DNA structure is triple-helical. Base pairs consist of silicon-analogues.<br>Simulations suggest rapid adaptability to oxygen-rich environments.',
+                    contentHeight: 3.5
+                }
+            ],
+            mode: 0, // Box
+            renderer: renderer
+        });
+        // Override some style for visuals
+        accordion.items.forEach(item => {
+            if (item.mesh) item.mesh.material.emissive = new THREE.Color(0x001122);
+        });
+
+
+        // Static Info Panel (Live Stats)
+        const infoDisplay = new TextDisplay3D(scene, camera, [2.5, 4, -0.5], {
+            width: 3.0,
+            height: 4.0,
+            title: 'Vital Sign Monitor',
+            content: `
+            <div style="font-family: 'Rajdhani', sans-serif;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <span>HEART RATE</span>
+                    <span style="color:#00ffcc; font-weight:bold;">240 BPM</span>
+                </div>
+                <div style="width:100%; height:4px; background:#003344; margin-bottom:20px;">
+                    <div style="width:80%; height:100%; background:#00ffcc;"></div>
+                </div>
+                
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <span>TOXIN LEVEL</span>
+                    <span style="color:#ffaa00; font-weight:bold;">CRITICAL</span>
+                </div>
+                 <div style="width:100%; height:4px; background:#003344; margin-bottom:20px;">
+                    <div style="width:95%; height:100%; background:#ffaa00;"></div>
+                </div>
+                
+                <hr style="border-color: rgba(0,255,204,0.2);">
+                <p style="font-size: 0.9em; color: rgba(0,255,204,0.8);">
+                    Subject appears agitated. Suggest increasing sedative dosage by 15%.
+                </p>
+            </div>
+            `,
+            backgroundColor: 'rgba(0, 15, 25, 0.85)',
+            borderColor: '#00ffcc'
+        });
+
+
+        // Remove loader
+        document.getElementById('loader').style.opacity = '0';
+        setTimeout(() => document.getElementById('loader').remove(), 500);
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Animate bubbles
+            const positions = particles.geometry.attributes.position.array;
+            for (let i = 1; i < positions.length; i += 3) {
+                positions[i] += 0.01; // rise
+                if (positions[i] > 4) positions[i] = 0; // reset
+            }
+            particles.geometry.attributes.position.needsUpdate = true;
+
+            if (accordion) accordion.update();
+
+            scene3D.render();
+
+            if (htmlOverlay && htmlOverlay.render) {
+                htmlOverlay.render(camera);
+            }
+        }
+        animate();
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+
+            if (htmlOverlay && htmlOverlay.setSize) {
+                htmlOverlay.setSize(width, height);
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site 19 - Access Node</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../styles/showcase.css">
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #0a0a0a;
+            color: #dcdcdc;
+            font-family: 'Courier Prime', monospace;
+        }
+
+        #room-canvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+
+        /* Overlay Container for HTML inputs/modals */
+        #html-overlay-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 5;
+        }
+
+        #html-overlay-container>* {
+            pointer-events: auto;
+        }
+
+        .hud-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .hud-title {
+            font-size: 2rem;
+            font-weight: 700;
+            background: #000;
+            color: #fff;
+            padding: 5px 15px;
+            border: 2px solid #fff;
+            text-transform: uppercase;
+            letter-spacing: -1px;
+            margin: 0;
+        }
+
+        .hud-subtitle {
+            font-family: 'JetBrains Mono', monospace;
+            background: #fff;
+            color: #000;
+            padding: 2px 15px;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            font-weight: bold;
+        }
+
+        .back-nav {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 20;
+            pointer-events: auto;
+        }
+
+        .back-btn {
+            background: #000;
+            border: 1px solid #fff;
+            color: #fff;
+            padding: 8px 16px;
+            text-decoration: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            transition: all 0.1s;
+        }
+
+        .back-btn:hover {
+            background: #fff;
+            color: #000;
+        }
+
+        /* CRT Scanline effect */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        /* Loading overlay */
+        #loader {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0a0a0a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            transition: opacity 0.5s;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #333;
+            border-top-color: #fff;
+            border-radius: 0;
+            /* Square for brutalism */
+            animation: spin 1s steps(8) infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loader">
+        <div class="spinner"></div>
+    </div>
+    <div class="scanlines"></div>
+
+    <div class="hud-overlay">
+        <h1 class="hud-title">SITE 19 [REDACTED]</h1>
+        <div class="hud-subtitle">EYES ONLY // ACCESS LEVEL 5</div>
+    </div>
+
+    <nav class="back-nav">
+        <a href="../index.html" class="back-btn">RETURN TO SURFACE</a>
+    </nav>
+
+    <div id="html-overlay-container"></div>
+    <canvas id="room-canvas"></canvas>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { TextInput3D } from '../../src/controls/TextInput3D.js';
+        import { Button3D } from '../../src/controls/Button3D.js';
+        import { Modal3D } from '../../src/controls/Modal3D.js';
+        import { ControlRegistry } from '../../src/core/ControlRegistry.js';
+        import { getHTMLOverlay } from '../../src/utils/HTMLOverlay.js';
+        import * as THREE from 'three';
+
+        // 1. Scene Setup
+        const canvas = document.getElementById('room-canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+        const controls = scene3D.getControls();
+
+        ControlRegistry.setOrbitControls(controls);
+
+        // Initialize HTML Overlay
+        const htmlOverlay = getHTMLOverlay();
+        const overlayContainer = document.getElementById('html-overlay-container');
+        htmlOverlay.init(overlayContainer);
+
+        // Brutalist / Horror aesthetics
+        scene.background = new THREE.Color(0x0a0a0a);
+        scene.fog = new THREE.FogExp2(0x0a0a0a, 0.05); // Thick fog
+
+        // Lighting - Uneasy
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
+        scene.add(ambientLight);
+
+        // Flickering Overhead Light
+        const spotLight = new THREE.SpotLight(0xccffcc, 15); // Sickly green/white
+        spotLight.position.set(0, 8, 2);
+        spotLight.castShadow = true;
+        scene.add(spotLight);
+
+        // Red warning light
+        const redLight = new THREE.PointLight(0xff0000, 2, 10);
+        redLight.position.set(4, 2, 0);
+        scene.add(redLight);
+
+        // Camera init
+        camera.position.set(0, 1.8, 4.5);
+        controls.target.set(0, 1.5, 0);
+        controls.enableDamping = true;
+
+        // --- TERMINAL ---
+
+        // Concrete Pedestal
+        const standGeo = new THREE.BoxGeometry(0.8, 1.2, 0.8);
+        const standMat = new THREE.MeshStandardMaterial({
+            color: 0x333333,
+            roughness: 0.9,
+            map: null // would be cool with concrete texture
+        });
+        const stand = new THREE.Mesh(standGeo, standMat);
+        stand.position.y = 0.6;
+        scene.add(stand);
+
+        // Terminal Casing
+        const panelGeo = new THREE.BoxGeometry(3, 2.0, 0.4);
+        const panelMat = new THREE.MeshStandardMaterial({
+            color: 0x111111,
+            roughness: 0.5,
+            metalness: 0.6
+        });
+        const panel = new THREE.Mesh(panelGeo, panelMat);
+        panel.position.set(0, 1.8, 0);
+        panel.rotation.x = -Math.PI / 12; // Slight tilt
+        scene.add(panel);
+
+        // Screen Glow (behind components)
+        const screenGeo = new THREE.PlaneGeometry(2.8, 1.8);
+        const screenMat = new THREE.MeshBasicMaterial({ color: 0x001100, side: THREE.DoubleSide });
+        const screen = new THREE.Mesh(screenGeo, screenMat);
+        screen.position.z = 0.21;
+        panel.add(screen);
+
+
+        // --- COMPONENTS ---
+
+        // Helper to place on tilted panel
+        const tilt = -Math.PI / 12;
+        function createOnPanel(yOffset, ComponentClass, options) {
+            const localY = yOffset;
+            const localZ = 0.22; // Surface of panel box
+
+            const worldY = 1.8 + localY * Math.cos(tilt) - localZ * Math.sin(tilt);
+            const worldZ = 0 + localY * Math.sin(tilt) + localZ * Math.cos(tilt);
+
+            const comp = new ComponentClass(scene, camera, [0, worldY, worldZ], options);
+            comp.group.rotation.x = tilt;
+            return comp;
+        }
+
+        // Clearance Code Input
+        const usernameInput = createOnPanel(0.4, TextInput3D, {
+            id: 'clearance-input',
+            width: 2.2,
+            placeholder: 'CLEARANCE CODE',
+            color: 0x00ff00,
+            textColor: '#00ff00',
+            backgroundColor: '#000000'
+        });
+
+        // Retinal Hash Input
+        const passwordInput = createOnPanel(-0.1, TextInput3D, {
+            id: 'retinal-input',
+            width: 2.2,
+            placeholder: 'RETINAL HASH',
+            color: 0x00ff00,
+            textColor: '#00ff00',
+            backgroundColor: '#000000'
+        });
+
+        // Authenticate Button
+        const loginBtn = createOnPanel(-0.6, Button3D, {
+            label: 'VERIFY BIOMETRICS',
+            color: 0x333333,
+            width: 2.2,
+            scale: 1.0,
+            onClick: handleLogin
+        });
+
+        // --- MODAL ---
+        const infoModal = new Modal3D(scene, camera, [0, 1.8, 1.5], {
+            title: 'SECURITY BREACH',
+            width: 2.5,
+            height: 1.8,
+            color: 0x880000,
+            billboardMode: 'none'
+        });
+        infoModal.close(); // Start hidden
+
+        function handleLogin() {
+            // Glitch effect on button click
+            renderer.domElement.style.filter = 'invert(1)';
+            setTimeout(() => renderer.domElement.style.filter = 'none', 100);
+
+            const user = usernameInput.getValue();
+
+            if (user === 'O5-1') {
+                showModal('ACCESS GRANTED', 'Welcome, Overseer.\n\nContainment protocols: STABLE.\nSubject 682: QUIET.', 0x008800);
+            } else {
+                showModal('UNAUTHORIZED', 'MEMETIC KILL AGENT ACTIVATED.\n\nPlease remain where you are.\nSecurity team dispatched.', 0x880000);
+            }
+        }
+
+        function showModal(title, text, color) {
+            infoModal.setTitle(title);
+            infoModal.setContent(text);
+            infoModal.headerMesh.material.color.setHex(color);
+            infoModal.open();
+        }
+
+        // Remove loader
+        document.getElementById('loader').style.opacity = '0';
+        setTimeout(() => document.getElementById('loader').remove(), 500);
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = Date.now() * 0.001;
+            // Flicker light
+            if (Math.random() > 0.95) {
+                spotLight.intensity = Math.random() * 20;
+            } else {
+                spotLight.intensity = 15;
+            }
+
+            // Update components
+            if (usernameInput) usernameInput.update();
+            if (passwordInput) passwordInput.update();
+            if (infoModal) infoModal.update();
+
+            scene3D.render();
+
+            if (htmlOverlay && htmlOverlay.render) {
+                htmlOverlay.render(camera);
+            }
+        }
+        animate();
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+
+            if (htmlOverlay && htmlOverlay.setSize) {
+                htmlOverlay.setSize(width, height);
+            }
+        });
+    </script>
+</body>
+
+</html>
