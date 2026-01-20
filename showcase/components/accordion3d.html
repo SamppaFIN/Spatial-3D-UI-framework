@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accordion3D Component - Spatial UI 3D</title>
+    <meta name="description"
+        content="Accordion3D - Collapsible 3D accordion with multiple sections, markdown support, and smooth animations.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+    <style>
+        .demo-container {
+            background: rgba(10, 10, 15, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 2rem 0;
+            position: relative;
+            min-height: 500px;
+        }
+
+        #component-canvas {
+            width: 100%;
+            height: 500px;
+            border-radius: 12px;
+            display: block;
+        }
+
+        .api-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+        }
+
+        .api-table th,
+        .api-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .api-table th {
+            background: rgba(78, 205, 196, 0.1);
+            color: var(--cosmic-cyan);
+            font-weight: 600;
+        }
+
+        .api-table code {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .breadcrumb {
+            padding: 1rem 0;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb a {
+            color: var(--cosmic-cyan);
+        }
+
+        .component-header {
+            text-align: center;
+            padding: 4rem 0 2rem;
+        }
+
+        .component-title {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            margin-bottom: 1rem;
+        }
+
+        .component-subtitle {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.7);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            margin: 3rem 0 1.5rem;
+            color: var(--cosmic-cyan);
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="../index.html" class="navbar-logo">🌸 Spatial UI 3D</a>
+            <ul class="navbar-menu">
+                <li><a href="../index.html#features" class="navbar-link">Features</a></li>
+                <li><a href="./index.html" class="navbar-link active">Components</a></li>
+                <li><a href="../index.html#demos" class="navbar-link">Demos</a></li>
+                <li><a href="../docs/getting-started.html" class="navbar-link">Docs</a></li>
+            </ul>
+            <button class="navbar-toggle" aria-label="Toggle menu" aria-expanded="false">☰</button>
+        </div>
+    </nav>
+    <main style="padding-top: 80px;">
+        <div class="container">
+            <div class="breadcrumb"><a href="../index.html">Home</a> / <a href="./index.html">Components</a> /
+                Accordion3D</div>
+            <header class="component-header">
+                <h1 class="component-title">📋 Accordion3D</h1>
+                <p class="component-subtitle">Collapsible 3D accordion with multiple sections, markdown content support,
+                    and smooth expand/collapse animations. Perfect for organizing information in spatial interfaces.</p>
+            </header>
+            <section>
+                <h2 class="section-title">Live Demo</h2>
+                <div class="demo-container"><canvas id="component-canvas"></canvas></div>
+                <p style="text-align: center; color: rgba(255, 255, 255, 0.6); margin-top: 1rem;">✨ Drag to rotate •
+                    Scroll to zoom • Click sections to expand/collapse</p>
+            </section>
+            <section>
+                <h2 class="section-title">Features</h2>
+                <div class="grid grid-3">
+                    <div class="card">
+                        <h3>📂 Multiple Sections</h3>
+                        <p>Support for multiple collapsible sections with individual content.</p>
+                    </div>
+                    <div class="card">
+                        <h3>🎬 Smooth Animations</h3>
+                        <p>Smooth expand/collapse animations with configurable speed.</p>
+                    </div>
+                    <div class="card">
+                        <h3>📝 Markdown Support</h3>
+                        <p>Full markdown rendering for rich text content.</p>
+                    </div>
+                    <div class="card">
+                        <h3>🎨 Three Geometry Modes</h3>
+                        <p>Choose between box, sphere, or sacred geometry.</p>
+                    </div>
+                    <div class="card">
+                        <h3>🔄 Multi-Open Support</h3>
+                        <p>Multiple sections can be open simultaneously.</p>
+                    </div>
+                    <div class="card">
+                        <h3>🎯 Event Callbacks</h3>
+                        <p>onItemToggle callback for custom logic.</p>
+                    </div>
+                </div>
+            </section>
+            <section>
+                <h2 class="section-title">Basic Usage</h2>
+                <div class="code-block">
+                    <div class="code-block-header"><span class="code-block-language">JavaScript</span><button
+                            class="code-copy-btn">Copy</button></div>
+                    <pre><code>import { Scene3D } from './src/core/Scene3D.js';
+import { Accordion3D } from './src/controls/Accordion3D.js';
+
+const scene3D = new Scene3D(canvas);
+const scene = scene3D.getScene();
+const camera = scene3D.getCamera();
+const renderer = scene3D.getRenderer();
+
+const accordion = new Accordion3D(scene, camera, [0, 0, 0], {
+    width: 5.0,
+    itemHeight: 0.8,
+    itemSpacing: 0.2,
+    mode: 0,
+    items: [
+        {
+            title: '📊 Section 1',
+            contentHeight: 3.0,
+            content: '# Content\\n\\nMarkdown **content** here.'
+        },
+        {
+            title: '🎯 Section 2',
+            contentHeight: 2.5,
+            content: '# More Content\\n\\nAnother section.'
+        }
+    ],
+    openItems: [0],
+    renderer: renderer,
+    onItemToggle: (accordion, index, isOpen) => {
+        console.log(`Section ${index} ${isOpen ? 'opened' : 'closed'}`);
+    }
+});
+
+function animate() {
+    requestAnimationFrame(animate);
+    accordion.update();
+    scene3D.render();
+}
+animate();</code></pre>
+                </div>
+            </section>
+            <section>
+                <h2 class="section-title">API Reference</h2>
+                <h3 style="margin-top: 2rem; color: var(--cosmic-cyan);">Constructor</h3>
+                <div class="code-block">
+                    <pre><code>new Accordion3D(scene, camera, position, options)</code></pre>
+                </div>
+                <h3 style="margin-top: 2rem; color: var(--cosmic-cyan);">Options</h3>
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>Type</th>
+                            <th>Default</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>width</code></td>
+                            <td>number</td>
+                            <td>5.0</td>
+                            <td>Accordion width in 3D units</td>
+                        </tr>
+                        <tr>
+                            <td><code>itemHeight</code></td>
+                            <td>number</td>
+                            <td>0.8</td>
+                            <td>Height of each section header</td>
+                        </tr>
+                        <tr>
+                            <td><code>itemSpacing</code></td>
+                            <td>number</td>
+                            <td>0.2</td>
+                            <td>Spacing between sections</td>
+                        </tr>
+                        <tr>
+                            <td><code>mode</code></td>
+                            <td>number</td>
+                            <td>0</td>
+                            <td>Geometry mode: 0=box, 1=sphere, 2=sacred</td>
+                        </tr>
+                        <tr>
+                            <td><code>items</code></td>
+                            <td>array</td>
+                            <td>[]</td>
+                            <td>Array of section objects (see below)</td>
+                        </tr>
+                        <tr>
+                            <td><code>openItems</code></td>
+                            <td>array</td>
+                            <td>[]</td>
+                            <td>Array of initially open section indices</td>
+                        </tr>
+                        <tr>
+                            <td><code>renderer</code></td>
+                            <td>WebGLRenderer</td>
+                            <td>required</td>
+                            <td>Three.js renderer instance</td>
+                        </tr>
+                        <tr>
+                            <td><code>onItemToggle</code></td>
+                            <td>function</td>
+                            <td>null</td>
+                            <td>Callback when section toggles (accordion, index, isOpen)</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <h3 style="margin-top: 2rem; color: var(--cosmic-cyan);">Item Object</h3>
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>title</code></td>
+                            <td>string</td>
+                            <td>Section title text</td>
+                        </tr>
+                        <tr>
+                            <td><code>contentHeight</code></td>
+                            <td>number</td>
+                            <td>Height of content when expanded</td>
+                        </tr>
+                        <tr>
+                            <td><code>content</code></td>
+                            <td>string</td>
+                            <td>Markdown content to display</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <h3 style="margin-top: 2rem; color: var(--cosmic-cyan);">Methods</h3>
+                <table class="api-table">
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>update()</code></td>
+                            <td>Update accordion state (call in animation loop)</td>
+                        </tr>
+                        <tr>
+                            <td><code>toggleItem(index)</code></td>
+                            <td>Toggle section at index</td>
+                        </tr>
+                        <tr>
+                            <td><code>openItem(index)</code></td>
+                            <td>Open section at index</td>
+                        </tr>
+                        <tr>
+                            <td><code>closeItem(index)</code></td>
+                            <td>Close section at index</td>
+                        </tr>
+                        <tr>
+                            <td><code>dispose()</code></td>
+                            <td>Clean up resources</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+            <section>
+                <h2 class="section-title">Related Components</h2>
+                <div class="grid grid-3">
+                    <a href="./textdisplay3d.html" class="card">
+                        <h3>📄 TextDisplay3D</h3>
+                        <p>Display text content</p>
+                    </a>
+                    <a href="./modal3d.html" class="card">
+                        <h3>🪟 Modal3D</h3>
+                        <p>Dialog overlays</p>
+                    </a>
+                    <a href="./toggle3d.html" class="card">
+                        <h3>🔄 Toggle3D</h3>
+                        <p>On/off switches</p>
+                    </a>
+                </div>
+            </section>
+        </div>
+    </main>
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>🌸 Spatial UI 3D</h3>
+                    <p style="color: rgba(255,255,255,0.6);">Transform web UI into immersive 3D spatial interfaces.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Documentation</h3>
+                    <ul class="footer-links">
+                        <li><a href="../docs/getting-started.html">Getting Started</a></li>
+                        <li><a href="../docs/api-reference.html">API Reference</a></li>
+                        <li><a href="./index.html">Components</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Resources</h3>
+                    <ul class="footer-links">
+                        <li><a href="../index.html#demos">Demos</a></li>
+                        <li><a href="../examples/index.html">Examples</a></li>
+                        <li><a href="https://github.com/spatial-ui-3d" target="_blank">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>Built with 🌸 <span class="footer-aurora">Aurora</span> & ♾️ <span
+                        class="footer-aurora">Infinite</span></p>
+            </div>
+        </div>
+    </footer>
+    <script
+        type="importmap">{"imports": {"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+    <script type="module">
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { Accordion3D } from '../../src/controls/Accordion3D.js';
+        import { ControlRegistry } from '../../src/core/ControlRegistry.js';
+        import * as THREE from 'three';
+
+        const canvas = document.getElementById('component-canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+        const orbitControls = scene3D.getControls();
+        ControlRegistry.setOrbitControls(orbitControls);
+        scene.background = new THREE.Color(0x0a0a0f);
+
+        const accordion1 = new Accordion3D(scene, camera, [-6, 0, 0], {
+            width: 4.5,
+            itemHeight: 0.7,
+            itemSpacing: 0.15,
+            mode: 0,
+            items: [
+                { title: '📊 Data Sources', contentHeight: 2.5, content: '# Data Sources\\n\\n- Google Analytics\\n- Stripe\\n- Custom API' },
+                { title: '🎯 Metrics', contentHeight: 2.5, content: '# Performance\\n\\n- Load: 1.2s\\n- Response: 45ms\\n- Uptime: 99.9%' },
+                { title: '⚙️ Settings', contentHeight: 2.5, content: '# Settings\\n\\n- Auto-refresh: On\\n- Theme: Dark' }
+            ],
+            openItems: [0],
+            renderer: renderer
+        });
+
+        const accordion2 = new Accordion3D(scene, camera, [0, 0, 0], {
+            width: 4.5,
+            itemHeight: 0.7,
+            itemSpacing: 0.15,
+            mode: 1,
+            items: [
+                { title: '🌟 Features', contentHeight: 2.5, content: '# Features\\n\\n- **3D** geometry\\n- **Markdown** support\\n- **Animations**' },
+                { title: '📚 Documentation', contentHeight: 2.5, content: '# Docs\\n\\nComprehensive API reference' },
+                { title: '🚀 Getting Started', contentHeight: 2.5, content: '# Quick Start\\n\\n1. Import\\n2. Create\\n3. Update' }
+            ],
+            openItems: [1],
+            renderer: renderer
+        });
+
+        const accordion3 = new Accordion3D(scene, camera, [6, 0, 0], {
+            width: 4.5,
+            itemHeight: 0.7,
+            itemSpacing: 0.15,
+            mode: 2,
+            items: [
+                { title: '🔮 Sacred', contentHeight: 2.5, content: '# Sacred Geometry\\n\\nOctahedron patterns' },
+                { title: '✨ Cosmic', contentHeight: 2.5, content: '# Cosmic Theme\\n\\nSpace-inspired design' },
+                { title: '♾️ Infinite', contentHeight: 2.5, content: '# Infinite Possibilities\\n\\nEndless customization' }
+            ],
+            openItems: [2],
+            renderer: renderer
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            ControlRegistry.getAll().forEach(control => {
+                if (control && control.update) control.update();
+                if (control && control.updateTooltipAndLabelPositions) control.updateTooltipAndLabelPositions();
+            });
+            scene3D.render();
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        });
+    </script>
+    <script src="../scripts/showcase.js"></script>
+</body>
+
+</html>

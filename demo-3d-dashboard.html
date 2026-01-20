@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 3D Data Dashboard - Spatial UI Demo</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <style>
+        /* Tooltip and Label Styles */
+        .spatial-tooltip {
+            background: linear-gradient(145deg, rgba(20, 20, 40, 0.95), rgba(10, 10, 30, 0.95));
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: #ffffff;
+            font-family: 'Arial', sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            max-width: 250px;
+            box-shadow:
+                0 0 20px rgba(0, 0, 0, 0.5),
+                0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            pointer-events: none;
+            user-select: none;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+
+        .spatial-tooltip strong {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .spatial-tooltip em {
+            color: #e0e0e0;
+            font-style: italic;
+        }
+
+        .spatial-tooltip code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #ffd700;
+        }
+
+        .spatial-label {
+            background: linear-gradient(145deg, rgba(30, 30, 50, 0.9), rgba(20, 20, 40, 0.9));
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: #ffffff;
+            font-family: 'Arial', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.4;
+            box-shadow:
+                0 0 15px rgba(0, 0, 0, 0.4),
+                0 4px 16px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(8px);
+            pointer-events: none;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        /* Text Display Styles */
+        .spatial-text-display {
+            background: linear-gradient(145deg, rgba(20, 20, 40, 0.95), rgba(10, 10, 30, 0.95));
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: #ffffff;
+            font-family: 'Arial', sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .spatial-text-display h1,
+        .spatial-text-display h2,
+        .spatial-text-display h3 {
+            color: #ffffff;
+            margin-top: 0.5em;
+            margin-bottom: 0.3em;
+        }
+
+        .spatial-text-display p {
+            margin: 0.5em 0;
+        }
+
+        .spatial-text-display code {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #ffd700;
+        }
+
+        /* Chart Styles */
+        .spatial-chart {
+            background: rgba(20, 20, 40, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .html-overlay {
+            pointer-events: none;
+        }
+
+        /* Demo Title */
+        .demo-title {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+            z-index: 100;
+        }
+
+        .demo-subtitle {
+            position: absolute;
+            top: 55px;
+            left: 20px;
+            color: rgba(255, 255, 255, 0.8);
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+            z-index: 100;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Canvas for WebGL rendering -->
+    <canvas id="canvas"></canvas>
+
+    <!-- Demo Title -->
+    <div class="demo-title">📊 3D Data Dashboard</div>
+    <div class="demo-subtitle">Real-time analytics in spatial context</div>
+
+    <!-- Background Switcher UI -->
+    <div id="background-switcher" class="background-switcher">
+        <button class="room-btn" data-room="coordinate" title="Coordinate Room">
+            📐 Coordinate
+        </button>
+        <button class="room-btn" data-room="landscape" title="Landscape Room">
+            🏔️ Landscape
+        </button>
+        <button class="room-btn" data-room="space" title="Space Room">
+            🌌 Space
+        </button>
+    </div>
+
+    <!-- FPS Counter -->
+    <div id="fps-counter" class="fps-counter">FPS: --</div>
+
+    <!-- Import Three.js from CDN -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <!-- Main application -->
+    <script type="module">
+        import { Scene3D } from './src/core/Scene3D.js';
+        import { RoomManager } from './src/core/RoomManager.js';
+        import { Button3D } from './src/controls/Button3D.js';
+        import { ButtonFactory } from './src/utils/ButtonFactory.js';
+        import { Toggle3D } from './src/controls/Toggle3D.js';
+        import { TextDisplay3D } from './src/controls/TextDisplay3D.js';
+        import { Chart3D } from './src/controls/Chart3D.js';
+        import { Slider3D } from './src/controls/Slider3D.js';
+        import { Modal3D } from './src/controls/Modal3D.js';
+        import { Accordion3D } from './src/controls/Accordion3D.js';
+        import { ControlRegistry } from './src/core/ControlRegistry.js';
+        import * as THREE from 'three';
+
+        // Initialize application
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+        const orbitControls = scene3D.getControls();
+
+        // Initialize ControlRegistry with OrbitControls reference
+        ControlRegistry.setOrbitControls(orbitControls);
+
+        // Initialize Room Manager
+        const roomManager = new RoomManager(scene, camera);
+        roomManager.initialize();
+
+        // ============================================
+        // DATA SIMULATION
+        // ============================================
+        let dashboardData = {
+            sales: { current: 45230, trend: [] },
+            revenue: { current: 123450, trend: [] },
+            users: { current: 8542, trend: [] },
+            conversion: { current: 3.2, trend: [] }
+        };
+
+        // Generate initial trend data
+        function generateInitialTrend(baseValue, points = 12) {
+            const trend = [];
+            for (let i = 0; i < points; i++) {
+                const variance = baseValue * 0.1;
+                const value = baseValue + (Math.random() - 0.5) * variance;
+                trend.push(Math.round(value));
+            }
+            return trend;
+        }
+
+        dashboardData.sales.trend = generateInitialTrend(45000, 12);
+        dashboardData.revenue.trend = generateInitialTrend(120000, 12);
+        dashboardData.users.trend = generateInitialTrend(8500, 12);
+        dashboardData.conversion.trend = generateInitialTrend(3.2, 12).map(v => (v / 1000).toFixed(2));
+
+        // Update data periodically
+        function updateDashboardData() {
+            // Update sales
+            const salesChange = (Math.random() - 0.5) * 1000;
+            dashboardData.sales.current = Math.max(0, Math.round(dashboardData.sales.current + salesChange));
+            dashboardData.sales.trend.shift();
+            dashboardData.sales.trend.push(dashboardData.sales.current);
+
+            // Update revenue
+            const revenueChange = (Math.random() - 0.5) * 5000;
+            dashboardData.revenue.current = Math.max(0, Math.round(dashboardData.revenue.current + revenueChange));
+            dashboardData.revenue.trend.shift();
+            dashboardData.revenue.trend.push(dashboardData.revenue.current);
+
+            // Update users
+            const usersChange = (Math.random() - 0.5) * 200;
+            dashboardData.users.current = Math.max(0, Math.round(dashboardData.users.current + usersChange));
+            dashboardData.users.trend.shift();
+            dashboardData.users.trend.push(dashboardData.users.current);
+
+            // Update conversion
+            const conversionChange = (Math.random() - 0.5) * 0.2;
+            dashboardData.conversion.current = Math.max(0, parseFloat((dashboardData.conversion.current + conversionChange).toFixed(2)));
+            dashboardData.conversion.trend.shift();
+            dashboardData.conversion.trend.push(dashboardData.conversion.current);
+        }
+
+        // ============================================
+        // LEFT ZONE: CONTROLS (Z = -2)
+        // ============================================
+        const CONTROL_ZONE_X = -10;
+        const CONTROL_ZONE_Z = -2;
+
+        // Time Range Slider
+        const timeRangeSlider = new Slider3D(scene, camera, [CONTROL_ZONE_X, 3, CONTROL_ZONE_Z], {
+            label: 'Time Range',
+            width: 3.5,
+            height: 0.3,
+            values: ['1 Hour', '6 Hours', '24 Hours', '7 Days', '30 Days'],
+            valueIndex: 2,
+            mode: 0,
+            renderer: renderer,
+            tooltip: {
+                content: '**Time Range** ⏱️\\n\\nSelect data time range',
+                position: 'right',
+                offset: [2.0, 0, 0]
+            },
+            onChange: (slider, value, index) => {
+                console.log('Time range changed to:', value);
+            }
+        });
+
+        // Data Filters
+        const filterSales = new Toggle3D(scene, camera, [CONTROL_ZONE_X, 1.5, CONTROL_ZONE_Z], {
+            label: 'Show Sales',
+            width: 3.5,
+            height: 0.6,
+            mode: 0,
+            isOn: true,
+            onColor: 0x4ecdc4,
+            offColor: 0x666666,
+            renderer: renderer,
+            tooltip: {
+                content: '**Sales Filter** 💰\\n\\nToggle sales data visibility',
+                position: 'right',
+                offset: [2.0, 0, 0]
+            }
+        });
+
+        const filterRevenue = new Toggle3D(scene, camera, [CONTROL_ZONE_X, 0.5, CONTROL_ZONE_Z], {
+            label: 'Show Revenue',
+            width: 3.5,
+            height: 0.6,
+            mode: 0,
+            isOn: true,
+            onColor: 0x4ecdc4,
+            offColor: 0x666666,
+            renderer: renderer,
+            tooltip: {
+                content: '**Revenue Filter** 💵\\n\\nToggle revenue data visibility',
+                position: 'right',
+                offset: [2.0, 0, 0]
+            }
+        });
+
+        const filterUsers = new Toggle3D(scene, camera, [CONTROL_ZONE_X, -0.5, CONTROL_ZONE_Z], {
+            label: 'Show Users',
+            width: 3.5,
+            height: 0.6,
+            mode: 0,
+            isOn: true,
+            onColor: 0x4ecdc4,
+            offColor: 0x666666,
+            renderer: renderer,
+            tooltip: {
+                content: '**Users Filter** 👥\\n\\nToggle users data visibility',
+                position: 'right',
+                offset: [2.0, 0, 0]
+            }
+        });
+
+        // Edit Mode Toggle
+        const editModeToggle = new Toggle3D(scene, camera, [CONTROL_ZONE_X, -2, CONTROL_ZONE_Z], {
+            label: 'Edit Mode',
+            width: 3.5,
+            height: 0.7,
+            mode: 0,
+            isOn: false,
+            onColor: 0xffaa00,
+            offColor: 0x666666,
+            renderer: renderer,
+            tooltip: {
+                content: '**Edit Mode** ✏️\\n\\nToggle transform handles',
+                position: 'right',
+                offset: [2.0, 0, 0]
+            },
+            onClick: (toggle) => {
+                roomManager.setEditMode(toggle.isOn);
+                ControlRegistry.setEditMode(toggle.isOn);
+            }
+        });
+
+        // ============================================
+        // CENTER ZONE: KPI DISPLAYS (Z = 0)
+        // ============================================
+        const CENTER_ZONE_X = 0;
+        const CENTER_ZONE_Z = 0;
+
+        // Sales KPI
+        const salesKPI = new TextDisplay3D(scene, camera, [CENTER_ZONE_X - 4, 2.5, CENTER_ZONE_Z], {
+            content: `# 💰 Sales\\n\\n## ${dashboardData.sales.current.toLocaleString()}\\n\\n*Updated just now*`,
+            width: 3.0,
+            height: 2.0,
+            mode: 0,
+            renderer: renderer,
+            tooltip: {
+                content: '**Sales KPI** 💰\\n\\nTotal sales count',
+                position: 'top',
+                offset: [0, 1.5, 0]
+            }
+        });
+
+        // Revenue KPI
+        const revenueKPI = new TextDisplay3D(scene, camera, [CENTER_ZONE_X + 4, 2.5, CENTER_ZONE_Z], {
+            content: `# 💵 Revenue\\n\\n## $${dashboardData.revenue.current.toLocaleString()}\\n\\n*Updated just now*`,
+            width: 3.0,
+            height: 2.0,
+            mode: 0,
+            renderer: renderer,
+            tooltip: {
+                content: '**Revenue KPI** 💵\\n\\nTotal revenue',
+                position: 'top',
+                offset: [0, 1.5, 0]
+            }
+        });
+
+        // Users KPI
+        const usersKPI = new TextDisplay3D(scene, camera, [CENTER_ZONE_X - 4, -0.5, CENTER_ZONE_Z], {
+            content: `# 👥 Active Users\\n\\n## ${dashboardData.users.current.toLocaleString()}\\n\\n*Updated just now*`,
+            width: 3.0,
+            height: 2.0,
+            mode: 0,
+            renderer: renderer,
+            tooltip: {
+                content: '**Users KPI** 👥\\n\\nActive users count',
+                position: 'top',
+                offset: [0, 1.5, 0]
+            }
+        });
+
+        // Conversion KPI
+        const conversionKPI = new TextDisplay3D(scene, camera, [CENTER_ZONE_X + 4, -0.5, CENTER_ZONE_Z], {
+            content: `# 📈 Conversion\\n\\n## ${dashboardData.conversion.current}%\\n\\n*Updated just now*`,
+            width: 3.0,
+            height: 2.0,
+            mode: 0,
+            renderer: renderer,
+            tooltip: {
+                content: '**Conversion Rate** 📈\\n\\nConversion percentage',
+                position: 'top',
+                offset: [0, 1.5, 0]
+            }
+        });
+
+        // ============================================
+        // RIGHT ZONE: CHARTS (Z = 2)
+        // ============================================
+        const CHART_ZONE_X = 10;
+        const CHART_ZONE_Z = 2;
+
+        // Sales Trend Chart
+        const salesChart = new Chart3D(scene, camera, [CHART_ZONE_X, 2.5, CHART_ZONE_Z], {
+            chartType: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Sales',
+                    data: dashboardData.sales.trend,
+                    backgroundColor: 'rgba(78, 205, 196, 0.2)',
+                    borderColor: '#4ecdc4',
+                    tension: 0.4
+                }]
+            },
+            width: 4.5,
+            height: 3.5,
+            mode: 0,
+            renderer: renderer,
+            tooltip: {
+                content: '**Sales Trend** 📊\\n\\nSales over time',
+                position: 'left',
+                offset: [-2.5, 0, 0]
+            }
+        });
+
+        // Revenue Chart
+        const revenueChart = new Chart3D(scene, camera, [CHART_ZONE_X, -1.5, CHART_ZONE_Z], {
+            chartType: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Revenue',
+                    data: dashboardData.revenue.trend,
+                    backgroundColor: '#6bb6ff',
+                    borderColor: '#4a9eff'
+                }]
+            },
+            width: 4.5,
+            height: 3.5,
+            mode: 0,
+            renderer: renderer,
+            tooltip: {
+                content: '**Revenue Chart** 💵\\n\\nRevenue by month',
+                position: 'left',
+                offset: [-2.5, 0, 0]
+            }
+        });
+
+        // ============================================
+        // FAR RIGHT: DETAILED ANALYTICS (Z = 4)
+        // ============================================
+        const DETAIL_ZONE_X = 18;
+        const DETAIL_ZONE_Z = 4;
+
+        // Analytics Accordion
+        const analyticsAccordion = new Accordion3D(scene, camera, [DETAIL_ZONE_X, 0, DETAIL_ZONE_Z], {
+            width: 5.0,
+            itemHeight: 0.8,
+            itemSpacing: 0.2,
+            mode: 0,
+            items: [
+                {
+                    title: '📊 Data Sources',
+                    contentHeight: 3.0,
+                    content: `# Data Sources\\n\\n## Active Integrations:\\n- Google Analytics\\n- Stripe Payments\\n- Custom API\\n\\n*Last sync: Just now*`
+                },
+                {
+                    title: '🎯 Performance Metrics',
+                    contentHeight: 3.0,
+                    content: `# Performance\\n\\n## Key Metrics:\\n- Load Time: 1.2s\\n- API Response: 45ms\\n- Uptime: 99.9%\\n\\n*All systems operational*`
+                },
+                {
+                    title: '⚙️ Settings',
+                    contentHeight: 3.0,
+                    content: `# Dashboard Settings\\n\\n## Options:\\n- Auto-refresh: Enabled\\n- Notifications: On\\n- Theme: Dark\\n\\n*Configure your dashboard*`
+                }
+            ],
+            openItems: [0],
+            renderer: renderer,
+            tooltip: {
+                content: '**Analytics** 📋\\n\\nDetailed information',
+                position: 'left',
+                offset: [-3.0, 0, 0]
+            }
+        });
+
+        // Details Modal
+        const detailsModal = new Modal3D(scene, camera, [CENTER_ZONE_X, 0, CENTER_ZONE_Z + 2], {
+            title: 'Detailed Analytics',
+            width: 6.0,
+            height: 5.0,
+            mode: 0,
+            isOpen: false,
+            renderer: renderer,
+            onOpen: () => console.log('Details modal opened'),
+            onClose: () => console.log('Details modal closed')
+        });
+
+        // Button to open details modal
+        // Button to open details modal (Modernized)
+        const detailsButton = new Button3D(scene, camera, [CENTER_ZONE_X, -3, CENTER_ZONE_Z], {
+            label: "View Details",
+            labelColor: 0xffffff,
+            geometryType: 'pill',
+            width: 2.5,
+            height: 0.8,
+            depth: 0.2,
+            color: 0x4ecdc4,
+            rippleEffect: true,
+            pulseAnimation: true,
+            renderer: renderer,
+            onClick: () => detailsModal.open()
+        });
+        window.detailsButton = detailsButton;
+
+        // Manual Raycasting removed as Button3D handles interactions internally
+
+        // ============================================
+        // ANIMATION LOOP
+        // ============================================
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Update details button if using factory
+            if (window.detailsButton && window.detailsButton.update) {
+                window.detailsButton.update();
+            }
+
+            // Update room animations
+            roomManager.update();
+
+            // Update all controls
+            ControlRegistry.getAll().forEach(control => {
+                if (control && control.update) {
+                    control.update();
+                }
+                if (control && control.updateTooltipAndLabelPositions) {
+                    control.updateTooltipAndLabelPositions();
+                }
+            });
+
+            // Update TransformControls in edit mode
+            if (ControlRegistry.getEditMode()) {
+                ControlRegistry.getAll().forEach(control => {
+                    if (control && control.isEditMode && control.updateTransformControls) {
+                        try {
+                            control.updateTransformControls();
+                        } catch (error) {
+                            console.warn('Error updating TransformControls:', error);
+                        }
+                    }
+                });
+            }
+
+            // Render scene
+            scene3D.render();
+
+            // Update FPS
+            updateFPS();
+        }
+
+        animate();
+    </script>
+</body>
+
+</html>

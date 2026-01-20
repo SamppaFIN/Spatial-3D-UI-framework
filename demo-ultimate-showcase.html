@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Showcase - Spatial UI 3D</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #0a0a0f;
+            font-family: 'Inter', Arial, sans-serif;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100vh;
+            display: block;
+        }
+
+        .ui-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(20, 20, 40, 0.95);
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 320px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(78, 205, 196, 0.3);
+        }
+
+        .ui-overlay h1 {
+            margin: 0 0 10px 0;
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, #4ecdc4, #6bb6ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .ui-overlay h2 {
+            font-size: 1rem;
+            color: #6bb6ff;
+            margin: 15px 0 8px 0;
+        }
+
+        .theme-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        .theme-btn {
+            padding: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+
+        .theme-btn:hover {
+            background: rgba(78, 205, 196, 0.3);
+            transform: scale(1.05);
+        }
+
+        .theme-btn.active {
+            background: linear-gradient(135deg, #4ecdc4, #6bb6ff);
+            border-color: #4ecdc4;
+        }
+
+        .effect-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .effect-btn {
+            padding: 10px;
+            background: rgba(107, 182, 255, 0.2);
+            border: 1px solid rgba(107, 182, 255, 0.4);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .effect-btn:hover {
+            background: rgba(107, 182, 255, 0.4);
+            transform: translateX(5px);
+        }
+
+        .stats {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 15px;
+            line-height: 1.6;
+        }
+
+        .stats strong {
+            color: #4ecdc4;
+        }
+
+        .feature-tag {
+            display: inline-block;
+            padding: 3px 8px;
+            background: rgba(78, 205, 196, 0.2);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin: 2px;
+            color: #4ecdc4;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="ui-overlay">
+        <h1>🌸 Ultimate Showcase</h1>
+        <p style="color: rgba(255,255,255,0.8); font-size: 0.9rem; margin: 10px 0;">Experience all enhanced features in
+            action!</p>
+
+        <h2>🎨 Themes</h2>
+        <div class="theme-buttons">
+            <button class="theme-btn active" onclick="changeTheme('cosmic')">Cosmic</button>
+            <button class="theme-btn" onclick="changeTheme('neon')">Neon</button>
+            <button class="theme-btn" onclick="changeTheme('nature')">Nature</button>
+            <button class="theme-btn" onclick="changeTheme('ocean')">Ocean</button>
+            <button class="theme-btn" onclick="changeTheme('sunset')">Sunset</button>
+            <button class="theme-btn" onclick="changeTheme('midnight')">Midnight</button>
+        </div>
+
+        <h2>✨ Visual Effects</h2>
+        <div class="effect-buttons">
+            <button class="effect-btn" onclick="applyEffect('holographic')">🌈 Holographic</button>
+            <button class="effect-btn" onclick="applyEffect('neon')">💫 Neon Glow</button>
+            <button class="effect-btn" onclick="applyEffect('glass')">🔮 Glassmorphism</button>
+            <button class="effect-btn" onclick="applyEffect('energy')">⚡ Energy Waves</button>
+        </div>
+
+        <div class="stats">
+            <strong>Components:</strong> <span id="component-count">0</span><br>
+            <strong>Theme:</strong> <span id="current-theme">Cosmic</span><br>
+            <strong>FPS:</strong> <span id="fps">60</span>
+        </div>
+
+        <div style="margin-top: 15px;">
+            <div class="feature-tag">Icons</div>
+            <div class="feature-tag">Loading</div>
+            <div class="feature-tag">Ripple</div>
+            <div class="feature-tag">Multi-State</div>
+            <div class="feature-tag">Dual-Handle</div>
+            <div class="feature-tag">AI-Ready</div>
+        </div>
+    </div>
+
+    <script
+        type="importmap">{"imports": {"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+    <script type="module">
+        import { Scene3D } from './src/core/Scene3D.js';
+        import { Button3D } from './src/controls/Button3D.js';
+        import { Toggle3D } from './src/controls/Toggle3D.js';
+        import { Slider3D } from './src/controls/Slider3D.js';
+        import { TextInput3D } from './src/controls/TextInput3D.js';
+        import { TextDisplay3D } from './src/controls/TextDisplay3D.js';
+        import { Modal3D } from './src/controls/Modal3D.js';
+        import { ControlRegistry } from './src/core/ControlRegistry.js';
+        import { themeManager } from './src/core/ThemeManager.js';
+        import { ShaderEffects, GlassmorphismEffect } from './src/effects/ShaderEffects.js';
+        import * as THREE from 'three';
+
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+        const orbitControls = scene3D.getControls();
+        ControlRegistry.setOrbitControls(orbitControls);
+
+        // Initialize effects
+        const shaderEffects = new ShaderEffects();
+        const glassEffect = new GlassmorphismEffect();
+
+        // Apply initial theme
+        themeManager.setTheme('cosmic');
+        themeManager.applyToScene(scene);
+
+        // Row 1: Enhanced Buttons
+        const iconButton = new Button3D(scene, camera, [-8, 4, 0], {
+            label: 'Save',
+            icon: '💾',
+            iconPosition: 'left',
+            color: themeManager.getColor('primary'),
+            pulseAnimation: true,
+            renderer: renderer
+        });
+
+        const loadingButton = new Button3D(scene, camera, [-4, 4, 0], {
+            label: 'Processing',
+            icon: '⚙️',
+            loading: true,
+            color: themeManager.getColor('warning'),
+            renderer: renderer
+        });
+
+        const rippleButton = new Button3D(scene, camera, [0, 4, 0], {
+            label: 'Click Me',
+            icon: '💧',
+            rippleEffect: true,
+            color: themeManager.getColor('accent'),
+            renderer: renderer
+        });
+
+        const aiButton = new Button3D(scene, camera, [4, 4, 0], {
+            label: 'AI Generate',
+            icon: '🤖',
+            iconPosition: 'left',
+            pulseAnimation: true,
+            color: themeManager.getColor('secondary'),
+            renderer: renderer,
+            onClick: (btn) => {
+                btn.setLoading(true);
+                setTimeout(() => {
+                    btn.setLoading(false);
+                    btn.setIcon('✅');
+                }, 2000);
+            }
+        });
+
+        // Row 2: Multi-State Toggles
+        const modeToggle = new Toggle3D(scene, camera, [-6, 2, 0], {
+            label: 'Mode',
+            states: ['off', 'on', 'auto'],
+            stateColors: [0x666666, themeManager.getColor('success'), themeManager.getColor('warning')],
+            stateIcons: ['❌', '✅', '🔄'],
+            trackShape: 'pill',
+            renderer: renderer
+        });
+
+        const themeToggle = new Toggle3D(scene, camera, [-2, 2, 0], {
+            label: 'Theme',
+            states: ['light', 'dark', 'auto'],
+            stateColors: [0xffffff, 0x000000, themeManager.getColor('primary')],
+            trackShape: 'circle',
+            animationPreset: 'bounce',
+            renderer: renderer
+        });
+
+        // Row 3: Advanced Sliders
+        const rangeSlider = new Slider3D(scene, camera, [-6, 0, 0], {
+            label: 'Range',
+            dualHandle: true,
+            minValue: 20,
+            maxValue: 80,
+            tickMarks: true,
+            tickInterval: 20,
+            gradientTrack: true,
+            gradientColors: [themeManager.getColor('error'), themeManager.getColor('warning'), themeManager.getColor('success')],
+            renderer: renderer
+        });
+
+        const valueSlider = new Slider3D(scene, camera, [0, 0, 0], {
+            label: 'Volume',
+            min: 0,
+            max: 100,
+            value: 75,
+            tickMarks: true,
+            fillColor: themeManager.getColor('primary'),
+            renderer: renderer
+        });
+
+        // Row 4: Text Components
+        const emailInput = new TextInput3D(scene, camera, [-6, -2, 0], {
+            placeholder: 'email@example.com',
+            type: 'email',
+            maxLength: 50,
+            showCounter: true,
+            renderer: renderer
+        });
+
+        const passwordInput = new TextInput3D(scene, camera, [-2, -2, 0], {
+            placeholder: 'Password',
+            type: 'password',
+            renderer: renderer
+        });
+
+        const codeDisplay = new TextDisplay3D(scene, camera, [3, -2, 0], {
+            content: '```javascript\nconst hello = "world";\nconsole.log(hello);\n```',
+            syntaxHighlight: 'javascript',
+            copyButton: true,
+            width: 4,
+            height: 2,
+            renderer: renderer
+        });
+
+        // Row 5: Modal
+        const modal = new Modal3D(scene, camera, [0, -4, 0], {
+            title: 'Enhanced Modal',
+            draggable: true,
+            resizable: true,
+            minimizable: true,
+            isOpen: false,
+            renderer: renderer
+        });
+
+        const openModalBtn = new Button3D(scene, camera, [-4, -4, 0], {
+            label: 'Open Modal',
+            icon: '🪟',
+            color: themeManager.getColor('primary'),
+            renderer: renderer,
+            onClick: () => modal.open()
+        });
+
+        // Theme change function
+        window.changeTheme = (themeName) => {
+            themeManager.setTheme(themeName);
+            themeManager.applyToScene(scene);
+            document.getElementById('current-theme').textContent = themeName.charAt(0).toUpperCase() + themeName.slice(1);
+
+            // Update active button
+            document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update component colors
+            iconButton.color = themeManager.getColor('primary');
+            rippleButton.color = themeManager.getColor('accent');
+            aiButton.color = themeManager.getColor('secondary');
+        };
+
+        // Effect application
+        let currentEffect = null;
+        window.applyEffect = (effectType) => {
+            // Remove previous effect
+            if (currentEffect) {
+                ControlRegistry.getAll().forEach(control => {
+                    if (control.mesh && currentEffect.mesh === control.mesh) {
+                        shaderEffects.removeEffect(control.mesh);
+                    }
+                });
+            }
+
+            // Apply new effect to random component
+            const controls = ControlRegistry.getAll();
+            const randomControl = controls[Math.floor(Math.random() * controls.length)];
+
+            if (randomControl && randomControl.mesh) {
+                switch (effectType) {
+                    case 'holographic':
+                        shaderEffects.applyHolographic(randomControl.mesh);
+                        break;
+                    case 'neon':
+                        shaderEffects.applyNeonGlow(randomControl.mesh, themeManager.getColor('primary'));
+                        break;
+                    case 'glass':
+                        glassEffect.apply(randomControl.mesh);
+                        break;
+                    case 'energy':
+                        shaderEffects.applyEnergyWave(randomControl.mesh, themeManager.getColor('accent'));
+                        break;
+                }
+                currentEffect = { mesh: randomControl.mesh, type: effectType };
+            }
+        };
+
+        // FPS counter
+        let lastTime = performance.now();
+        let frames = 0;
+        function updateFPS() {
+            frames++;
+            const currentTime = performance.now();
+            if (currentTime >= lastTime + 1000) {
+                document.getElementById('fps').textContent = frames;
+                frames = 0;
+                lastTime = currentTime;
+            }
+        }
+
+        // Update component count
+        document.getElementById('component-count').textContent = ControlRegistry.getAll().length;
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            ControlRegistry.getAll().forEach(control => {
+                if (control && control.update) control.update();
+                if (control && control.updateTooltipAndLabelPositions) {
+                    control.updateTooltipAndLabelPositions();
+                }
+            });
+
+            shaderEffects.update();
+            updateFPS();
+            scene3D.render();
+        }
+        animate();
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        });
+    </script>
+</body>
+
+</html>

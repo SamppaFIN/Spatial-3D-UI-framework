@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Demo - Spatial UI 3D</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #0a0a0f;
+            font-family: 'Inter', Arial, sans-serif;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100vh;
+            display: block;
+        }
+
+        .ai-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 350px;
+            background: rgba(20, 20, 40, 0.95);
+            padding: 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(107, 182, 255, 0.3);
+        }
+
+        .ai-panel h1 {
+            margin: 0 0 10px 0;
+            font-size: 1.5rem;
+            color: #6bb6ff;
+        }
+
+        .ai-status {
+            padding: 12px;
+            background: rgba(78, 205, 196, 0.1);
+            border-left: 3px solid #4ecdc4;
+            border-radius: 4px;
+            margin: 10px 0;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+        }
+
+        .ai-output {
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .ai-output::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .ai-output::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .ai-output::-webkit-scrollbar-thumb {
+            background: #4ecdc4;
+            border-radius: 3px;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0;
+        }
+
+        .feature-list li {
+            padding: 8px 0;
+            color: rgba(255, 255, 255, 0.7);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .feature-list li::before {
+            content: '🤖';
+            margin-right: 8px;
+        }
+
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(20, 20, 40, 0.95);
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 300px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(78, 205, 196, 0.3);
+        }
+
+        .info-panel h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.3rem;
+            background: linear-gradient(135deg, #4ecdc4, #6bb6ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .info-panel p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div class="info-panel">
+        <h2>🤖 AI-Powered Demo</h2>
+        <p>This demo showcases AI integration capabilities:</p>
+        <ul class="feature-list">
+            <li>Text generation</li>
+            <li>Auto-complete</li>
+            <li>Sentiment analysis</li>
+            <li>Data insights</li>
+        </ul>
+        <p style="font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-top: 15px;">
+            ⚠️ AI features require API key configuration
+        </p>
+    </div>
+
+    <div class="ai-panel">
+        <h1>🧠 AI Control Center</h1>
+        <div class="ai-status" id="ai-status">
+            AI Service: <strong style="color: #ffaa00;">Not Configured</strong>
+        </div>
+        <div class="ai-output" id="ai-output">
+            <strong>AI Output:</strong><br>
+            Waiting for AI interaction...
+        </div>
+    </div>
+
+    <script
+        type="importmap">{"imports": {"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+    <script type="module">
+        import { Scene3D } from './src/core/Scene3D.js';
+        import { Button3D } from './src/controls/Button3D.js';
+        import { TextInput3D } from './src/controls/TextInput3D.js';
+        import { TextDisplay3D } from './src/controls/TextDisplay3D.js';
+        import { Chart3D } from './src/controls/Chart3D.js';
+        import { ControlRegistry } from './src/core/ControlRegistry.js';
+        import { aiService } from './src/ai/AIService.js';
+        import { themeManager } from './src/core/ThemeManager.js';
+        import * as THREE from 'three';
+
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+        const orbitControls = scene3D.getControls();
+        ControlRegistry.setOrbitControls(orbitControls);
+
+        themeManager.setTheme('midnight');
+        themeManager.applyToScene(scene);
+
+        // AI Status display
+        function updateAIStatus(message, color = '#4ecdc4') {
+            const statusEl = document.getElementById('ai-status');
+            statusEl.innerHTML = `AI Service: <strong style="color: ${color};">${message}</strong>`;
+        }
+
+        function updateAIOutput(text) {
+            const outputEl = document.getElementById('ai-output');
+            outputEl.innerHTML = `<strong>AI Output:</strong><br>${text}`;
+        }
+
+        // Text Input with AI Auto-Complete
+        const aiInput = new TextInput3D(scene, camera, [-6, 3, 0], {
+            placeholder: 'Type something...',
+            width: 4,
+            maxLength: 100,
+            showCounter: true,
+            renderer: renderer,
+            onChange: async (control, value) => {
+                if (value.length > 3 && aiService.enabled) {
+                    updateAIStatus('Generating suggestions...', '#ffaa00');
+                    const suggestions = await aiService.generateSuggestions(value);
+                    if (suggestions && suggestions.length > 0) {
+                        updateAIOutput(`Suggestions:<br>${suggestions.map(s => `• ${s}`).join('<br>')}`);
+                        updateAIStatus('Ready', '#48bb78');
+                    }
+                } else if (!aiService.enabled) {
+                    updateAIOutput('AI Service not configured. Set API key to enable.');
+                }
+            }
+        });
+
+        // Generate Content Button
+        const generateBtn = new Button3D(scene, camera, [-2, 3, 0], {
+            label: 'Generate',
+            icon: '✨',
+            iconPosition: 'left',
+            color: themeManager.getColor('primary'),
+            renderer: renderer,
+            onClick: async (btn) => {
+                if (!aiService.enabled) {
+                    updateAIOutput('⚠️ AI Service not configured');
+                    return;
+                }
+
+                btn.setLoading(true);
+                updateAIStatus('Generating content...', '#ffaa00');
+
+                const content = await aiService.generateContent('Spatial UI 3D', {
+                    format: 'markdown',
+                    length: 'short',
+                    maxTokens: 200
+                });
+
+                btn.setLoading(false);
+
+                if (content) {
+                    contentDisplay.setContent(content);
+                    updateAIOutput('✅ Content generated successfully!');
+                    updateAIStatus('Ready', '#48bb78');
+                } else {
+                    updateAIOutput('❌ Generation failed. Check API key.');
+                    updateAIStatus('Error', '#ff6b6b');
+                }
+            }
+        });
+
+        // Content Display
+        const contentDisplay = new TextDisplay3D(scene, camera, [3, 3, 0], {
+            content: '# AI-Generated Content\n\nClick "Generate" to create content with AI.',
+            width: 5,
+            height: 3,
+            copyButton: true,
+            syntaxHighlight: null,
+            renderer: renderer
+        });
+
+        // Sentiment Analysis Input
+        const sentimentInput = new TextInput3D(scene, camera, [-6, 0, 0], {
+            placeholder: 'Enter text for sentiment analysis...',
+            width: 4,
+            renderer: renderer
+        });
+
+        const analyzeBtn = new Button3D(scene, camera, [-2, 0, 0], {
+            label: 'Analyze',
+            icon: '😊',
+            color: themeManager.getColor('accent'),
+            renderer: renderer,
+            onClick: async (btn) => {
+                const text = sentimentInput.getValue();
+                if (!text || !aiService.enabled) {
+                    updateAIOutput(text ? '⚠️ AI Service not configured' : '⚠️ Enter text first');
+                    return;
+                }
+
+                btn.setLoading(true);
+                updateAIStatus('Analyzing sentiment...', '#ffaa00');
+
+                const result = await aiService.analyzeSentiment(text);
+
+                btn.setLoading(false);
+
+                if (result) {
+                    const emoji = result.sentiment === 'positive' ? '😊' : result.sentiment === 'negative' ? '😞' : '😐';
+                    updateAIOutput(`${emoji} Sentiment: <strong>${result.sentiment}</strong><br>Confidence: ${(result.confidence * 100).toFixed(1)}%`);
+                    updateAIStatus('Ready', '#48bb78');
+                }
+            }
+        });
+
+        // Chart with AI Insights
+        const chartData = {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+            datasets: [{
+                label: 'Sales',
+                data: [12, 19, 15, 25, 22],
+                borderColor: themeManager.hexToCSS(themeManager.getColor('primary')),
+                backgroundColor: themeManager.hexToCSS(themeManager.getColor('primary')) + '40'
+            }]
+        };
+
+        const chart = new Chart3D(scene, camera, [3, 0, 0], {
+            chartType: 'line',
+            data: chartData,
+            width: 5,
+            height: 3,
+            renderer: renderer
+        });
+
+        const insightsBtn = new Button3D(scene, camera, [6, 0, 0], {
+            label: 'Insights',
+            icon: '📊',
+            color: themeManager.getColor('success'),
+            renderer: renderer,
+            onClick: async (btn) => {
+                if (!aiService.enabled) {
+                    updateAIOutput('⚠️ AI Service not configured');
+                    return;
+                }
+
+                btn.setLoading(true);
+                updateAIStatus('Generating insights...', '#ffaa00');
+
+                const insights = await aiService.generateInsights(chartData.datasets[0].data);
+
+                btn.setLoading(false);
+
+                if (insights && insights.length > 0) {
+                    updateAIOutput(`<strong>Data Insights:</strong><br>${insights.map((i, idx) => `${idx + 1}. ${i}`).join('<br>')}`);
+                    updateAIStatus('Ready', '#48bb78');
+                }
+            }
+        });
+
+        // Configure AI Button
+        const configBtn = new Button3D(scene, camera, [0, -3, 0], {
+            label: 'Configure AI',
+            icon: '⚙️',
+            color: themeManager.getColor('warning'),
+            renderer: renderer,
+            onClick: () => {
+                const apiKey = prompt('Enter your OpenAI API key:');
+                if (apiKey) {
+                    aiService.setAPIKey(apiKey);
+                    aiService.setEnabled(true);
+                    updateAIStatus('Configured & Ready', '#48bb78');
+                    updateAIOutput('✅ AI Service configured successfully!<br>Try the features above.');
+                }
+            }
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            ControlRegistry.getAll().forEach(control => {
+                if (control && control.update) control.update();
+                if (control && control.updateTooltipAndLabelPositions) {
+                    control.updateTooltipAndLabelPositions();
+                }
+            });
+
+            scene3D.render();
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        });
+    </script>
+</body>
+
+</html>

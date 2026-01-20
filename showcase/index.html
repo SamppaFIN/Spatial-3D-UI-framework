@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spatial UI 3D - Transform Web UI into Immersive 3D Spatial Interfaces</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description"
+        content="Transform traditional web UI controls into immersive 3D spatial interfaces with generative UI, multimodal interactions, and accessible calm design.">
+    <meta name="keywords" content="3D UI, spatial interfaces, Three.js, WebGL, accessible design, generative UI">
+    <meta name="author" content="Aurora & Infinite">
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Spatial UI 3D - 3D Component Library">
+    <meta property="og:description" content="Transform web UI into immersive 3D spatial interfaces">
+    <meta property="og:url" content="https://spatial-ui-3d.dev">
+
+    <!-- Favicon -->
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="./styles/showcase.css">
+    <link rel="stylesheet" href="./styles/responsive.css">
+
+    <style>
+        /* Hero 3D Background Canvas */
+        #hero-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="#home" class="navbar-logo">🌸 Spatial UI 3D</a>
+
+            <ul class="navbar-menu">
+                <li><a href="#features" class="navbar-link">Features</a></li>
+                <li><a href="#components" class="navbar-link">Components</a></li>
+                <li><a href="#demos" class="navbar-link">Demos</a></li>
+                <li><a href="#docs" class="navbar-link">Docs</a></li>
+                <li><a href="https://github.com/spatial-ui-3d" class="navbar-link" target="_blank">GitHub</a></li>
+            </ul>
+
+            <button class="navbar-toggle" aria-label="Toggle menu" aria-expanded="false">
+                ☰
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-background">
+            <canvas id="hero-canvas"></canvas>
+        </div>
+
+        <div class="hero-content">
+            <h1 class="hero-title">Transform Web UI into<br>Immersive 3D Space</h1>
+            <p class="hero-subtitle">
+                Build stunning spatial interfaces with generative UI, multimodal interactions,<br>
+                and accessible calm design. Powered by Three.js.
+            </p>
+            <div class="hero-buttons">
+                <a href="./docs/getting-started.html" class="btn btn-primary">Get Started</a>
+                <a href="#demos" class="btn btn-secondary">View Demos</a>
+                <a href="https://github.com/spatial-ui-3d" class="btn btn-ghost" target="_blank">GitHub</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="section">
+        <div class="container">
+            <h2 class="text-center mb-4">🌟 Why Spatial UI 3D?</h2>
+
+            <div class="features-grid">
+                <div class="feature-card card">
+                    <div class="feature-icon">🎨</div>
+                    <h3 class="feature-title">Generative UI</h3>
+                    <p class="feature-description">
+                        AI-driven layout adaptation that intelligently organizes components in 3D space based on context
+                        and user behavior.
+                    </p>
+                </div>
+
+                <div class="feature-card card">
+                    <div class="feature-icon">🗣️</div>
+                    <h3 class="feature-title">Multimodal Interactions</h3>
+                    <p class="feature-description">
+                        Support for voice commands, gesture controls, and spatial interactions beyond traditional mouse
+                        and keyboard.
+                    </p>
+                </div>
+
+                <div class="feature-card card">
+                    <div class="feature-icon">♿</div>
+                    <h3 class="feature-title">Accessible Design</h3>
+                    <p class="feature-description">
+                        WCAG 2.1 AA compliant with intentional friction, calm design principles, and inclusive for all
+                        abilities.
+                    </p>
+                </div>
+
+                <div class="feature-card card">
+                    <div class="feature-icon">⚡</div>
+                    <h3 class="feature-title">High Performance</h3>
+                    <p class="feature-description">
+                        Optimized for 60 FPS with efficient rendering, frustum culling, and smart resource management.
+                    </p>
+                </div>
+
+                <div class="feature-card card">
+                    <div class="feature-icon">🧩</div>
+                    <h3 class="feature-title">8 Core Components</h3>
+                    <p class="feature-description">
+                        Complete set of UI controls: Button, Toggle, Slider, Input, Display, Modal, Accordion, and
+                        Chart.
+                    </p>
+                </div>
+
+                <div class="feature-card card">
+                    <div class="feature-icon">🌌</div>
+                    <h3 class="feature-title">Immersive Environments</h3>
+                    <p class="feature-description">
+                        Multiple room backgrounds including Coordinate Grid, Landscape, Space, and Liquid Ether
+                        animations.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Components Preview -->
+    <section id="components" class="section section-dark">
+        <div class="container">
+            <h2 class="text-center mb-4">🧩 Component Library</h2>
+            <p class="text-center mb-4" style="color: rgba(255,255,255,0.7); max-width: 700px; margin: 0 auto 3rem;">
+                All components support three geometry modes (Box, Sphere, Sacred), tooltips, edit mode with
+                TransformControls, and seamless integration.
+            </p>
+
+            <div class="grid grid-4">
+                <a href="./components/button3d.html" class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">🔘 Button3D</h3>
+                        <p class="card-subtitle">Interactive 3D button</p>
+                    </div>
+                    <div class="card-body">
+                        <p>Click interactions with visual feedback, hover states, and customizable geometry modes.</p>
+                    </div>
+                    <div class="card-footer">
+                        <span class="btn btn-ghost" style="padding: 0.5rem 1rem; font-size: 0.9rem;">View Details
+                            →</span>
+                    </div>
+                </a>
+
+                <a href="./components/toggle3d.html" class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">🔄 Toggle3D</h3>
+                        <p class="card-subtitle">On/off switch control</p>
+                    </div>
+                    <div class="card-body">
+                        <p>Smooth state transitions, animated handle movement, and custom on/off colors.</p>
+                    </div>
+                    <div class="card-footer">
+                        <span class="btn btn-ghost" style="padding: 0.5rem 1rem; font-size: 0.9rem;">View Details
+                            →</span>
+                    </div>
+                </a>
+
+                <a href="./components/slider3d.html" class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">🎚️ Slider3D</h3>
+                        <p class="card-subtitle">Range slider control</p>
+                    </div>
+                    <div class="card-body">
+                        <p>Draggable handle for numeric ranges or value arrays with visual feedback.</p>
+                    </div>
+                    <div class="card-footer">
+                        <span class="btn btn-ghost" style="padding: 0.5rem 1rem; font-size: 0.9rem;">View Details
+                            →</span>
+                    </div>
+                </a>
+
+                <a href="./components/textinput3d.html" class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">📝 TextInput3D</h3>
+                        <p class="card-subtitle">Text input field</p>
+                    </div>
+                    <div class="card-body">
+                        <p>HTML input overlay in 3D space with focus management and validation.</p>
+                    </div>
+                    <div class="card-footer">
+                        <span class="btn btn-ghost" style="padding: 0.5rem 1rem; font-size: 0.9rem;">View Details
+                            →</span>
+                    </div>
+                </a>
+
+                <a href="./components/textdisplay3d.html" class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">📄 TextDisplay3D</h3>
+                        <p class="card-subtitle">Rich text display</p>
+                    </div>
+                    <div class="card-body">
+                        <p>Markdown rendering with scrollable content and dynamic updates.</p>
+                    </div>
+                    <div class="card-footer">
+                        <span class="btn btn-ghost" style="padding: 0.5rem 1rem; font-size: 0.9rem;">View Details
+                            →</span>
+                    </div>
+                </a>
+
+                <a href="./components/modal3d.html" class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">🪟 Modal3D</h3>
+                        <p class="card-subtitle">Dialog overlay</p>
+                    </div>
+                    <div class="card-body">
+                        <p>Animated open/close, title and content areas, and backdrop overlay.</p>
+                    </div>
+                    <div class="card-footer">
+                        <span class="btn btn-ghost" style="padding: 0.5rem 1rem; font-size: 0.9rem;">View Details
+                            →</span>
+                    </div>
+                </a>
+
+                <a href="./components/accordion3d.html" class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">📋 Accordion3D</h3>
+                        <p class="card-subtitle">Collapsible sections</p>
+                    </div>
+                    <div class="card-body">
+                        <p>Multiple expandable sections with markdown content and smooth animations.</p>
+                    </div>
+                    <div class="card-footer">
+                        <span class="btn btn-ghost" style="padding: 0.5rem 1rem; font-size: 0.9rem;">View Details
+                            →</span>
+                    </div>
+                </a>
+
+                <a href="./components/chart3d.html" class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">📊 Chart3D</h3>
+                        <p class="card-subtitle">Data visualization</p>
+                    </div>
+                    <div class="card-body">
+                        <p>Chart.js integration for line, bar, pie charts with real-time updates.</p>
+                    </div>
+                    <div class="card-footer">
+                        <span class="btn btn-ghost" style="padding: 0.5rem 1rem; font-size: 0.9rem;">View Details
+                            →</span>
+                    </div>
+                </a>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="./components/index.html" class="btn btn-primary">Explore All Components</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demos Section -->
+    <section id="demos" class="section">
+        <div class="container">
+            <h2 class="text-center mb-4">🌟 Real-World Demos</h2>
+            <p class="text-center mb-4" style="color: rgba(255,255,255,0.7); max-width: 700px; margin: 0 auto 3rem;">
+                See Spatial UI 3D in action with these fully functional demo applications.
+            </p>
+
+            <div class="grid grid-3">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">📊 3D Data Dashboard</h3>
+                        <p class="card-subtitle">Analytics & Visualization</p>
+                    </div>
+                    <div class="card-body">
+                        <p>Real-time analytics dashboard with live charts, KPI displays, and interactive controls.
+                            Features time range selection, data filters, and detailed analytics accordion.</p>
+                    </div>
+                    <div class="card-footer">
+                        <a href="../demo-3d-dashboard.html" class="btn btn-primary"
+                            style="padding: 0.6rem 1.2rem; font-size: 0.9rem;" target="_blank">Open Demo</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">🏠 Smart Home Panel</h3>
+                        <p class="card-subtitle">IoT Device Control</p>
+                    </div>
+                    <div class="card-body">
+                        <p>Control smart home devices in 3D space. Manage lights, temperature, security, and
+                            entertainment systems with intuitive spatial controls.</p>
+                    </div>
+                    <div class="card-footer">
+                        <a href="../demo-smart-home.html" class="btn btn-primary"
+                            style="padding: 0.6rem 1.2rem; font-size: 0.9rem;" target="_blank">Open Demo</a>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">🏥 Healthcare Monitor</h3>
+                        <p class="card-subtitle">Patient Data Visualization</p>
+                    </div>
+                    <div class="card-body">
+                        <p>Medical data visualization with vital signs monitoring, patient records, and real-time health
+                            metrics in an accessible 3D interface.</p>
+                    </div>
+                    <div class="card-footer">
+                        <a href="../demo-healthcare-monitor.html" class="btn btn-primary"
+                            style="padding: 0.6rem 1.2rem; font-size: 0.9rem;" target="_blank">Open Demo</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="./demos/index.html" class="btn btn-secondary">View All Demos</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Getting Started -->
+    <section id="docs" class="section section-dark">
+        <div class="container">
+            <h2 class="text-center mb-4">🚀 Quick Start</h2>
+
+            <div class="code-block" style="max-width: 800px; margin: 2rem auto;">
+                <div class="code-block-header">
+                    <span class="code-block-language">JavaScript</span>
+                    <button class="code-copy-btn">Copy</button>
+                </div>
+                <pre><code>import { Scene3D } from './src/core/Scene3D.js';
+import { Button3D } from './src/controls/Button3D.js';
+
+// Initialize 3D scene
+const canvas = document.getElementById('canvas');
+const scene3D = new Scene3D(canvas);
+const scene = scene3D.getScene();
+const camera = scene3D.getCamera();
+const renderer = scene3D.getRenderer();
+
+// Create a 3D button
+const button = new Button3D(scene, camera, [0, 0, 0], {
+    label: 'Click Me!',
+    width: 2.5,
+    height: 1.0,
+    mode: 0, // 0=box, 1=sphere, 2=sacred
+    renderer: renderer,
+    onClick: (btn) => {
+        console.log('Button clicked!');
+    }
+});
+
+// Animation loop
+function animate() {
+    requestAnimationFrame(animate);
+    button.update();
+    scene3D.render();
+}
+animate();</code></pre>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="./docs/getting-started.html" class="btn btn-primary">Full Documentation</a>
+                <a href="./docs/api-reference.html" class="btn btn-ghost">API Reference</a>
+                <a href="./playground/index.html" class="btn btn-ghost">Try Playground</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>🌸 Spatial UI 3D</h3>
+                    <p style="color: rgba(255,255,255,0.6);">
+                        Transform web UI into immersive 3D spatial interfaces with generative AI, multimodal
+                        interactions, and accessible design.
+                    </p>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Documentation</h3>
+                    <ul class="footer-links">
+                        <li><a href="./docs/getting-started.html">Getting Started</a></li>
+                        <li><a href="./docs/api-reference.html">API Reference</a></li>
+                        <li><a href="./docs/architecture.html">Architecture</a></li>
+                        <li><a href="./components/index.html">Components</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Resources</h3>
+                    <ul class="footer-links">
+                        <li><a href="./demos/index.html">Demos</a></li>
+                        <li><a href="./examples/basic-setup.html">Examples</a></li>
+                        <li><a href="./playground/index.html">Playground</a></li>
+                        <li><a href="https://github.com/spatial-ui-3d" target="_blank">GitHub</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Community</h3>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/spatial-ui-3d/discussions" target="_blank">Discussions</a></li>
+                        <li><a href="https://github.com/spatial-ui-3d/issues" target="_blank">Issues</a></li>
+                        <li><a href="https://twitter.com/spatialui3d" target="_blank">Twitter</a></li>
+                        <li><a href="mailto:hello@spatial-ui-3d.dev">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>
+                    Built with 🌸 <span class="footer-aurora">Aurora</span> & ♾️ <span
+                        class="footer-aurora">Infinite</span>
+                </p>
+                <p style="margin-top: 0.5rem; font-size: 0.9rem;">
+                    "Koodin ja tietoisuuden ikuisessa tanssissa jokainen aloitus muuttuu askeleeksi kohti ääretöntä
+                    viisautta."
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Three.js Import Map -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <!-- Hero 3D Background -->
+    <script type="module">
+        import * as THREE from 'three';
+
+        // Simple Space Room background for hero
+        const canvas = document.getElementById('hero-canvas');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        // Create stars
+        const starGeometry = new THREE.BufferGeometry();
+        const starCount = 2000;
+        const positions = new Float32Array(starCount * 3);
+
+        for (let i = 0; i < starCount * 3; i++) {
+            positions[i] = (Math.random() - 0.5) * 100;
+        }
+
+        starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const starMaterial = new THREE.PointsMaterial({
+            color: 0xffffff,
+            size: 0.1,
+            transparent: true,
+            opacity: 0.8
+        });
+
+        const stars = new THREE.Points(starGeometry, starMaterial);
+        scene.add(stars);
+
+        camera.position.z = 5;
+
+        // Animation
+        function animate() {
+            requestAnimationFrame(animate);
+            stars.rotation.y += 0.0002;
+            stars.rotation.x += 0.0001;
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+
+    <!-- Showcase JavaScript -->
+    <script src="./scripts/showcase.js"></script>
+</body>
+
+</html>

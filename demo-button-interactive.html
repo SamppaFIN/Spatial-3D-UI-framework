@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Button3D Interactive Demo - Spatial UI 3D</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a0f;
+            color: white;
+            overflow: hidden;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100vh;
+            display: block;
+        }
+
+        .controls-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            background: rgba(20, 20, 40, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(78, 205, 196, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        .controls-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .controls-panel::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+
+        .controls-panel::-webkit-scrollbar-thumb {
+            background: #4ecdc4;
+            border-radius: 3px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #4ecdc4, #6bb6ff);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.85rem;
+            margin-bottom: 24px;
+        }
+
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .preset-btn {
+            padding: 12px;
+            background: linear-gradient(135deg, rgba(78, 205, 196, 0.2), rgba(107, 182, 255, 0.2));
+            border: 1px solid rgba(78, 205, 196, 0.4);
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            color: white;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .preset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(78, 205, 196, 0.3);
+            background: linear-gradient(135deg, rgba(78, 205, 196, 0.3), rgba(107, 182, 255, 0.3));
+        }
+
+        .preset-btn .emoji {
+            font-size: 1.2rem;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .tutorial-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #6bb6ff, #4ecdc4);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 16px;
+            transition: all 0.3s;
+            font-size: 0.95rem;
+        }
+
+        .tutorial-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(107, 182, 255, 0.4);
+        }
+
+        .tutorial-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .tutorial-overlay.active {
+            display: flex;
+        }
+
+        .tutorial-box {
+            background: rgba(20, 20, 40, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 500px;
+            border: 2px solid #4ecdc4;
+            box-shadow: 0 8px 32px rgba(78, 205, 196, 0.3);
+        }
+
+        .tutorial-box h2 {
+            font-size: 1.8rem;
+            margin-bottom: 16px;
+            color: #4ecdc4;
+        }
+
+        .tutorial-box p {
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.8;
+            margin-bottom: 16px;
+            font-size: 1rem;
+        }
+
+        .tutorial-box .step-indicator {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+        }
+
+        .tutorial-nav {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .tutorial-nav button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tutorial-nav .next-btn {
+            background: linear-gradient(135deg, #4ecdc4, #6bb6ff);
+            color: white;
+        }
+
+        .tutorial-nav .prev-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .tutorial-nav .skip-btn {
+            background: rgba(255, 107, 157, 0.2);
+            color: #ff6b9d;
+        }
+
+        .tutorial-nav button:hover {
+            transform: translateY(-2px);
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .control-group input[type="text"],
+        .control-group select {
+            width: 100%;
+            padding: 10px 12px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .control-group input[type="text"]:focus,
+        .control-group select:focus {
+            outline: none;
+            border-color: #4ecdc4;
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        .control-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #4ecdc4;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            padding: 8px 0;
+        }
+
+        .control-group input[type="color"] {
+            width: 100%;
+            height: 44px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            background: transparent;
+        }
+
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .icon-btn {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 1.2rem;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover {
+            background: rgba(78, 205, 196, 0.3);
+            transform: scale(1.1);
+        }
+
+        .icon-btn.active {
+            background: rgba(78, 205, 196, 0.5);
+            border-color: #4ecdc4;
+        }
+
+        .position-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .position-btn {
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            color: white;
+        }
+
+        .position-btn:hover {
+            background: rgba(78, 205, 196, 0.3);
+        }
+
+        .position-btn.active {
+            background: rgba(78, 205, 196, 0.5);
+            border-color: #4ecdc4;
+        }
+
+        .divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 20px 0;
+        }
+
+        .info-box {
+            background: rgba(78, 205, 196, 0.1);
+            border-left: 3px solid #4ecdc4;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 20px;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .reset-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #ff6b9d, #ff4466);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: all 0.3s;
+        }
+
+        .reset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 107, 157, 0.4);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div class="controls-panel">
+        <h1>🎨 Button3D Controls</h1>
+        <p class="subtitle">Customize your button in real-time</p>
+
+        <button class="tutorial-btn" id="tutorial-btn">📚 Start Tutorial</button>
+
+        <div class="control-group">
+            <label>Quick Presets</label>
+            <div class="preset-grid">
+                <div class="preset-btn" data-preset="save">
+                    <span class="emoji">💾</span>
+                    Save Button
+                </div>
+                <div class="preset-btn" data-preset="action">
+                    <span class="emoji">🚀</span>
+                    Action Button
+                </div>
+                <div class="preset-btn" data-preset="success">
+                    <span class="emoji">✅</span>
+                    Success
+                </div>
+                <div class="preset-btn" data-preset="danger">
+                    <span class="emoji">⚠️</span>
+                    Danger
+                </div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="control-group">
+            <label>Label Text</label>
+            <input type="text" id="label-input" value="Click Me" placeholder="Button label">
+        </div>
+
+        <div class="control-group">
+            <label>Icon</label>
+            <div class="icon-grid">
+                <div class="icon-btn" data-icon="">None</div>
+                <div class="icon-btn" data-icon="💾">💾</div>
+                <div class="icon-btn" data-icon="🚀">🚀</div>
+                <div class="icon-btn" data-icon="✨">✨</div>
+                <div class="icon-btn" data-icon="🎯">🎯</div>
+                <div class="icon-btn" data-icon="🔥">🔥</div>
+                <div class="icon-btn" data-icon="💡">💡</div>
+                <div class="icon-btn" data-icon="⚡">⚡</div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Icon Position</label>
+            <div class="position-grid">
+                <div class="position-btn" data-position="left">Left</div>
+                <div class="position-btn active" data-position="center">Center</div>
+                <div class="position-btn" data-position="right">Right</div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="control-group">
+            <label>Button Color</label>
+            <input type="color" id="color-input" value="#4ecdc4">
+        </div>
+
+        <div class="control-group">
+            <label>Geometry Mode</label>
+            <select id="mode-select">
+                <option value="0">Box (Rounded)</option>
+                <option value="1">Sphere</option>
+                <option value="2">Sacred (Octahedron)</option>
+            </select>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="control-group">
+            <label class="checkbox-label">
+                <input type="checkbox" id="loading-check">
+                <span>Loading State</span>
+            </label>
+        </div>
+
+        <div class="control-group">
+            <label class="checkbox-label">
+                <input type="checkbox" id="pulse-check">
+                <span>Pulse Animation</span>
+            </label>
+        </div>
+
+        <div class="control-group">
+            <label class="checkbox-label">
+                <input type="checkbox" id="ripple-check" checked>
+                <span>Ripple Effect</span>
+            </label>
+        </div>
+
+        <button class="reset-btn" id="reset-btn">Reset to Defaults</button>
+
+        <div class="info-box">
+            💡 <strong>Tip:</strong> Click the button in the 3D view to see the ripple effect and animations in action!
+        </div>
+    </div>
+
+    <div class="tutorial-overlay" id="tutorial-overlay">
+        <div class="tutorial-box">
+            <div class="step-indicator" id="step-indicator">Step 1 of 5</div>
+            <h2 id="tutorial-title">Welcome to Button3D!</h2>
+            <p id="tutorial-content">Learn how to create and customize beautiful 3D buttons for your spatial UI
+                applications.</p>
+            <div class="tutorial-nav">
+                <button class="prev-btn" id="prev-btn" style="display: none;">← Previous</button>
+                <button class="next-btn" id="next-btn">Next →</button>
+                <button class="skip-btn" id="skip-btn">Skip Tutorial</button>
+            </div>
+        </div>
+    </div>
+
+    <script
+        type="importmap">{"imports": {"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+    <script type="module">
+        import { Scene3D } from './src/core/Scene3D.js';
+        import { Button3D } from './src/controls/Button3D.js';
+        import { ControlRegistry } from './src/core/ControlRegistry.js';
+        import * as THREE from 'three';
+
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+        const orbitControls = scene3D.getControls();
+        ControlRegistry.setOrbitControls(orbitControls);
+
+        scene.background = new THREE.Color(0x0a0a0f);
+
+        // Preset configurations
+        const presets = {
+            save: {
+                label: 'Save',
+                icon: '💾',
+                iconPosition: 'left',
+                color: 0x4ecdc4,
+                mode: 0,
+                loading: false,
+                pulseAnimation: false,
+                rippleEffect: true
+            },
+            action: {
+                label: 'Launch',
+                icon: '🚀',
+                iconPosition: 'left',
+                color: 0x6bb6ff,
+                mode: 0,
+                loading: false,
+                pulseAnimation: true,
+                rippleEffect: true
+            },
+            success: {
+                label: 'Success',
+                icon: '✅',
+                iconPosition: 'center',
+                color: 0x48bb78,
+                mode: 1,
+                loading: false,
+                pulseAnimation: false,
+                rippleEffect: true
+            },
+            danger: {
+                label: 'Delete',
+                icon: '⚠️',
+                iconPosition: 'left',
+                color: 0xff6b6b,
+                mode: 0,
+                loading: false,
+                pulseAnimation: true,
+                rippleEffect: true
+            }
+        };
+
+        // Tutorial steps
+        const tutorialSteps = [
+            {
+                title: 'Welcome to Button3D! 👋',
+                content: 'Button3D is a powerful 3D button component with icons, animations, and interactive effects. Let\'s learn how to use it!'
+            },
+            {
+                title: 'Quick Presets 🎨',
+                content: 'Start with pre-configured button styles! Click any preset (Save, Action, Success, Danger) to instantly apply a professional design.'
+            },
+            {
+                title: 'Customize Your Button ✨',
+                content: 'Change the label text, add icons, adjust colors, and select geometry modes. All changes happen in real-time!'
+            },
+            {
+                title: 'Add Visual Effects 💫',
+                content: 'Enable Loading State for async operations, Pulse Animation for attention, and Ripple Effect for click feedback.'
+            },
+            {
+                title: 'You\'re Ready! 🚀',
+                content: 'Try clicking the button in the 3D view to see effects in action. Experiment with different combinations and have fun!'
+            }
+        ];
+
+        let currentTutorialStep = 0;
+
+        function showTutorial() {
+            document.getElementById('tutorial-overlay').classList.add('active');
+            currentTutorialStep = 0;
+            updateTutorialStep();
+        }
+
+        function hideTutorial() {
+            document.getElementById('tutorial-overlay').classList.remove('active');
+        }
+
+        function updateTutorialStep() {
+            const step = tutorialSteps[currentTutorialStep];
+            document.getElementById('step-indicator').textContent = `Step ${currentTutorialStep + 1} of ${tutorialSteps.length}`;
+            document.getElementById('tutorial-title').textContent = step.title;
+            document.getElementById('tutorial-content').textContent = step.content;
+
+            document.getElementById('prev-btn').style.display = currentTutorialStep > 0 ? 'block' : 'none';
+            document.getElementById('next-btn').textContent = currentTutorialStep === tutorialSteps.length - 1 ? 'Finish ✓' : 'Next →';
+        }
+
+        // Tutorial event listeners
+        document.getElementById('tutorial-btn').addEventListener('click', showTutorial);
+        document.getElementById('skip-btn').addEventListener('click', hideTutorial);
+
+        document.getElementById('next-btn').addEventListener('click', () => {
+            if (currentTutorialStep < tutorialSteps.length - 1) {
+                currentTutorialStep++;
+                updateTutorialStep();
+            } else {
+                hideTutorial();
+            }
+        });
+
+        document.getElementById('prev-btn').addEventListener('click', () => {
+            if (currentTutorialStep > 0) {
+                currentTutorialStep--;
+                updateTutorialStep();
+            }
+        });
+
+        // Button state
+        let buttonConfig = {
+            label: 'Click Me',
+            icon: null,
+            iconPosition: 'center',
+            color: 0x4ecdc4,
+            mode: 0,
+            loading: false,
+            pulseAnimation: false,
+            rippleEffect: true
+        };
+
+        let button = null;
+
+        function createButton() {
+            // Remove old button
+            if (button) {
+                button.dispose();
+            }
+
+            // Create new button with current config
+            button = new Button3D(scene, camera, [0, 0, 0], {
+                label: buttonConfig.label,
+                icon: buttonConfig.icon,
+                iconPosition: buttonConfig.iconPosition,
+                color: buttonConfig.color,
+                mode: buttonConfig.mode,
+                loading: buttonConfig.loading,
+                pulseAnimation: buttonConfig.pulseAnimation,
+                rippleEffect: buttonConfig.rippleEffect,
+                width: 3.0,
+                height: 1.0,
+                renderer: renderer,
+                onClick: () => console.log('Button clicked!')
+            });
+        }
+
+        // Initial button
+        createButton();
+
+        // Preset buttons
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const presetName = btn.dataset.preset;
+                const preset = presets[presetName];
+
+                // Apply preset
+                buttonConfig = { ...preset };
+
+                // Update UI controls
+                document.getElementById('label-input').value = preset.label;
+                document.getElementById('color-input').value = '#' + preset.color.toString(16).padStart(6, '0');
+                document.getElementById('mode-select').value = preset.mode.toString();
+                document.getElementById('loading-check').checked = preset.loading;
+                document.getElementById('pulse-check').checked = preset.pulseAnimation;
+                document.getElementById('ripple-check').checked = preset.rippleEffect;
+
+                // Update icon selection
+                document.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('active'));
+                const iconBtn = document.querySelector(`.icon-btn[data-icon="${preset.icon || ''}"]`);
+                if (iconBtn) iconBtn.classList.add('active');
+
+                // Update position selection
+                document.querySelectorAll('.position-btn').forEach(b => b.classList.remove('active'));
+                const posBtn = document.querySelector(`.position-btn[data-position="${preset.iconPosition}"]`);
+                if (posBtn) posBtn.classList.add('active');
+
+                createButton();
+            });
+        });
+
+        // Event listeners
+        document.getElementById('label-input').addEventListener('input', (e) => {
+            buttonConfig.label = e.target.value;
+            button.setLabel(e.target.value);
+        });
+
+        document.querySelectorAll('.icon-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const icon = btn.dataset.icon;
+                buttonConfig.icon = icon || null;
+                button.setIcon(icon || null);
+            });
+        });
+
+        document.querySelectorAll('.position-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.position-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                buttonConfig.iconPosition = btn.dataset.position;
+                createButton();
+            });
+        });
+
+        document.getElementById('color-input').addEventListener('input', (e) => {
+            const color = parseInt(e.target.value.replace('#', ''), 16);
+            buttonConfig.color = color;
+            createButton();
+        });
+
+        document.getElementById('mode-select').addEventListener('change', (e) => {
+            buttonConfig.mode = parseInt(e.target.value);
+            button.setMode(buttonConfig.mode);
+        });
+
+        document.getElementById('loading-check').addEventListener('change', (e) => {
+            buttonConfig.loading = e.target.checked;
+            button.setLoading(e.target.checked);
+        });
+
+        document.getElementById('pulse-check').addEventListener('change', (e) => {
+            buttonConfig.pulseAnimation = e.target.checked;
+            createButton();
+        });
+
+        document.getElementById('ripple-check').addEventListener('change', (e) => {
+            buttonConfig.rippleEffect = e.target.checked;
+            createButton();
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            buttonConfig = {
+                label: 'Click Me',
+                icon: null,
+                iconPosition: 'center',
+                color: 0x4ecdc4,
+                mode: 0,
+                loading: false,
+                pulseAnimation: false,
+                rippleEffect: true
+            };
+
+            document.getElementById('label-input').value = 'Click Me';
+            document.getElementById('color-input').value = '#4ecdc4';
+            document.getElementById('mode-select').value = '0';
+            document.getElementById('loading-check').checked = false;
+            document.getElementById('pulse-check').checked = false;
+            document.getElementById('ripple-check').checked = true;
+
+            document.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('.icon-btn[data-icon=""]').classList.add('active');
+
+            document.querySelectorAll('.position-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('.position-btn[data-position="center"]').classList.add('active');
+
+            createButton();
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (button && button.update) {
+                button.update();
+            }
+            if (button && button.updateTooltipAndLabelPositions) {
+                button.updateTooltipAndLabelPositions();
+            }
+
+            scene3D.render();
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        });
+    </script>
+</body>
+
+</html>

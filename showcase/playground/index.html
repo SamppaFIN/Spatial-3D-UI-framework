@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Playground - Spatial UI 3D</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description"
+        content="Interactive playground for experimenting with Spatial UI 3D components in real-time.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .playground-container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            height: 100vh;
+            padding-top: 70px;
+        }
+
+        .controls-panel {
+            background: var(--cosmic-dark);
+            border-right: 1px solid var(--glass-border);
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .controls-panel h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--cosmic-cyan);
+        }
+
+        .control-group {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .control-group:last-child {
+            border-bottom: none;
+        }
+
+        .control-group h3 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .control-item {
+            margin-bottom: 1rem;
+        }
+
+        .control-item label {
+            display: block;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .control-item input[type="text"],
+        .control-item input[type="number"],
+        .control-item select {
+            width: 100%;
+            padding: 0.5rem;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            color: white;
+            font-family: var(--font-primary);
+        }
+
+        .control-item input[type="range"] {
+            width: 100%;
+        }
+
+        .control-item button {
+            width: 100%;
+            padding: 0.6rem;
+            background: var(--gradient-cosmic);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .control-item button:hover {
+            transform: translateY(-2px);
+        }
+
+        .control-item button.secondary {
+            background: transparent;
+            border: 1px solid var(--cosmic-cyan);
+        }
+
+        #playground-canvas {
+            width: 100%;
+            height: calc(100vh - 70px);
+            display: block;
+        }
+
+        .info-panel {
+            position: absolute;
+            top: 90px;
+            right: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1rem;
+            max-width: 300px;
+            z-index: 100;
+        }
+
+        .info-panel h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1rem;
+            color: var(--cosmic-cyan);
+        }
+
+        .info-panel p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .navbar {
+            height: 70px;
+        }
+
+        .navbar-container {
+            padding: 1rem 2rem;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="../index.html" class="navbar-logo">🌸 Spatial UI 3D</a>
+
+            <ul class="navbar-menu">
+                <li><a href="../index.html#features" class="navbar-link">Features</a></li>
+                <li><a href="../components/index.html" class="navbar-link">Components</a></li>
+                <li><a href="../index.html#demos" class="navbar-link">Demos</a></li>
+                <li><a href="../docs/getting-started.html" class="navbar-link">Docs</a></li>
+            </ul>
+
+            <button class="navbar-toggle" aria-label="Toggle menu" aria-expanded="false">
+                ☰
+            </button>
+        </div>
+    </nav>
+
+    <!-- Info Panel -->
+    <div class="info-panel">
+        <h3>🎮 Playground Controls</h3>
+        <p>
+            <strong>Drag:</strong> Rotate view<br>
+            <strong>Scroll:</strong> Zoom in/out<br>
+            <strong>Right-click:</strong> Pan view<br>
+            <strong>Edit Mode:</strong> Click components to transform
+        </p>
+    </div>
+
+    <!-- Main Playground -->
+    <div class="playground-container">
+        <!-- Controls Panel -->
+        <aside class="controls-panel">
+            <h2>🎨 Component Creator</h2>
+
+            <!-- Component Type -->
+            <div class="control-group">
+                <h3>Component Type</h3>
+                <div class="control-item">
+                    <label>Select Component</label>
+                    <select id="component-type">
+                        <option value="button">Button3D</option>
+                        <option value="toggle">Toggle3D</option>
+                        <option value="slider">Slider3D</option>
+                        <option value="textdisplay">TextDisplay3D</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Position -->
+            <div class="control-group">
+                <h3>Position</h3>
+                <div class="control-item">
+                    <label>X: <span id="pos-x-value">0</span></label>
+                    <input type="range" id="pos-x" min="-10" max="10" step="0.5" value="0">
+                </div>
+                <div class="control-item">
+                    <label>Y: <span id="pos-y-value">0</span></label>
+                    <input type="range" id="pos-y" min="-5" max="5" step="0.5" value="0">
+                </div>
+                <div class="control-item">
+                    <label>Z: <span id="pos-z-value">0</span></label>
+                    <input type="range" id="pos-z" min="-10" max="10" step="0.5" value="0">
+                </div>
+            </div>
+
+            <!-- Appearance -->
+            <div class="control-group">
+                <h3>Appearance</h3>
+                <div class="control-item">
+                    <label>Geometry Mode</label>
+                    <select id="geometry-mode">
+                        <option value="0">Box</option>
+                        <option value="1">Sphere</option>
+                        <option value="2">Sacred</option>
+                    </select>
+                </div>
+                <div class="control-item">
+                    <label>Label</label>
+                    <input type="text" id="label" value="My Component" placeholder="Component label">
+                </div>
+                <div class="control-item">
+                    <label>Width</label>
+                    <input type="number" id="width" value="2.5" step="0.1" min="0.5" max="10">
+                </div>
+                <div class="control-item">
+                    <label>Height</label>
+                    <input type="number" id="height" value="1.0" step="0.1" min="0.5" max="10">
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="control-group">
+                <h3>Actions</h3>
+                <div class="control-item">
+                    <button id="add-component">➕ Add Component</button>
+                </div>
+                <div class="control-item">
+                    <button id="clear-all" class="secondary">🗑️ Clear All</button>
+                </div>
+                <div class="control-item">
+                    <button id="toggle-edit" class="secondary">✏️ Toggle Edit Mode</button>
+                </div>
+            </div>
+
+            <!-- Info -->
+            <div class="control-group">
+                <h3>📊 Stats</h3>
+                <p style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">
+                    Components: <strong id="component-count">0</strong><br>
+                    FPS: <strong id="fps-display">60</strong>
+                </p>
+            </div>
+        </aside>
+
+        <!-- Canvas -->
+        <main>
+            <canvas id="playground-canvas"></canvas>
+        </main>
+    </div>
+
+    <!-- Three.js Import Map -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <!-- Playground Script -->
+    <script type="module">
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { Button3D } from '../../src/controls/Button3D.js';
+        import { Toggle3D } from '../../src/controls/Toggle3D.js';
+        import { Slider3D } from '../../src/controls/Slider3D.js';
+        import { TextDisplay3D } from '../../src/controls/TextDisplay3D.js';
+        import { ControlRegistry } from '../../src/core/ControlRegistry.js';
+        import * as THREE from 'three';
+
+        // Initialize scene
+        const canvas = document.getElementById('playground-canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+        const orbitControls = scene3D.getControls();
+
+        ControlRegistry.setOrbitControls(orbitControls);
+        scene.background = new THREE.Color(0x0a0a0f);
+
+        // Component tracking
+        let components = [];
+        let componentCounter = 0;
+
+        // UI Elements
+        const componentTypeSelect = document.getElementById('component-type');
+        const posXSlider = document.getElementById('pos-x');
+        const posYSlider = document.getElementById('pos-y');
+        const posZSlider = document.getElementById('pos-z');
+        const geometryModeSelect = document.getElementById('geometry-mode');
+        const labelInput = document.getElementById('label');
+        const widthInput = document.getElementById('width');
+        const heightInput = document.getElementById('height');
+        const addButton = document.getElementById('add-component');
+        const clearButton = document.getElementById('clear-all');
+        const editButton = document.getElementById('toggle-edit');
+        const componentCountDisplay = document.getElementById('component-count');
+        const fpsDisplay = document.getElementById('fps-display');
+
+        // Update position value displays
+        posXSlider.addEventListener('input', (e) => {
+            document.getElementById('pos-x-value').textContent = e.target.value;
+        });
+        posYSlider.addEventListener('input', (e) => {
+            document.getElementById('pos-y-value').textContent = e.target.value;
+        });
+        posZSlider.addEventListener('input', (e) => {
+            document.getElementById('pos-z-value').textContent = e.target.value;
+        });
+
+        // Add component
+        addButton.addEventListener('click', () => {
+            const type = componentTypeSelect.value;
+            const position = [
+                parseFloat(posXSlider.value),
+                parseFloat(posYSlider.value),
+                parseFloat(posZSlider.value)
+            ];
+            const mode = parseInt(geometryModeSelect.value);
+            const label = labelInput.value || 'Component';
+            const width = parseFloat(widthInput.value);
+            const height = parseFloat(heightInput.value);
+
+            let component;
+
+            try {
+                switch (type) {
+                    case 'button':
+                        component = new Button3D(scene, camera, position, {
+                            label: label,
+                            width: width,
+                            height: height,
+                            mode: mode,
+                            renderer: renderer,
+                            onClick: (btn) => {
+                                console.log('Button clicked:', label);
+                            }
+                        });
+                        break;
+
+                    case 'toggle':
+                        component = new Toggle3D(scene, camera, position, {
+                            label: label,
+                            width: width,
+                            height: height,
+                            mode: mode,
+                            renderer: renderer,
+                            onClick: (toggle) => {
+                                console.log('Toggle state:', toggle.isOn);
+                            }
+                        });
+                        break;
+
+                    case 'slider':
+                        component = new Slider3D(scene, camera, position, {
+                            label: label,
+                            width: width,
+                            height: height * 0.3,
+                            mode: mode,
+                            min: 0,
+                            max: 100,
+                            value: 50,
+                            renderer: renderer,
+                            onChange: (slider, value) => {
+                                console.log('Slider value:', value);
+                            }
+                        });
+                        break;
+
+                    case 'textdisplay':
+                        component = new TextDisplay3D(scene, camera, position, {
+                            content: `# ${label}\\n\\nThis is a **TextDisplay3D** component.`,
+                            width: width,
+                            height: height,
+                            mode: mode,
+                            renderer: renderer
+                        });
+                        break;
+                }
+
+                if (component) {
+                    components.push(component);
+                    componentCounter++;
+                    updateComponentCount();
+                    console.log(`Added ${type} at`, position);
+                }
+            } catch (error) {
+                console.error('Error creating component:', error);
+            }
+        });
+
+        // Clear all components
+        clearButton.addEventListener('click', () => {
+            components.forEach(comp => {
+                if (comp.dispose) {
+                    comp.dispose();
+                }
+            });
+            components = [];
+            componentCounter = 0;
+            updateComponentCount();
+            console.log('Cleared all components');
+        });
+
+        // Toggle edit mode
+        let editMode = false;
+        editButton.addEventListener('click', () => {
+            editMode = !editMode;
+            ControlRegistry.setEditMode(editMode);
+            editButton.textContent = editMode ? '✏️ Edit Mode: ON' : '✏️ Toggle Edit Mode';
+            console.log('Edit mode:', editMode);
+        });
+
+        // Update component count
+        function updateComponentCount() {
+            componentCountDisplay.textContent = components.length;
+        }
+
+        // FPS Counter
+        let lastTime = performance.now();
+        let frameCount = 0;
+        let fps = 60;
+
+        function updateFPS() {
+            frameCount++;
+            const currentTime = performance.now();
+            const delta = currentTime - lastTime;
+
+            if (delta >= 1000) {
+                fps = Math.round((frameCount * 1000) / delta);
+                fpsDisplay.textContent = fps;
+                frameCount = 0;
+                lastTime = currentTime;
+            }
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Update all components
+            ControlRegistry.getAll().forEach(control => {
+                if (control && control.update) {
+                    control.update();
+                }
+                if (control && control.updateTooltipAndLabelPositions) {
+                    control.updateTooltipAndLabelPositions();
+                }
+            });
+
+            scene3D.render();
+            updateFPS();
+        }
+
+        animate();
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        });
+
+        console.log('🎮 Playground initialized!');
+    </script>
+
+    <!-- Showcase JavaScript -->
+    <script src="../scripts/showcase.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TextInput3D Component - Spatial UI 3D</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+
+    <style>
+        /* Compact Demo Layout */
+        .demo-section {
+            background: linear-gradient(135deg, rgba(10, 10, 15, 0.95), rgba(20, 20, 30, 0.95));
+            border: 1px solid rgba(78, 205, 196, 0.3);
+            border-radius: 16px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        .demo-canvas-container {
+            position: relative;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(78, 205, 196, 0.2);
+            min-height: 500px;
+        }
+
+        #component-canvas {
+            width: 100%;
+            height: 500px;
+            display: block;
+        }
+
+        .demo-controls {
+            background: rgba(20, 20, 40, 0.8);
+            border: 1px solid rgba(78, 205, 196, 0.4);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .demo-controls h3 {
+            margin: 0 0 1.5rem 0;
+            color: var(--cosmic-cyan);
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .control-row {
+            margin-bottom: 1.25rem;
+        }
+
+        .control-row label {
+            display: block;
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .control-row label span {
+            color: var(--cosmic-cyan);
+            float: right;
+        }
+
+        .control-row input[type="text"],
+        .control-row textarea {
+            width: 100%;
+            padding: 0.6rem;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(78, 205, 196, 0.3);
+            border-radius: 6px;
+            color: #fff;
+            font-size: 0.9rem;
+            font-family: 'Fira Code', monospace;
+        }
+
+        .control-row input[type="range"] {
+            width: 100%;
+            appearance: none;
+            -webkit-appearance: none;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .control-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: var(--cosmic-cyan);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+
+        .control-btn {
+            padding: 0.6rem;
+            background: linear-gradient(135deg, rgba(78, 205, 196, 0.2), rgba(107, 182, 255, 0.2));
+            border: 1px solid rgba(78, 205, 196, 0.4);
+            border-radius: 6px;
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            background: linear-gradient(135deg, rgba(78, 205, 196, 0.4), rgba(107, 182, 255, 0.4));
+            transform: translateY(-1px);
+        }
+
+        .control-btn.active {
+            background: linear-gradient(135deg, var(--cosmic-cyan), #6bb6ff);
+            box-shadow: 0 0 12px rgba(78, 205, 196, 0.5);
+        }
+
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .toggle-switch input {
+            display: none;
+        }
+
+        .toggle-slider {
+            width: 40px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            position: relative;
+            margin-right: 10px;
+            transition: 0.3s;
+        }
+
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            top: 2px;
+            left: 2px;
+            transition: 0.3s;
+        }
+
+        .toggle-switch input:checked+.toggle-slider {
+            background: var(--cosmic-cyan);
+        }
+
+        .toggle-switch input:checked+.toggle-slider::before {
+            transform: translateX(20px);
+        }
+
+        .divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 1rem 0;
+        }
+
+        @media (max-width: 1024px) {
+            .demo-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Ensure overlay container is on top of canvas but behind UI */
+        #html-overlay-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        /* Make direct children of overlay container interactive */
+        #html-overlay-container>* {
+            pointer-events: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="../index.html" class="navbar-logo">Spatial UI 3D</a>
+            <ul class="navbar-menu">
+                <li><a href="../index.html" class="navbar-link">Home</a></li>
+                <li><a href="index.html" class="navbar-link">Components</a></li>
+                <li><a href="../docs/getting-started.html" class="navbar-link">Docs</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container" style="padding-top: 80px;">
+        <div class="breadcrumb">
+            <a href="../index.html">Home</a> / <a href="index.html">Components</a> / TextInput3D
+        </div>
+
+        <header class="component-header">
+            <h1 class="component-title gradient-text">TextInput3D</h1>
+            <p class="component-subtitle">
+                Interactive logic-defying input fields with 3D presence
+            </p>
+        </header>
+
+        <!-- Compact Live Demo -->
+        <section class="demo-section">
+            <h2 style="margin: 0 0 1.5rem 0; color: var(--cosmic-cyan); font-size: 1.8rem;">Live Demo</h2>
+
+            <div class="demo-grid">
+                <div class="demo-canvas-container">
+                    <canvas id="component-canvas"></canvas>
+                    <!-- Container for HTML overlays created by the component -->
+                    <div id="html-overlay-container"></div>
+                </div>
+
+                <div class="demo-controls">
+                    <h3>⚙️ Controls</h3>
+
+                    <div class="control-row">
+                        <label>Current Value</label>
+                        <input type="text" id="value-input" value="Hello Space" placeholder="Type here...">
+                    </div>
+
+                    <div class="control-row">
+                        <label>Placeholder</label>
+                        <input type="text" id="placeholder-input" value="Enter text...">
+                    </div>
+
+                    <div class="control-row">
+                        <label>Input Mode</label>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="password-toggle">
+                            <span class="toggle-slider"></span>
+                            <span>Password Mode</span>
+                        </label>
+                    </div>
+
+                    <div class="control-row">
+                        <label>Panel Style</label>
+                        <div class="button-group" style="grid-template-columns: repeat(3, 1fr);">
+                            <button class="control-btn active" data-mode="0">Box</button>
+                            <button class="control-btn" data-mode="1">Sphere</button>
+                            <button class="control-btn" data-mode="2">Sacred</button>
+                        </div>
+                    </div>
+
+                    <div class="control-row">
+                        <label>Style Preset</label>
+                        <div class="button-group" style="grid-template-columns: repeat(3, 1fr);">
+                            <button class="control-btn active" data-style="default">Default</button>
+                            <button class="control-btn" data-style="post-it">Post-It</button>
+                            <button class="control-btn" data-style="dialog">Dialog</button>
+                            <button class="control-btn" data-style="idea">Idea</button>
+                            <button class="control-btn" data-style="board">Board</button>
+                            <button class="control-btn" data-style="message">Message</button>
+                        </div>
+                    </div>
+
+                    <div class="control-row">
+                        <label>Background Color</label>
+                        <div class="button-group">
+                            <button class="control-btn active" data-color="0x2a2a3e"
+                                style="background: #2a2a3e;">Dark</button>
+                            <button class="control-btn" data-color="0x2d3748" style="background: #2d3748;">Gray</button>
+                            <button class="control-btn" data-color="0x4a1820" style="background: #4a1820;">Red</button>
+                            <button class="control-btn" data-color="0x0b2d35" style="background: #0b2d35;">Teal</button>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="control-row">
+                        <label>Width <span id="width-value">3.0</span></label>
+                        <input type="range" id="width-slider" min="2.0" max="6.0" step="0.5" value="3.0">
+                    </div>
+
+                    <div class="control-row">
+                        <label>Height <span id="height-value">0.8</span></label>
+                        <input type="range" id="height-slider" min="0.5" max="1.5" step="0.1" value="0.8">
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- Code Example -->
+        <section>
+            <h2 class="section-title">Code Example</h2>
+            <div class="code-block">
+                <pre><code>import { TextInput3D } from './src/controls/TextInput3D.js';
+
+const inputField = new TextInput3D(scene, camera, [0, 0, 0], {
+    value: 'Initial Text',
+    placeholder: 'Type here...',
+    width: 3.0,
+    height: 0.8,
+    type: 'text', // or 'password'
+    mode: 0,
+    style: 'post-it',
+    onChange: (input, value) => {
+        console.log('Value changed:', value);
+    }
+});
+
+function animate() {
+    requestAnimationFrame(animate);
+    inputField.update();
+    scene3D.render();
+}</code></pre>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2024 Spatial UI 3D. Built with Three.js and ❤️</p>
+    </footer>
+
+    <!-- Style Definitions for Text Input -->
+    <style>
+        /* Base Style */
+        .spatial-text-input {
+            font-family: 'Inter', sans-serif;
+            color: #fff;
+            box-sizing: border-box;
+            transition: all 0.2s;
+        }
+
+        .spatial-text-input.default {
+            /* Default transparent look */
+            background: transparent;
+        }
+
+        /* Post-it Note */
+        .spatial-text-input.post-it {
+            background: #fff740 !important;
+            color: #333 !important;
+            font-family: 'Comic Sans MS', 'Inter', cursive !important;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+            /* Hide placeholder color specifically if needed, but browser handles typically */
+        }
+
+        .spatial-text-input.post-it::placeholder {
+            color: rgba(0, 0, 0, 0.5);
+        }
+
+        /* Dialog Bubble */
+        .spatial-text-input.dialog {
+            background: #ffffff !important;
+            color: #000 !important;
+            border-radius: 20px !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            border: 2px solid #e0e0e0 !important;
+            padding-left: 20px !important;
+        }
+
+        .spatial-text-input.dialog::placeholder {
+            color: rgba(0, 0, 0, 0.4);
+        }
+
+        /* Idea Card */
+        .spatial-text-input.idea {
+            background: linear-gradient(135deg, #a8ff78, #78ffd6) !important;
+            color: #004d40 !important;
+            border-radius: 8px !important;
+            border-left: 10px solid #004d40 !important;
+        }
+
+        .spatial-text-input.idea::placeholder {
+            color: rgba(0, 77, 64, 0.6);
+        }
+
+        /* Cork Board */
+        .spatial-text-input.board {
+            background: #d2b48c !important;
+            background-image: radial-gradient(rgba(0, 0, 0, 0.1) 1px, transparent 1px) !important;
+            background-size: 20px 20px !important;
+            color: #3e2723 !important;
+            font-family: 'Courier New', monospace !important;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .spatial-text-input.board::placeholder {
+            color: rgba(62, 39, 35, 0.6);
+        }
+
+        /* Message/Notification */
+        .spatial-text-input.message {
+            background: rgba(40, 40, 60, 0.95) !important;
+            backdrop-filter: blur(10px) !important;
+            color: #fff !important;
+            border-radius: 12px !important;
+            border: 1px solid rgba(78, 205, 196, 0.5) !important;
+            box-shadow: 0 0 20px rgba(78, 205, 196, 0.2);
+        }
+    </style>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { TextInput3D } from '../../src/controls/TextInput3D.js?v=2';
+        import { ControlRegistry } from '../../src/core/ControlRegistry.js';
+        import { getHTMLOverlay } from '../../src/utils/HTMLOverlay.js';
+        import * as THREE from 'three';
+
+        // 1. Scene Setup
+        const canvas = document.getElementById('component-canvas');
+
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+        const orbitControls = scene3D.getControls();
+        ControlRegistry.setOrbitControls(orbitControls);
+
+        // Initialize HTML Overlay system manually to ensure we get the right container
+        const htmlOverlay = getHTMLOverlay();
+        // Look for the overlay container in the DOM
+        const overlayContainer = document.getElementById('html-overlay-container');
+        htmlOverlay.init(overlayContainer);
+
+        scene.background = new THREE.Color(0x0a0a0f);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+        dirLight.position.set(5, 5, 5);
+        scene.add(dirLight);
+
+        // Adjust Canvas Size - including HTML overlay container
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+
+            // Resize WebGL Renderer
+            renderer.setSize(width, height);
+
+            // Resize CSS3D Renderer (Important for overlay alignment)
+            if (htmlOverlay && htmlOverlay.setSize) {
+                htmlOverlay.setSize(width, height);
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+        // Call once to set initial size
+        resizeCanvas();
+
+        // Camera Positioning
+        camera.position.set(0, 0, 5);
+        camera.lookAt(0, 0, 0);
+
+        // 2. Default Configuration
+        let config = {
+            value: 'Hello Space',
+            placeholder: 'Type something...',
+            width: 3.0,
+            height: 0.8,
+            depth: 0.2,
+            mode: 0,
+            backgroundColor: 0x2a2a3e,
+            borderColor: 0x5a5a8e,
+            type: 'text'
+        };
+
+        let textInput = null;
+
+        // 3. Create TextInput
+        function createTextInput() {
+            if (textInput) textInput.dispose();
+
+            textInput = new TextInput3D(scene, camera, [0, 0, 0], {
+                value: config.value,
+                placeholder: config.placeholder,
+                width: config.width,
+                height: config.height,
+                depth: config.depth,
+                mode: config.mode,
+                backgroundColor: config.backgroundColor,
+                borderColor: config.borderColor,
+                type: config.type,
+                renderer: renderer,
+                onChange: (control, val) => {
+                    // Update the external input when 3D input changes
+                    document.getElementById('value-input').value = val;
+                }
+            });
+        }
+
+        // Initialize
+        createTextInput();
+
+        // 4. Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            if (textInput) textInput.update();
+            scene3D.render();
+
+            // Force rendering of HTML Overlay if not handled by Scene3D
+            // HTMLOverlay typically renders itself via CSS3DObject which are part of the scene, 
+            // but we need to make sure the CSS3DRenderer 'render' is called.
+            // Scene3D might not call htmlOverlay.render(camera) if it doesn't know about it.
+            // Looking at Scene3D.js might be needed, but for now calling it safe:
+            if (htmlOverlay && htmlOverlay.render) {
+                htmlOverlay.render(camera);
+            }
+        }
+        animate();
+
+
+        // 5. UI Controls Event Listeners
+
+        // Value Input
+        const valueInput = document.getElementById('value-input');
+        valueInput.addEventListener('input', (e) => {
+            config.value = e.target.value;
+            if (textInput) {
+                textInput.setValue(config.value);
+            }
+        });
+
+        // Placeholder Input
+        const placeholderInput = document.getElementById('placeholder-input');
+        placeholderInput.addEventListener('input', (e) => {
+            config.placeholder = e.target.value;
+            // Need recreation to update placeholder in current implementation
+            createTextInput();
+        });
+
+        // Password Toggle
+        const passwordToggle = document.getElementById('password-toggle');
+        passwordToggle.addEventListener('change', (e) => {
+            config.type = e.target.checked ? 'password' : 'text';
+            createTextInput();
+        });
+
+        // Mode Buttons
+        document.querySelectorAll('[data-mode]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('[data-mode]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                config.mode = parseInt(e.target.dataset.mode);
+                createTextInput();
+            });
+        });
+
+        // Color Buttons
+        document.querySelectorAll('[data-color]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('[data-color]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                config.backgroundColor = parseInt(e.target.dataset.color);
+                createTextInput();
+            });
+        });
+
+        // Style Buttons
+        document.querySelectorAll('[data-style]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('[data-style]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                config.style = e.target.dataset.style;
+                if (textInput) {
+                    textInput.setStyle(config.style);
+                } else {
+                    createTextInput();
+                }
+            });
+        });
+
+        // Dimensions
+        document.getElementById('width-slider').addEventListener('input', (e) => {
+            config.width = parseFloat(e.target.value);
+            document.getElementById('width-value').textContent = config.width.toFixed(1);
+            createTextInput();
+        });
+
+        document.getElementById('height-slider').addEventListener('input', (e) => {
+            config.height = parseFloat(e.target.value);
+            document.getElementById('height-value').textContent = config.height.toFixed(1);
+            createTextInput();
+        });
+
+    </script>
+</body>
+
+</html>

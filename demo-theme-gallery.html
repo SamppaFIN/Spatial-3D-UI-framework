@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theme Gallery - Spatial UI 3D</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #0a0a0f;
+            font-family: 'Inter', Arial, sans-serif;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100vh;
+            display: block;
+        }
+
+        .theme-selector {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20, 20, 40, 0.95);
+            padding: 20px;
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(78, 205, 196, 0.3);
+        }
+
+        .theme-selector h1 {
+            margin: 0 0 20px 0;
+            font-size: 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, #4ecdc4, #6bb6ff);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .theme-card {
+            padding: 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .theme-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .theme-card.active {
+            border-color: white;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+
+        .theme-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.1rem;
+            color: white;
+        }
+
+        .theme-card .colors {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .theme-card .color-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .theme-info {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20, 20, 40, 0.95);
+            padding: 15px 30px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(78, 205, 196, 0.3);
+            color: white;
+            text-align: center;
+        }
+
+        .theme-info h2 {
+            margin: 0 0 5px 0;
+            font-size: 1.5rem;
+        }
+
+        .theme-info p {
+            margin: 0;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div class="theme-selector">
+        <h1>🎨 Theme Gallery</h1>
+        <div class="theme-grid" id="theme-grid"></div>
+    </div>
+
+    <div class="theme-info">
+        <h2 id="theme-name">Cosmic</h2>
+        <p id="theme-desc">Default cosmic theme with cyan and blue tones</p>
+    </div>
+
+    <script
+        type="importmap">{"imports": {"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+    <script type="module">
+        import { Scene3D } from './src/core/Scene3D.js';
+        import { Button3D } from './src/controls/Button3D.js';
+        import { Toggle3D } from './src/controls/Toggle3D.js';
+        import { Slider3D } from './src/controls/Slider3D.js';
+        import { Modal3D } from './src/controls/Modal3D.js';
+        import { ControlRegistry } from './src/core/ControlRegistry.js';
+        import { themeManager } from './src/core/ThemeManager.js';
+        import * as THREE from 'three';
+
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+        const orbitControls = scene3D.getControls();
+        ControlRegistry.setOrbitControls(orbitControls);
+
+        // Theme descriptions
+        const themeDescriptions = {
+            cosmic: 'Default cosmic theme with cyan and blue tones',
+            neon: 'Vibrant neon colors with magenta and cyan',
+            nature: 'Earth tones with green and amber accents',
+            ocean: 'Deep blue oceanic colors with teal highlights',
+            sunset: 'Warm sunset colors with orange and gold',
+            midnight: 'Dark purple and violet midnight theme'
+        };
+
+        // Create theme cards
+        const themes = themeManager.getAvailableThemes();
+        const themeGrid = document.getElementById('theme-grid');
+
+        themes.forEach(({ id, name }) => {
+            const theme = themeManager.getTheme(id);
+            const card = document.createElement('div');
+            card.className = 'theme-card' + (id === 'cosmic' ? ' active' : '');
+            card.style.background = `linear-gradient(135deg, ${themeManager.hexToCSS(theme.primary)}, ${themeManager.hexToCSS(theme.secondary)})`;
+
+            card.innerHTML = `
+                <h3>${name}</h3>
+                <div class="colors">
+                    <div class="color-dot" style="background: ${themeManager.hexToCSS(theme.primary)}"></div>
+                    <div class="color-dot" style="background: ${themeManager.hexToCSS(theme.secondary)}"></div>
+                    <div class="color-dot" style="background: ${themeManager.hexToCSS(theme.accent)}"></div>
+                </div>
+            `;
+
+            card.onclick = () => {
+                document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+                applyTheme(id);
+            };
+
+            themeGrid.appendChild(card);
+        });
+
+        // Sample components
+        let components = [];
+
+        function createComponents() {
+            // Clear existing
+            components.forEach(comp => {
+                if (comp.dispose) comp.dispose();
+            });
+            components = [];
+
+            const theme = themeManager.getTheme();
+
+            // Row 1: Buttons
+            components.push(new Button3D(scene, camera, [-6, 3, 0], {
+                label: 'Primary',
+                icon: '✨',
+                color: theme.primary,
+                pulseAnimation: true,
+                renderer: renderer
+            }));
+
+            components.push(new Button3D(scene, camera, [-2, 3, 0], {
+                label: 'Secondary',
+                icon: '🎯',
+                color: theme.secondary,
+                renderer: renderer
+            }));
+
+            components.push(new Button3D(scene, camera, [2, 3, 0], {
+                label: 'Accent',
+                icon: '🔥',
+                color: theme.accent,
+                rippleEffect: true,
+                renderer: renderer
+            }));
+
+            components.push(new Button3D(scene, camera, [6, 3, 0], {
+                label: 'Success',
+                icon: '✅',
+                color: theme.success,
+                renderer: renderer
+            }));
+
+            // Row 2: Toggles
+            components.push(new Toggle3D(scene, camera, [-4, 1, 0], {
+                label: 'Toggle',
+                trackShape: 'pill',
+                onColor: theme.primary,
+                offColor: theme.border,
+                renderer: renderer
+            }));
+
+            components.push(new Toggle3D(scene, camera, [0, 1, 0], {
+                label: 'Multi-State',
+                states: ['off', 'on', 'auto'],
+                stateColors: [theme.border, theme.success, theme.warning],
+                stateIcons: ['❌', '✅', '🔄'],
+                trackShape: 'pill',
+                renderer: renderer
+            }));
+
+            components.push(new Toggle3D(scene, camera, [4, 1, 0], {
+                label: 'Circle',
+                trackShape: 'circle',
+                onColor: theme.accent,
+                renderer: renderer
+            }));
+
+            // Row 3: Sliders
+            components.push(new Slider3D(scene, camera, [-4, -1, 0], {
+                label: 'Slider',
+                fillColor: theme.primary,
+                handleColor: theme.secondary,
+                renderer: renderer
+            }));
+
+            components.push(new Slider3D(scene, camera, [2, -1, 0], {
+                label: 'Gradient',
+                gradientTrack: true,
+                gradientColors: [theme.error, theme.warning, theme.success],
+                tickMarks: true,
+                renderer: renderer
+            }));
+
+            // Row 4: Modal
+            components.push(new Modal3D(scene, camera, [0, -3, 0], {
+                title: 'Themed Modal',
+                borderColor: theme.primary,
+                isOpen: true,
+                width: 4,
+                height: 2.5,
+                renderer: renderer
+            }));
+        }
+
+        function applyTheme(themeName) {
+            themeManager.setTheme(themeName);
+            themeManager.applyToScene(scene);
+
+            // Update info
+            document.getElementById('theme-name').textContent =
+                themeName.charAt(0).toUpperCase() + themeName.slice(1);
+            document.getElementById('theme-desc').textContent =
+                themeDescriptions[themeName];
+
+            // Recreate components with new theme
+            createComponents();
+        }
+
+        // Initial components
+        createComponents();
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            ControlRegistry.getAll().forEach(control => {
+                if (control && control.update) control.update();
+                if (control && control.updateTooltipAndLabelPositions) {
+                    control.updateTooltipAndLabelPositions();
+                }
+            });
+
+            scene3D.render();
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        });
+    </script>
+</body>
+
+</html>

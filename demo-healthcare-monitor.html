@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏥 Healthcare Patient Monitor - Spatial UI Demo</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <style>
+        /* Tooltip and Label Styles */
+        .spatial-tooltip {
+            background: linear-gradient(145deg, rgba(20, 20, 40, 0.95), rgba(10, 10, 30, 0.95));
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: #ffffff;
+            font-family: 'Arial', sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            max-width: 250px;
+            box-shadow:
+                0 0 20px rgba(0, 0, 0, 0.5),
+                0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            pointer-events: none;
+            user-select: none;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+
+        .spatial-tooltip strong {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .spatial-label {
+            background: linear-gradient(145deg, rgba(30, 30, 50, 0.9), rgba(20, 20, 40, 0.9));
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: #ffffff;
+            font-family: 'Arial', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.4;
+            box-shadow:
+                0 0 15px rgba(0, 0, 0, 0.4),
+                0 4px 16px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(8px);
+            pointer-events: none;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .spatial-text-display {
+            background: linear-gradient(145deg, rgba(20, 40, 40, 0.95), rgba(10, 30, 30, 0.95));
+            border: 1px solid rgba(78, 205, 196, 0.3);
+            border-radius: 12px;
+            color: #ffffff;
+            font-family: 'Arial', sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(78, 205, 196, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .spatial-text-display h1,
+        .spatial-text-display h2,
+        .spatial-text-display h3 {
+            color: #4ecdc4;
+            margin-top: 0.5em;
+            margin-bottom: 0.3em;
+        }
+
+        .spatial-chart {
+            background: rgba(20, 40, 40, 0.95);
+            border: 1px solid rgba(78, 205, 196, 0.3);
+            border-radius: 12px;
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(78, 205, 196, 0.2);
+        }
+
+        .html-overlay {
+            pointer-events: none;
+        }
+
+        .demo-title {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #4ecdc4;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+            z-index: 100;
+        }
+
+        .demo-subtitle {
+            position: absolute;
+            top: 55px;
+            left: 20px;
+            color: rgba(78, 205, 196, 0.8);
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+            z-index: 100;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div class="demo-title">🏥 Healthcare Patient Monitor</div>
+    <div class="demo-subtitle">Real-time patient vital signs monitoring</div>
+
+    <div id="background-switcher" class="background-switcher">
+        <button class="room-btn" data-room="coordinate">📐 Coordinate</button>
+        <button class="room-btn" data-room="landscape">🏔️ Landscape</button>
+        <button class="room-btn" data-room="space">🌌 Space</button>
+    </div>
+
+    <div id="fps-counter" class="fps-counter">FPS: --</div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import { Scene3D } from './src/core/Scene3D.js';
+        import { RoomManager } from './src/core/RoomManager.js';
+        import { Button3D } from './src/controls/Button3D.js';
+        import { ButtonFactory } from './src/utils/ButtonFactory.js';
+        import { Toggle3D } from './src/controls/Toggle3D.js';
+        import { TextDisplay3D } from './src/controls/TextDisplay3D.js';
+        import { Chart3D } from './src/controls/Chart3D.js';
+        import { Slider3D } from './src/controls/Slider3D.js';
+        import { Modal3D } from './src/controls/Modal3D.js';
+        import { Accordion3D } from './src/controls/Accordion3D.js';
+        import { ControlRegistry } from './src/core/ControlRegistry.js';
+        import * as THREE from 'three';
+
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+        const orbitControls = scene3D.getControls();
+
+        ControlRegistry.setOrbitControls(orbitControls);
+
+        const roomManager = new RoomManager(scene, camera);
+        roomManager.initialize();
+
+        // Medical blue/green theme
+        scene.background = new THREE.Color(0x0a1a1a);
+
+        // ============================================
+        // PATIENT DATA
+        // ============================================
+        const patientData = {
+            name: 'John Doe',
+            age: 45,
+            id: 'P-12345',
+            heartRate: { current: 75, trend: [], normal: [60, 100], critical: [40, 120] },
+            bloodPressure: { systolic: 120, diastolic: 80, trend: [], normal: [90, 140] },
+            temperature: { current: 37.0, trend: [], normal: [36.1, 37.2], critical: [35.0, 39.0] },
+            oxygenSaturation: { current: 98, trend: [], normal: [95, 100], critical: [90, 100] }
+        };
+
+        // Generate initial vital signs data
+        function generateVitalTrend(baseValue, variance, points = 20) {
+            const trend = [];
+            for (let i = 0; i < points; i++) {
+                const value = baseValue + (Math.random() - 0.5) * variance;
+                trend.push(parseFloat(value.toFixed(1)));
+            }
+            return trend;
+        }
+
+        patientData.heartRate.trend = generateVitalTrend(75, 10, 20);
+        patientData.temperature.trend = generateVitalTrend(37.0, 0.5, 20);
+        patientData.oxygenSaturation.trend = generateVitalTrend(98, 2, 20);
+
+        // Update vital signs
+        function updateVitalSigns() {
+            // Heart rate
+            const hrChange = (Math.random() - 0.5) * 5;
+            patientData.heartRate.current = Math.max(50, Math.min(110, Math.round(patientData.heartRate.current + hrChange)));
+            patientData.heartRate.trend.shift();
+            patientData.heartRate.trend.push(patientData.heartRate.current);
+
+            // Temperature
+            const tempChange = (Math.random() - 0.5) * 0.2;
+            patientData.temperature.current = Math.max(35.5, Math.min(38.5, parseFloat((patientData.temperature.current + tempChange).toFixed(1))));
+            patientData.temperature.trend.shift();
+            patientData.temperature.trend.push(patientData.temperature.current);
+
+            // Oxygen saturation
+            const o2Change = (Math.random() - 0.5) * 1;
+            patientData.oxygenSaturation.current = Math.max(92, Math.min(100, Math.round(patientData.oxygenSaturation.current + o2Change)));
+            patientData.oxygenSaturation.trend.shift();
+            patientData.oxygenSaturation.trend.push(patientData.oxygenSaturation.current);
+
+            // Check for critical values
+            if (patientData.heartRate.current < patientData.heartRate.critical[0] ||
+                patientData.heartRate.current > patientData.heartRate.critical[1]) {
+                console.warn('CRITICAL: Heart rate out of range!');
+                alertModal.open();
+            }
+        }
+
+        // ============================================
+        // PATIENT INFO (X = -10, Z = -2)
+        // ============================================
+        const PATIENT_INFO_X = -10;
+        const PATIENT_INFO_Z = -2;
+
+        const patientInfo = new TextDisplay3D(scene, camera, [PATIENT_INFO_X, 2.5, PATIENT_INFO_Z], {
+            content: `# 👤 Patient Information\\n\\n**Name:** ${patientData.name}\\n**Age:** ${patientData.age}\\n**ID:** ${patientData.id}\\n\\n**Status:** Stable\\n**Room:** 302-B`,
+            width: 4.0,
+            height: 3.5,
+            mode: 0,
+            renderer: renderer,
+            tooltip: {
+                content: '**Patient Info** 👤\\n\\nPatient details',
+                position: 'right',
+                offset: [2.5, 0, 0]
+            }
+        });
+
+        const patientHistory = new Accordion3D(scene, camera, [PATIENT_INFO_X, -1.5, PATIENT_INFO_Z], {
+            width: 4.0,
+            itemHeight: 0.7,
+            itemSpacing: 0.15,
+            mode: 0,
+            items: [
+                {
+                    title: '📋 Medical History',
+                    contentHeight: 2.5,
+                    content: `# Medical History\\n\\n- Hypertension (controlled)\\n- Type 2 Diabetes\\n- No known allergies\\n\\n*Last updated: Today*`
+                },
+                {
+                    title: '💊 Medications',
+                    contentHeight: 2.5,
+                    content: `# Current Medications\\n\\n- Metformin 500mg (2x daily)\\n- Lisinopril 10mg (1x daily)\\n- Aspirin 81mg (1x daily)\\n\\n*Next dose: 14:00*`
+                },
+                {
+                    title: '📝 Notes',
+                    contentHeight: 2.5,
+                    content: `# Clinical Notes\\n\\n- Admitted: Jan 18, 2026\\n- Reason: Routine checkup\\n- Expected discharge: Jan 21\\n\\n*Stable condition*`
+                }
+            ],
+            openItems: [],
+            renderer: renderer,
+            tooltip: {
+                content: '**History** 📋\\n\\nPatient history',
+                position: 'right',
+                offset: [2.5, 0, 0]
+            }
+        });
+
+        // ============================================
+        // VITAL SIGNS (X = 0, Z = 0)
+        // ============================================
+        const VITALS_X = 0;
+        const VITALS_Z = 0;
+
+        const heartRateDisplay = new TextDisplay3D(scene, camera, [VITALS_X - 4, 2.5, VITALS_Z], {
+            content: `# ❤️ Heart Rate\\n\\n## ${patientData.heartRate.current} BPM\\n\\n*Normal: 60-100 BPM*`,
+            width: 3.0,
+            height: 2.0,
+            mode: 0,
+            renderer: renderer,
+            tooltip: {
+                content: '**Heart Rate** ❤️\\n\\nBeats per minute',
+                position: 'top',
+                offset: [0, 1.5, 0]
+            }
+        });
+
+        const bloodPressureDisplay = new TextDisplay3D(scene, camera, [VITALS_X + 4, 2.5, VITALS_Z], {
+            content: `# 🩸 Blood Pressure\\n\\n## ${patientData.bloodPressure.systolic}/${patientData.bloodPressure.diastolic}\\n\\n*Normal: 90-140/60-90*`,
+            width: 3.0,
+            height: 2.0,
+            mode: 0,
+            renderer: renderer,
+            tooltip: {
+                content: '**Blood Pressure** 🩸\\n\\nSystolic/Diastolic',
+                position: 'top',
+                offset: [0, 1.5, 0]
+            }
+        });
+
+        const temperatureDisplay = new TextDisplay3D(scene, camera, [VITALS_X - 4, 0, VITALS_Z], {
+            content: `# 🌡️ Temperature\\n\\n## ${patientData.temperature.current}°C\\n\\n*Normal: 36.1-37.2°C*`,
+            width: 3.0,
+            height: 2.0,
+            mode: 0,
+            renderer: renderer,
+            tooltip: {
+                content: '**Temperature** 🌡️\\n\\nBody temperature',
+                position: 'top',
+                offset: [0, 1.5, 0]
+            }
+        });
+
+        const oxygenDisplay = new TextDisplay3D(scene, camera, [VITALS_X + 4, 0, VITALS_Z], {
+            content: `# 💨 SpO2\\n\\n## ${patientData.oxygenSaturation.current}%\\n\\n*Normal: 95-100%*`,
+            width: 3.0,
+            height: 2.0,
+            mode: 0,
+            renderer: renderer,
+            tooltip: {
+                content: '**Oxygen Saturation** 💨\\n\\nBlood oxygen level',
+                position: 'top',
+                offset: [0, 1.5, 0]
+            }
+        });
+
+        // ============================================
+        // CHARTS (X = 10, Z = 0)
+        // ============================================
+        const CHARTS_X = 10;
+        const CHARTS_Z = 0;
+
+        const heartRateChart = new Chart3D(scene, camera, [CHARTS_X, 2.5, CHARTS_Z], {
+            chartType: 'line',
+            data: {
+                labels: Array.from({ length: 20 }, (_, i) => `${i}`),
+                datasets: [{
+                    label: 'Heart Rate (BPM)',
+                    data: patientData.heartRate.trend,
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: '#ff6384',
+                    tension: 0.4
+                }]
+            },
+            width: 4.5,
+            height: 3.0,
+            mode: 0,
+            renderer: renderer,
+            tooltip: {
+                content: '**Heart Rate Trend** ❤️\\n\\nLast 20 readings',
+                position: 'left',
+                offset: [-2.5, 0, 0]
+            }
+        });
+
+        const temperatureChart = new Chart3D(scene, camera, [CHARTS_X, -0.5, CHARTS_Z], {
+            chartType: 'line',
+            data: {
+                labels: Array.from({ length: 20 }, (_, i) => `${i}`),
+                datasets: [{
+                    label: 'Temperature (°C)',
+                    data: patientData.temperature.trend,
+                    backgroundColor: 'rgba(78, 205, 196, 0.2)',
+                    borderColor: '#4ecdc4',
+                    tension: 0.4
+                }]
+            },
+            width: 4.5,
+            height: 3.0,
+            mode: 0,
+            renderer: renderer,
+            tooltip: {
+                content: '**Temperature Trend** 🌡️\\n\\nLast 20 readings',
+                position: 'left',
+                offset: [-2.5, 0, 0]
+            }
+        });
+
+        // ============================================
+        // CONTROLS (X = 0, Z = 3)
+        // ============================================
+        const CONTROLS_X = 0;
+        const CONTROLS_Z = 3;
+
+        const monitoringToggle = new Toggle3D(scene, camera, [CONTROLS_X - 3, 1.5, CONTROLS_Z], {
+            label: '📊 Monitoring',
+            width: 2.5,
+            height: 0.6,
+            mode: 0,
+            isOn: true,
+            onColor: 0x4ecdc4,
+            offColor: 0x666666,
+            renderer: renderer,
+            tooltip: {
+                content: '**Monitoring** 📊\\n\\nToggle vital signs monitoring',
+                position: 'top',
+                offset: [0, 1.0, 0]
+            }
+        });
+
+        const alarmsToggle = new Toggle3D(scene, camera, [CONTROLS_X + 3, 1.5, CONTROLS_Z], {
+            label: '🔔 Alarms',
+            width: 2.5,
+            height: 0.6,
+            mode: 0,
+            isOn: true,
+            onColor: 0xff6384,
+            offColor: 0x666666,
+            renderer: renderer,
+            tooltip: {
+                content: '**Alarms** 🔔\\n\\nToggle critical alerts',
+                position: 'top',
+                offset: [0, 1.0, 0]
+            }
+        });
+
+        const medicationDosage = new Slider3D(scene, camera, [CONTROLS_X, 0, CONTROLS_Z], {
+            label: '💊 Medication Dosage',
+            width: 4.0,
+            height: 0.3,
+            values: ['Low', 'Medium', 'High'],
+            valueIndex: 1,
+            mode: 0,
+            renderer: renderer,
+            tooltip: {
+                content: '**Dosage** 💊\\n\\nAdjust medication dosage',
+                position: 'top',
+                offset: [0, 1.0, 0]
+            }
+        });
+
+        const editModeToggle = new Toggle3D(scene, camera, [CONTROLS_X, -1.5, CONTROLS_Z], {
+            label: 'Edit Mode',
+            width: 2.5,
+            height: 0.6,
+            mode: 0,
+            isOn: false,
+            onColor: 0xffaa00,
+            offColor: 0x666666,
+            renderer: renderer,
+            tooltip: {
+                content: '**Edit Mode** ✏️\\n\\nRearrange monitors',
+                position: 'top',
+                offset: [0, 1.0, 0]
+            },
+            onClick: (toggle) => {
+                roomManager.setEditMode(toggle.isOn);
+                ControlRegistry.setEditMode(toggle.isOn);
+            }
+        });
+
+        // Emergency Button (Octahedron, Pulse)
+        const emergencyButton = new Button3D(scene, camera, [CONTROLS_X + 6, 1.5, CONTROLS_Z], {
+            label: "EMERGENCY",
+            labelColor: 0xffffff,
+            geometryType: 'octahedron',
+            width: 1.0,
+            height: 1.0,
+            depth: 1.0,
+            color: 0xff4444,
+            pulseAnimation: true,
+            pulseSpeed: 0.05,
+            rippleEffect: true,
+            renderer: renderer,
+            onClick: () => { alertModal.open(); }
+        });
+        window.emergencyButton = emergencyButton;
+
+        // Admin Button (Locked)
+        const adminButton = new Button3D(scene, camera, [CONTROLS_X - 6, 1.5, CONTROLS_Z], {
+            label: "Admin",
+            geometryType: 'pill',
+            width: 2.0,
+            height: 0.6,
+            depth: 0.2,
+            color: 0x555555,
+            renderer: renderer,
+            onClick: () => console.log("Admin Access is Locked")
+        });
+        window.adminButton = adminButton;
+
+        const adminLabel = new TextDisplay3D(scene, camera, [CONTROLS_X - 6, 2.5, CONTROLS_Z], {
+            content: "Admin (Locked 🔒)",
+            width: 2.5,
+            height: 0.5,
+            mode: 0,
+            renderer: renderer
+        });
+
+        // Manual Raycasting removed as Button3D handles interactions internally
+
+        // ============================================
+        // ALERT MODAL
+        // ============================================
+        const alertModal = new Modal3D(scene, camera, [0, 0, 5], {
+            title: '⚠️ CRITICAL ALERT',
+            width: 5.0,
+            height: 3.5,
+            mode: 0,
+            isOpen: false,
+            renderer: renderer,
+            onOpen: () => console.log('ALERT: Critical vital signs detected'),
+            onClose: () => console.log('Alert acknowledged')
+        });
+
+        // ============================================
+        // DATA UPDATE LOOP
+        // ============================================
+        setInterval(() => {
+            if (monitoringToggle.isOn) {
+                updateVitalSigns();
+
+                // Update displays
+                heartRateDisplay.setContent(`# ❤️ Heart Rate\\n\\n## ${patientData.heartRate.current} BPM\\n\\n*Normal: 60-100 BPM*`);
+                temperatureDisplay.setContent(`# 🌡️ Temperature\\n\\n## ${patientData.temperature.current}°C\\n\\n*Normal: 36.1-37.2°C*`);
+                oxygenDisplay.setContent(`# 💨 SpO2\\n\\n## ${patientData.oxygenSaturation.current}%\\n\\n*Normal: 95-100%*`);
+
+                // Update charts
+                if (heartRateChart.chart) {
+                    heartRateChart.chart.data.datasets[0].data = patientData.heartRate.trend;
+                    heartRateChart.chart.update('none');
+                }
+
+                if (temperatureChart.chart) {
+                    temperatureChart.chart.data.datasets[0].data = patientData.temperature.trend;
+                    temperatureChart.chart.update('none');
+                }
+            }
+        }, 2000);
+
+        // ============================================
+        // BACKGROUND SWITCHER
+        // ============================================
+        const roomButtons = document.querySelectorAll('.room-btn');
+        roomButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const roomName = btn.dataset.room;
+                roomManager.switchRoom(roomName);
+
+                if (roomName === 'coordinate') {
+                    scene.background = new THREE.Color(0x0a1a1a);
+                } else if (roomName === 'landscape') {
+                    scene.background = new THREE.Color(0x0a1a1a);
+                } else if (roomName === 'space') {
+                    scene.background = new THREE.Color(0x0a1a1a);
+                }
+
+                roomButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        document.querySelector('.room-btn[data-room="coordinate"]').classList.add('active');
+
+        // ============================================
+        // FPS COUNTER
+        // ============================================
+        let lastTime = performance.now();
+        let frameCount = 0;
+        let fps = 0;
+
+        function updateFPS() {
+            frameCount++;
+            const currentTime = performance.now();
+            const delta = currentTime - lastTime;
+
+            if (delta >= 1000) {
+                fps = Math.round((frameCount * 1000) / delta);
+                document.getElementById('fps-counter').textContent = `FPS: ${fps}`;
+                frameCount = 0;
+                lastTime = currentTime;
+            }
+        }
+
+        // ============================================
+        // ANIMATION LOOP
+        // ============================================
+        function animate() {
+            requestAnimationFrame(animate);
+
+            roomManager.update();
+
+            ControlRegistry.getAll().forEach(control => {
+                if (control && control.update) {
+                    control.update();
+                }
+                if (control && control.updateTooltipAndLabelPositions) {
+                    control.updateTooltipAndLabelPositions();
+                }
+            });
+
+            // Update Factory Buttons
+            if (window.emergencyButton && window.emergencyButton.update) {
+                window.emergencyButton.update();
+            }
+            if (window.adminButton && window.adminButton.update) {
+                window.adminButton.update();
+            }
+
+            if (ControlRegistry.getEditMode()) {
+                ControlRegistry.getAll().forEach(control => {
+                    if (control && control.isEditMode && control.updateTransformControls) {
+                        try {
+                            control.updateTransformControls();
+                        } catch (error) {
+                            console.warn('Error updating TransformControls:', error);
+                        }
+                    }
+                });
+            }
+
+            scene3D.render();
+            updateFPS();
+        }
+
+        animate();
+    </script>
+</body>
+
+</html>

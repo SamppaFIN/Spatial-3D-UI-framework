@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Button3D Demo - Spatial UI 3D</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #0a0a0f;
+            font-family: Arial, sans-serif;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100vh;
+            display: block;
+        }
+
+        .info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(20, 20, 40, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 350px;
+        }
+
+        .info h1 {
+            margin: 0 0 15px 0;
+            font-size: 1.5rem;
+            color: #4ecdc4;
+        }
+
+        .info ul {
+            margin: 10px 0;
+            padding-left: 20px;
+            line-height: 1.8;
+        }
+
+        .feature {
+            color: #4ecdc4;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+    <div class="info">
+        <h1>🚀 Enhanced Button3D</h1>
+        <p><strong>New Features:</strong></p>
+        <ul>
+            <li><span class="feature">Icons:</span> Emoji support</li>
+            <li><span class="feature">Loading:</span> Animated spinner</li>
+            <li><span class="feature">Ripple:</span> Click feedback</li>
+            <li><span class="feature">Pulse:</span> Attention animation</li>
+            <li><span class="feature">Gradients:</span> Multi-color</li>
+        </ul>
+        <p style="margin-top: 15px; color: rgba(255,255,255,0.7); font-size: 0.9rem;">
+            ✨ Click buttons to see effects<br>
+            🎯 Drag to rotate • Scroll to zoom
+        </p>
+    </div>
+
+    <script
+        type="importmap">{"imports": {"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+    <script type="module">
+        import { Scene3D } from './src/core/Scene3D.js';
+        import { Button3D } from './src/controls/Button3D.js';
+        import { ControlRegistry } from './src/core/ControlRegistry.js';
+        import * as THREE from 'three';
+
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+        const orbitControls = scene3D.getControls();
+        ControlRegistry.setOrbitControls(orbitControls);
+        scene.background = new THREE.Color(0x0a0a0f);
+
+        // Row 1: Icon buttons
+        const iconButton1 = new Button3D(scene, camera, [-6, 3, 0], {
+            label: 'Save',
+            icon: '💾',
+            iconPosition: 'left',
+            width: 2.5,
+            height: 0.9,
+            color: 0x4ecdc4,
+            renderer: renderer,
+            tooltip: { content: '**Save Button** 💾\\n\\nWith icon on left', position: 'top' },
+            onClick: () => console.log('Save clicked!')
+        });
+
+        const iconButton2 = new Button3D(scene, camera, [-2, 3, 0], {
+            label: 'Upload',
+            icon: '📤',
+            iconPosition: 'right',
+            width: 2.5,
+            height: 0.9,
+            color: 0x6bb6ff,
+            renderer: renderer,
+            tooltip: { content: '**Upload Button** 📤\\n\\nWith icon on right', position: 'top' }
+        });
+
+        const iconButton3 = new Button3D(scene, camera, [2, 3, 0], {
+            label: 'Delete',
+            icon: '🗑️',
+            iconPosition: 'left',
+            width: 2.5,
+            height: 0.9,
+            color: 0xff6b9d,
+            renderer: renderer,
+            tooltip: { content: '**Delete Button** 🗑️\\n\\nDanger action', position: 'top' }
+        });
+
+        // Row 2: Loading buttons
+        const loadingButton = new Button3D(scene, camera, [-6, 1, 0], {
+            label: 'Loading...',
+            loading: true,
+            width: 2.5,
+            height: 0.9,
+            color: 0xffaa00,
+            renderer: renderer,
+            tooltip: { content: '**Loading State** ⏳\\n\\nAnimated spinner', position: 'top' }
+        });
+
+        const toggleLoadingBtn = new Button3D(scene, camera, [-2, 1, 0], {
+            label: 'Toggle Loading',
+            width: 2.5,
+            height: 0.9,
+            color: 0x48bb78,
+            renderer: renderer,
+            onClick: (btn) => {
+                loadingButton.setLoading(!loadingButton.loading);
+            }
+        });
+
+        // Row 3: Pulse animation
+        const pulseButton = new Button3D(scene, camera, [-6, -1, 0], {
+            label: 'Pulse Me!',
+            icon: '💫',
+            pulseAnimation: true,
+            pulseSpeed: 0.005,
+            pulseIntensity: 0.15,
+            width: 2.5,
+            height: 0.9,
+            color: 0x6b4ecf,
+            renderer: renderer,
+            tooltip: { content: '**Pulse Animation** 💫\\n\\nAttention-grabbing', position: 'top' }
+        });
+
+        const rippleButton = new Button3D(scene, camera, [-2, -1, 0], {
+            label: 'Ripple Effect',
+            icon: '💧',
+            rippleEffect: true,
+            width: 2.5,
+            height: 0.9,
+            color: 0x4ecdc4,
+            renderer: renderer,
+            tooltip: { content: '**Ripple Effect** 💧\\n\\nClick to see ripple', position: 'top' }
+        });
+
+        // Row 4: Dynamic icon change
+        const icons = ['🚀', '⭐', '🎯', '🔥', '💎'];
+        let iconIndex = 0;
+        const dynamicButton = new Button3D(scene, camera, [-6, -3, 0], {
+            label: 'Change Icon',
+            icon: icons[0],
+            width: 2.5,
+            height: 0.9,
+            color: 0xff6b9d,
+            renderer: renderer,
+            onClick: (btn) => {
+                iconIndex = (iconIndex + 1) % icons.length;
+                btn.setIcon(icons[iconIndex]);
+            }
+        });
+
+        // Row 4: Mode switching
+        const modeButton = new Button3D(scene, camera, [-2, -3, 0], {
+            label: 'Box Mode',
+            icon: '📦',
+            mode: 0,
+            width: 2.5,
+            height: 0.9,
+            color: 0x48bb78,
+            renderer: renderer
+        });
+
+        const sphereButton = new Button3D(scene, camera, [2, -3, 0], {
+            label: 'Sphere',
+            icon: '🔮',
+            mode: 1,
+            width: 2.5,
+            height: 0.9,
+            color: 0x6bb6ff,
+            renderer: renderer
+        });
+
+        const sacredButton = new Button3D(scene, camera, [6, -3, 0], {
+            label: 'Sacred',
+            icon: '✨',
+            mode: 2,
+            width: 2.5,
+            height: 0.9,
+            color: 0x6b4ecf,
+            renderer: renderer
+        });
+
+        // Large feature button
+        const featureButton = new Button3D(scene, camera, [4, 1, 0], {
+            label: 'All Features!',
+            icon: '🎨',
+            iconPosition: 'left',
+            pulseAnimation: true,
+            rippleEffect: true,
+            width: 4.0,
+            height: 1.2,
+            color: 0xff6b9d,
+            renderer: renderer,
+            tooltip: { content: '**Ultimate Button** 🎨\\n\\nAll features combined!', position: 'top' },
+            onClick: (btn) => {
+                console.log('Feature button clicked!');
+                // Toggle pulse
+                btn.pulseAnimation = !btn.pulseAnimation;
+            }
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            ControlRegistry.getAll().forEach(control => {
+                if (control && control.update) control.update();
+                if (control && control.updateTooltipAndLabelPositions) {
+                    control.updateTooltipAndLabelPositions();
+                }
+            });
+            scene3D.render();
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        });
+    </script>
+</body>
+
+</html>

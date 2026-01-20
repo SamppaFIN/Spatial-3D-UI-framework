@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toggle3D Component - Spatial UI 3D</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+
+    <style>
+        /* Compact Demo Layout - Same as Button3D */
+        .demo-section {
+            background: linear-gradient(135deg, rgba(10, 10, 15, 0.95), rgba(20, 20, 30, 0.95));
+            border: 1px solid rgba(78, 205, 196, 0.3);
+            border-radius: 16px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        .demo-canvas-container {
+            position: relative;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(78, 205, 196, 0.2);
+        }
+
+        #component-canvas {
+            width: 100%;
+            height: 400px;
+            display: block;
+        }
+
+        /* 2D Text Overlay */
+        .component-label-2d {
+            position: absolute;
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+            pointer-events: none;
+            user-select: none;
+            white-space: nowrap;
+            transform: translate(-50%, -50%);
+            left: 50%;
+            top: 20%;
+        }
+
+        .demo-controls {
+            background: rgba(20, 20, 40, 0.8);
+            border: 1px solid rgba(78, 205, 196, 0.4);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .demo-controls h3 {
+            margin: 0 0 1.5rem 0;
+            color: var(--cosmic-cyan);
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .control-row {
+            margin-bottom: 1.25rem;
+        }
+
+        .control-row label {
+            display: block;
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .control-row label span {
+            color: var(--cosmic-cyan);
+            float: right;
+        }
+
+        .control-row input[type="text"],
+        .control-row select {
+            width: 100%;
+            padding: 0.6rem;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(78, 205, 196, 0.3);
+            border-radius: 6px;
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        .control-row input[type="range"] {
+            width: 100%;
+            appearance: none;
+            -webkit-appearance: none;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .control-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: var(--cosmic-cyan);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+
+        .control-btn {
+            padding: 0.6rem;
+            background: linear-gradient(135deg, rgba(78, 205, 196, 0.2), rgba(107, 182, 255, 0.2));
+            border: 1px solid rgba(78, 205, 196, 0.4);
+            border-radius: 6px;
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            background: linear-gradient(135deg, rgba(78, 205, 196, 0.4), rgba(107, 182, 255, 0.4));
+            transform: translateY(-1px);
+        }
+
+        .control-btn.active {
+            background: linear-gradient(135deg, var(--cosmic-cyan), #6bb6ff);
+            box-shadow: 0 0 12px rgba(78, 205, 196, 0.5);
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0;
+        }
+
+        .checkbox-row input {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--cosmic-cyan);
+        }
+
+        .divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 1rem 0;
+        }
+
+        @media (max-width: 1024px) {
+            .demo-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="../index.html" class="navbar-logo">Spatial UI 3D</a>
+            <ul class="navbar-menu">
+                <li><a href="../index.html" class="navbar-link">Home</a></li>
+                <li><a href="index.html" class="navbar-link">Components</a></li>
+                <li><a href="../docs/getting-started.html" class="navbar-link">Docs</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container" style="padding-top: 80px;">
+        <div class="breadcrumb">
+            <a href="../index.html">Home</a> / <a href="index.html">Components</a> / Toggle3D
+        </div>
+
+        <header class="component-header">
+            <h1 class="component-title gradient-text">Toggle3D</h1>
+            <p class="component-subtitle">
+                Interactive 3D toggle switch with smooth animations and multi-state support
+            </p>
+        </header>
+
+        <!-- Compact Live Demo -->
+        <section class="demo-section">
+            <h2 style="margin: 0 0 1.5rem 0; color: var(--cosmic-cyan); font-size: 1.8rem;">Live Demo</h2>
+
+            <div class="demo-grid">
+                <div class="demo-canvas-container">
+                    <canvas id="component-canvas"></canvas>
+                    <div class="component-label-2d" id="status-label">Status: OFF</div>
+                </div>
+
+                <div class="demo-controls">
+                    <h3>⚙️ Controls</h3>
+
+                    <div class="control-row">
+                        <label>Label</label>
+                        <input type="text" id="label-input" value="Settings" placeholder="Toggle label">
+                    </div>
+
+                    <div class="control-row">
+                        <label>Track Shape</label>
+                        <div class="button-group" style="grid-template-columns: repeat(2, 1fr);">
+                            <button class="control-btn active" data-shape="pill">Pill</button>
+                            <button class="control-btn" data-shape="box">Box</button>
+                            <button class="control-btn" data-shape="circle">Circle</button>
+                            <button class="control-btn" data-shape="square">Square</button>
+                        </div>
+                    </div>
+
+                    <div class="control-row">
+                        <label>Handle Mode</label>
+                        <div class="button-group" style="grid-template-columns: repeat(3, 1fr);">
+                            <button class="control-btn active" data-mode="1">Sphere</button>
+                            <button class="control-btn" data-mode="0">Box</button>
+                            <button class="control-btn" data-mode="2">Sacred</button>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="control-row">
+                        <label>Animation Style</label>
+                        <select id="animation-select">
+                            <option value="slide">Slide</option>
+                            <option value="bounce">Bounce</option>
+                            <option value="fade">Fade</option>
+                        </select>
+                    </div>
+
+                    <div class="control-row">
+                        <label>Active Color</label>
+                        <div class="button-group">
+                            <button class="control-btn active" data-color="0x3366ff"
+                                style="background: linear-gradient(135deg, #3366ff, #5a9fee);">Blue</button>
+                            <button class="control-btn" data-color="0x4ecdc4"
+                                style="background: linear-gradient(135deg, #4ecdc4, #3ab5ad);">Cyan</button>
+                            <button class="control-btn" data-color="0x48bb78"
+                                style="background: linear-gradient(135deg, #48bb78, #3aa967);">Green</button>
+                            <button class="control-btn" data-color="0xff6b9d"
+                                style="background: linear-gradient(135deg, #ff6b9d, #ee5a8c);">Pink</button>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="control-row">
+                        <label>Size Multiplier <span id="size-value">1.0</span></label>
+                        <input type="range" id="size-slider" min="0.5" max="2.0" step="0.1" value="1.0">
+                    </div>
+
+                    <div class="control-row">
+                        <button class="control-btn" id="toggle-btn" style="width: 100%;">Click to Toggle</button>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- Code Example -->
+        <section>
+            <h2 class="section-title">Code Example</h2>
+            <div class="code-block">
+                <pre><code>import { Toggle3D } from './src/controls/Toggle3D.js';
+
+const toggle = new Toggle3D(scene, camera, [0, 0, 0], {
+    label: 'Notifications',
+    onColor: 0x3366ff,
+    offColor: 0x666666,
+    isOn: true,
+    trackShape: 'pill',
+    animationPreset: 'bounce',
+    width: 2.0,
+    renderer: renderer,
+    onClick: () => console.log('Toggled!')
+});
+
+function animate() {
+    requestAnimationFrame(animate);
+    toggle.update();
+    scene3D.render();
+}</code></pre>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2024 Spatial UI 3D. Built with Three.js and ❤️</p>
+    </footer>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { Toggle3D } from '../../src/controls/Toggle3D.js';
+        import { ControlRegistry } from '../../src/core/ControlRegistry.js';
+        import * as THREE from 'three';
+
+        // 1. Scene Setup
+        const canvas = document.getElementById('component-canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+        const orbitControls = scene3D.getControls();
+        ControlRegistry.setOrbitControls(orbitControls);
+
+        scene.background = new THREE.Color(0x0a0a0f);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+        dirLight.position.set(5, 5, 5);
+        scene.add(dirLight);
+
+        // Adjust Canvas Size
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Camera Positioning
+        camera.position.set(0, 0, 6);
+        camera.lookAt(0, 0, 0);
+
+        // 2. Default Configuration
+        let config = {
+            label: 'Settings',
+            width: 2.0,
+            height: 0.8,
+            depth: 0.2,
+            mode: 1, // Sphere handle
+            trackShape: 'pill',
+            animationPreset: 'slide',
+            isOn: false,
+            onColor: 0x3366ff,
+            offColor: 0x666666,
+            scale: 1.0
+        };
+
+        let toggle = null;
+
+        // 3. Create Toggle
+        function createToggle() {
+            if (toggle) toggle.dispose();
+
+            // Apply scaling to base dimensions
+            const s = config.scale;
+
+            toggle = new Toggle3D(scene, camera, [0, 0, 0], {
+                label: config.label,
+                width: config.width * s,
+                height: config.height * s,
+                depth: config.depth * s,
+                mode: config.mode,
+                trackShape: config.trackShape,
+                animationPreset: config.animationPreset,
+                isOn: config.isOn,
+                onColor: config.onColor,
+                offColor: config.offColor,
+                renderer: renderer,
+                onClick: () => {
+                    updateStatusLabel();
+                }
+            });
+            updateStatusLabel();
+        }
+
+        // 4. Update UI helpers
+        function updateStatusLabel() {
+            const label = document.getElementById('status-label');
+            if (toggle && toggle.isOn) {
+                label.textContent = "Status: ON";
+                label.style.color = "#33ff33";
+            } else {
+                label.textContent = "Status: OFF";
+                label.style.color = "#ff3333";
+            }
+        }
+
+        // Initialize
+        createToggle();
+
+        // 5. Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            if (toggle) toggle.update();
+            scene3D.render();
+        }
+        animate();
+
+
+        // 6. UI Controls Event Listeners
+
+        // Label
+        document.getElementById('label-input').addEventListener('input', (e) => {
+            config.label = e.target.value;
+            if (toggle) toggle.setLabel(config.label);
+        });
+
+        // Track Shape Buttons
+        document.querySelectorAll('[data-shape]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('[data-shape]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                config.trackShape = e.target.dataset.shape;
+                createToggle();
+            });
+        });
+
+        // Handle Mode Buttons
+        document.querySelectorAll('[data-mode]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('[data-mode]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                config.mode = parseInt(e.target.dataset.mode);
+                createToggle();
+            });
+        });
+
+        // Animation Select
+        document.getElementById('animation-select').addEventListener('change', (e) => {
+            config.animationPreset = e.target.value;
+            createToggle();
+        });
+
+        // Color Buttons
+        document.querySelectorAll('[data-color]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('[data-color]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                config.onColor = parseInt(e.target.dataset.color);
+                createToggle();
+            });
+        });
+
+        // Size Slider
+        document.getElementById('size-slider').addEventListener('input', (e) => {
+            config.scale = parseFloat(e.target.value);
+            document.getElementById('size-value').textContent = config.scale.toFixed(1);
+            createToggle();
+        });
+
+        // Manual Toggle Button
+        document.getElementById('toggle-btn').addEventListener('click', () => {
+            if (toggle) {
+                toggle.toggle();
+                updateStatusLabel();
+            }
+        });
+
+    </script>
+</body>
+
+</html>

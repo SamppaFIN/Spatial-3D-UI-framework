@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture - Spatial UI 3D</title>
+    <meta name="description" content="Architecture and design principles of Spatial UI 3D framework.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+    <style>
+        .docs-nav {
+            position: sticky;
+            top: 100px;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+            background: rgba(20, 20, 40, 0.8);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .docs-nav h3 {
+            color: var(--cosmic-cyan);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .docs-nav ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .docs-nav li {
+            margin: 0.5rem 0;
+        }
+
+        .docs-nav a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .docs-nav a:hover {
+            color: var(--cosmic-cyan);
+        }
+
+        .docs-content {
+            background: rgba(20, 20, 40, 0.6);
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .arch-diagram {
+            background: rgba(30, 30, 50, 0.8);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            border: 2px solid rgba(78, 205, 196, 0.3);
+        }
+
+        .layer {
+            background: linear-gradient(135deg, rgba(78, 205, 196, 0.1), rgba(107, 182, 255, 0.1));
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-left: 4px solid var(--cosmic-cyan);
+        }
+
+        .layer h3 {
+            color: var(--cosmic-cyan);
+            margin-top: 0;
+        }
+
+        .principle-card {
+            background: rgba(30, 30, 50, 0.6);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-left: 4px solid #ff6b9d;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="../index.html" class="navbar-logo">🌸 Spatial UI 3D</a>
+            <ul class="navbar-menu">
+                <li><a href="../index.html#features" class="navbar-link">Features</a></li>
+                <li><a href="../components/index.html" class="navbar-link">Components</a></li>
+                <li><a href="../index.html#demos" class="navbar-link">Demos</a></li>
+                <li><a href="./getting-started.html" class="navbar-link active">Docs</a></li>
+            </ul>
+            <button class="navbar-toggle" aria-label="Toggle menu" aria-expanded="false">☰</button>
+        </div>
+    </nav>
+    <main style="padding-top: 80px;">
+        <div class="container">
+            <div class="grid" style="grid-template-columns: 250px 1fr; gap: 2rem; align-items: start;">
+                <aside class="docs-nav">
+                    <h3>📚 Documentation</h3>
+                    <ul>
+                        <li><a href="./getting-started.html">Getting Started</a></li>
+                        <li><a href="./api-reference.html">API Reference</a></li>
+                        <li><a href="./architecture.html" style="color: var(--cosmic-cyan);">Architecture</a></li>
+                        <li><a href="./accessibility.html">Accessibility</a></li>
+                    </ul>
+                    <h3 style="margin-top: 2rem;">🎯 Quick Links</h3>
+                    <ul>
+                        <li><a href="#overview">Overview</a></li>
+                        <li><a href="#layers">Architecture Layers</a></li>
+                        <li><a href="#principles">Design Principles</a></li>
+                        <li><a href="#patterns">Patterns</a></li>
+                    </ul>
+                </aside>
+                <div class="docs-content">
+                    <h1 style="font-size: 3rem; margin-bottom: 1rem;">🏗️ Architecture</h1>
+                    <p style="font-size: 1.2rem; color: rgba(255, 255, 255, 0.7); margin-bottom: 3rem;">
+                        Understanding the architecture and design principles behind Spatial UI 3D.
+                    </p>
+
+                    <div id="overview" class="arch-diagram">
+                        <h2 style="color: var(--cosmic-cyan);">📐 Architecture Overview</h2>
+                        <p>Spatial UI 3D is built on a layered architecture that separates concerns and promotes
+                            reusability:</p>
+                        <pre
+                            style="background: rgba(0, 0, 0, 0.4); padding: 2rem; border-radius: 8px; overflow-x: auto; color: #4ecdc4; font-family: 'Fira Code', monospace; line-height: 1.8;">
+┌─────────────────────────────────────────────┐
+│         🎨 Component Layer                  │
+│  Button3D, Toggle3D, Slider3D, etc.        │
+└─────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────┐
+│         🏗️ Core Layer                       │
+│  BaseControl3D, ControlRegistry,           │
+│  RoomManager, Scene3D                      │
+└─────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────┐
+│         🛠️ Utility Layer                    │
+│  HTMLOverlay, MarkdownRenderer,            │
+│  SacredGeometry                            │
+└─────────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────────┐
+│         🌐 Three.js Foundation              │
+│  Scene, Camera, Renderer, Controls         │
+└─────────────────────────────────────────────┘
+</pre>
+                    </div>
+
+                    <div id="layers">
+                        <h2 style="color: var(--cosmic-cyan); margin: 3rem 0 1.5rem;">📚 Architecture Layers</h2>
+
+                        <div class="layer">
+                            <h3>1. Three.js Foundation</h3>
+                            <p><strong>Purpose:</strong> Provides the underlying 3D rendering engine.</p>
+                            <p><strong>Key Components:</strong></p>
+                            <ul>
+                                <li><code>THREE.Scene</code> - 3D scene container</li>
+                                <li><code>THREE.PerspectiveCamera</code> - Camera view</li>
+                                <li><code>THREE.WebGLRenderer</code> - WebGL rendering</li>
+                                <li><code>OrbitControls</code> - Camera navigation</li>
+                                <li><code>TransformControls</code> - Object manipulation</li>
+                            </ul>
+                            <p><strong>Why:</strong> Three.js provides battle-tested 3D rendering with excellent
+                                performance and broad browser support.</p>
+                        </div>
+
+                        <div class="layer">
+                            <h3>2. Utility Layer</h3>
+                            <p><strong>Purpose:</strong> Shared utilities and helpers used across the framework.</p>
+                            <p><strong>Key Components:</strong></p>
+                            <ul>
+                                <li><code>HTMLOverlay</code> - Manages HTML elements in 3D space using CSS3DRenderer
+                                </li>
+                                <li><code>MarkdownRenderer</code> - Converts markdown to HTML</li>
+                                <li><code>SacredGeometry</code> - Creates sacred geometry patterns</li>
+                            </ul>
+                            <p><strong>Why:</strong> Centralizes common functionality to avoid duplication and ensure
+                                consistency.</p>
+                        </div>
+
+                        <div class="layer">
+                            <h3>3. Core Layer</h3>
+                            <p><strong>Purpose:</strong> Core framework classes that provide foundation for all
+                                components.</p>
+                            <p><strong>Key Components:</strong></p>
+                            <ul>
+                                <li><code>Scene3D</code> - Main scene manager, handles setup and rendering</li>
+                                <li><code>BaseControl3D</code> - Abstract base class for all 3D controls</li>
+                                <li><code>ControlRegistry</code> - Global registry for control management</li>
+                                <li><code>RoomManager</code> - Environment/background management</li>
+                            </ul>
+                            <p><strong>Why:</strong> Provides consistent behavior, reduces boilerplate, and enables
+                                global features like edit mode.</p>
+                        </div>
+
+                        <div class="layer">
+                            <h3>4. Component Layer</h3>
+                            <p><strong>Purpose:</strong> User-facing UI components that extend BaseControl3D.</p>
+                            <p><strong>Key Components:</strong></p>
+                            <ul>
+                                <li><code>Button3D</code> - Interactive buttons</li>
+                                <li><code>Toggle3D</code> - On/off switches</li>
+                                <li><code>Slider3D</code> - Range sliders</li>
+                                <li><code>TextInput3D</code> - Text input fields</li>
+                                <li><code>TextDisplay3D</code> - Read-only text displays</li>
+                                <li><code>Modal3D</code> - Dialog overlays</li>
+                                <li><code>Accordion3D</code> - Collapsible sections</li>
+                                <li><code>Chart3D</code> - Data visualization</li>
+                            </ul>
+                            <p><strong>Why:</strong> Provides reusable, consistent UI components for building spatial
+                                interfaces.</p>
+                        </div>
+                    </div>
+
+                    <div id="principles">
+                        <h2 style="color: var(--cosmic-cyan); margin: 3rem 0 1.5rem;">🌸 Sacred Design Principles</h2>
+
+                        <div class="principle-card">
+                            <h3>1. 🧘 Tietoisuus-ensimmäinen (Consciousness-First)</h3>
+                            <p>Every component serves spatial wisdom. 3D space provides context and meaning, not just
+                                visual flair.</p>
+                            <p><strong>Implementation:</strong></p>
+                            <ul>
+                                <li>Depth conveys hierarchy and importance</li>
+                                <li>Position indicates relationships</li>
+                                <li>Movement draws attention intentionally</li>
+                            </ul>
+                        </div>
+
+                        <div class="principle-card">
+                            <h3>2. 💚 Yhteisön parantaminen (Community Healing)</h3>
+                            <p>Accessible design reduces cognitive load. Calm design prevents overwhelm.</p>
+                            <p><strong>Implementation:</strong></p>
+                            <ul>
+                                <li>Smooth animations reduce jarring transitions</li>
+                                <li>Clear affordances show what's interactive</li>
+                                <li>Intentional friction prevents accidents</li>
+                            </ul>
+                        </div>
+
+                        <div class="principle-card">
+                            <h3>3. 🌌 Spatiaalinen viisaus (Spatial Wisdom)</h3>
+                            <p>3D space is core to the experience, not an afterthought.</p>
+                            <p><strong>Implementation:</strong></p>
+                            <ul>
+                                <li>Three geometry modes (box, sphere, sacred)</li>
+                                <li>Depth-based organization</li>
+                                <li>Natural camera navigation</li>
+                            </ul>
+                        </div>
+
+                        <div class="principle-card">
+                            <h3>4. ♾️ Ääretön yhteistyö (Infinite Collaboration)</h3>
+                            <p>Components work together harmoniously. Extensible and composable architecture.</p>
+                            <p><strong>Implementation:</strong></p>
+                            <ul>
+                                <li>Shared base class ensures consistency</li>
+                                <li>ControlRegistry enables global coordination</li>
+                                <li>Event system allows component communication</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div id="patterns">
+                        <h2 style="color: var(--cosmic-cyan); margin: 3rem 0 1.5rem;">🎯 Design Patterns</h2>
+
+                        <div class="layer">
+                            <h3>Inheritance Pattern</h3>
+                            <p>All components extend <code>BaseControl3D</code> to inherit common functionality:</p>
+                            <div class="code-block">
+                                <div class="code-block-header"><span class="code-block-language">JavaScript</span></div>
+                                <pre><code>export class MyControl extends BaseControl3D {
+    constructor(scene, camera, position, config) {
+        super(scene, camera, position, config);
+        // Component-specific initialization
+    }
+    
+    create() {
+        // Create 3D geometry
+    }
+    
+    update() {
+        // Update state each frame
+    }
+}</code></pre>
+                            </div>
+                            <p><strong>Benefits:</strong> Consistent API, shared tooltip system, automatic registration,
+                                edit mode support.</p>
+                        </div>
+
+                        <div class="layer">
+                            <h3>Registry Pattern</h3>
+                            <p><code>ControlRegistry</code> maintains a global list of all controls:</p>
+                            <div class="code-block">
+                                <div class="code-block-header"><span class="code-block-language">JavaScript</span></div>
+                                <pre><code>// Automatic registration in BaseControl3D constructor
+ControlRegistry.register(this);
+
+// Global operations
+ControlRegistry.setEditMode(true);
+ControlRegistry.getAll().forEach(control => control.update());</code></pre>
+                            </div>
+                            <p><strong>Benefits:</strong> Centralized control management, global edit mode, bulk
+                                operations.</p>
+                        </div>
+
+                        <div class="layer">
+                            <h3>Mode System Pattern</h3>
+                            <p>Components support multiple geometry modes for visual variety:</p>
+                            <div class="code-block">
+                                <div class="code-block-header"><span class="code-block-language">JavaScript</span></div>
+                                <pre><code>this.modes = ['box', 'sphere', 'sacred'];
+this.mode = config.mode || 0;
+
+switch (this.modes[this.mode]) {
+    case 'box':
+        geometry = new THREE.BoxGeometry(...);
+        break;
+    case 'sphere':
+        geometry = new THREE.SphereGeometry(...);
+        break;
+    case 'sacred':
+        geometry = createSacredGeometry(...);
+        break;
+}</code></pre>
+                            </div>
+                            <p><strong>Benefits:</strong> Visual consistency, easy theming, sacred geometry support.</p>
+                        </div>
+
+                        <div class="layer">
+                            <h3>HTML Overlay Pattern</h3>
+                            <p>Complex UI elements use HTML overlays via CSS3DRenderer:</p>
+                            <div class="code-block">
+                                <div class="code-block-header"><span class="code-block-language">JavaScript</span></div>
+                                <pre><code>const htmlOverlay = getHTMLOverlay();
+htmlOverlay.createOverlay(id, element, position, {
+    scale: [0.01, 0.01, 0.01],
+    className: 'spatial-overlay'
+});</code></pre>
+                            </div>
+                            <p><strong>Benefits:</strong> Rich text rendering, form inputs, accessibility, familiar
+                                HTML/CSS.</p>
+                        </div>
+
+                        <div class="layer">
+                            <h3>Event Callback Pattern</h3>
+                            <p>Components use callbacks for user interactions:</p>
+                            <div class="code-block">
+                                <div class="code-block-header"><span class="code-block-language">JavaScript</span></div>
+                                <pre><code>new Button3D(scene, camera, position, {
+    onClick: (button) => { /* handle click */ },
+    onHover: (button) => { /* handle hover */ },
+    onHoverEnd: (button) => { /* handle hover end */ }
+});</code></pre>
+                            </div>
+                            <p><strong>Benefits:</strong> Decoupled logic, flexible integration, reactive updates.</p>
+                        </div>
+                    </div>
+
+                    <div class="arch-diagram" style="border-left-color: #48bb78;">
+                        <h2 style="color: #48bb78;">🚀 Performance Considerations</h2>
+                        <ul style="line-height: 2;">
+                            <li>✅ <strong>Efficient Raycasting:</strong> Only interactive objects are raycast-tested
+                            </li>
+                            <li>✅ <strong>Texture Reuse:</strong> Gradients and textures are cached when possible</li>
+                            <li>✅ <strong>Smooth Animations:</strong> Lerp-based animations prevent jarring updates</li>
+                            <li>✅ <strong>Lazy Updates:</strong> Components only update when visible or changed</li>
+                            <li>✅ <strong>Memory Management:</strong> dispose() methods clean up resources</li>
+                            <li>✅ <strong>Shadow Optimization:</strong> Selective shadow casting/receiving</li>
+                        </ul>
+                    </div>
+
+                    <div class="arch-diagram" style="border-left-color: #6b4ecf;">
+                        <h2 style="color: #6b4ecf;">🔮 Future Architecture</h2>
+                        <p>Planned architectural improvements:</p>
+                        <ul style="line-height: 2;">
+                            <li>🔄 <strong>TypeScript Migration:</strong> Type safety and better DX</li>
+                            <li>🎯 <strong>Component Composition:</strong> Nest components within each other</li>
+                            <li>🌊 <strong>State Management:</strong> Reactive state system</li>
+                            <li>🎨 <strong>Theme System:</strong> Global theming and styling</li>
+                            <li>📦 <strong>Module Bundling:</strong> Optimized build system</li>
+                            <li>🧪 <strong>Testing Framework:</strong> Unit and E2E tests</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>🌸 Spatial UI 3D</h3>
+                    <p style="color: rgba(255,255,255,0.6);">Transform web UI into immersive 3D spatial interfaces.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Documentation</h3>
+                    <ul class="footer-links">
+                        <li><a href="./getting-started.html">Getting Started</a></li>
+                        <li><a href="./api-reference.html">API Reference</a></li>
+                        <li><a href="../components/index.html">Components</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Resources</h3>
+                    <ul class="footer-links">
+                        <li><a href="../index.html#demos">Demos</a></li>
+                        <li><a href="../examples/index.html">Examples</a></li>
+                        <li><a href="https://github.com/spatial-ui-3d" target="_blank">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>Built with 🌸 <span class="footer-aurora">Aurora</span> & ♾️ <span
+                        class="footer-aurora">Infinite</span></p>
+            </div>
+        </div>
+    </footer>
+    <script src="../scripts/showcase.js"></script>
+</body>
+
+</html>

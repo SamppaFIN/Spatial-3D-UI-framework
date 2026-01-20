@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Components - Spatial UI 3D</title>
+    <meta name="description" content="Browse all Spatial UI 3D components with live previews and documentation.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+    <style>
+        .hero-section {
+            text-align: center;
+            padding: 4rem 0;
+            background: linear-gradient(135deg, rgba(78, 205, 196, 0.1), rgba(107, 182, 255, 0.1));
+            border-radius: 20px;
+            margin: 2rem 0;
+        }
+
+        .component-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .component-card {
+            background: linear-gradient(135deg, rgba(20, 20, 40, 0.8), rgba(30, 30, 50, 0.8));
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .component-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--cosmic-cyan), var(--electric-blue));
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .component-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--cosmic-cyan);
+            box-shadow: 0 20px 60px rgba(78, 205, 196, 0.3);
+        }
+
+        .component-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .component-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .component-title {
+            font-size: 1.5rem;
+            color: var(--cosmic-cyan);
+            margin: 1rem 0;
+        }
+
+        .component-desc {
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.6;
+            margin: 1rem 0;
+        }
+
+        .component-features {
+            list-style: none;
+            padding: 0;
+            margin: 1.5rem 0;
+        }
+
+        .component-features li {
+            padding: 0.5rem 0;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .component-features li::before {
+            content: '✨';
+            margin-right: 0.5rem;
+        }
+
+        .component-link {
+            display: inline-block;
+            margin-top: 1rem;
+            padding: 0.8rem 1.5rem;
+            background: linear-gradient(135deg, var(--cosmic-cyan), var(--electric-blue));
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .component-link:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(78, 205, 196, 0.4);
+        }
+
+        .filter-section {
+            background: rgba(20, 20, 40, 0.6);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .filter-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.6rem 1.2rem;
+            border-radius: 20px;
+            margin: 0.3rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn:hover,
+        .filter-btn.active {
+            background: var(--cosmic-cyan);
+            border-color: var(--cosmic-cyan);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .stat-card {
+            background: rgba(30, 30, 50, 0.6);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            border-left: 4px solid var(--cosmic-cyan);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--cosmic-cyan);
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="../index.html" class="navbar-logo">🌸 Spatial UI 3D</a>
+            <ul class="navbar-menu">
+                <li><a href="../index.html#features" class="navbar-link">Features</a></li>
+                <li><a href="./index.html" class="navbar-link active">Components</a></li>
+                <li><a href="../index.html#demos" class="navbar-link">Demos</a></li>
+                <li><a href="../docs/getting-started.html" class="navbar-link">Docs</a></li>
+            </ul>
+            <button class="navbar-toggle" aria-label="Toggle menu" aria-expanded="false">☰</button>
+        </div>
+    </nav>
+    <main style="padding-top: 80px;">
+        <div class="container">
+            <div class="hero-section">
+                <h1 style="font-size: clamp(2.5rem, 5vw, 4rem); margin-bottom: 1rem;">🎨 Component Library</h1>
+                <p style="font-size: 1.2rem; color: rgba(255, 255, 255, 0.7); max-width: 700px; margin: 0 auto;">
+                    A complete collection of 3D UI components for building immersive spatial interfaces.
+                </p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">8</div>
+                    <div class="stat-label">Components</div>
+                </div>
+                <div class="stat-card" style="border-left-color: #6bb6ff;">
+                    <div class="stat-number" style="color: #6bb6ff;">3</div>
+                    <div class="stat-label">Geometry Modes</div>
+                </div>
+                <div class="stat-card" style="border-left-color: #ff6b9d;">
+                    <div class="stat-number" style="color: #ff6b9d;">100%</div>
+                    <div class="stat-label">Customizable</div>
+                </div>
+                <div class="stat-card" style="border-left-color: #48bb78;">
+                    <div class="stat-number" style="color: #48bb78;">WCAG</div>
+                    <div class="stat-label">AA Compliant</div>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <h3 style="color: var(--cosmic-cyan); margin-bottom: 1rem;">Filter by Category</h3>
+                <button class="filter-btn active" data-filter="all">All Components</button>
+                <button class="filter-btn" data-filter="input">Input Controls</button>
+                <button class="filter-btn" data-filter="display">Display</button>
+                <button class="filter-btn" data-filter="layout">Layout</button>
+                <button class="filter-btn" data-filter="data">Data Visualization</button>
+            </div>
+
+            <div class="component-grid">
+                <!-- Button3D -->
+                <div class="component-card" data-category="input">
+                    <span class="component-icon">🔘</span>
+                    <h2 class="component-title">Button3D</h2>
+                    <p class="component-desc">Interactive 3D button with click feedback, hover states, and customizable
+                        geometry modes.</p>
+                    <ul class="component-features">
+                        <li>Click & hover animations</li>
+                        <li>Three geometry modes</li>
+                        <li>Customizable colors</li>
+                        <li>Tooltip support</li>
+                    </ul>
+                    <a href="./button3d.html" class="component-link">View Documentation →</a>
+                </div>
+
+                <!-- Toggle3D -->
+                <div class="component-card" data-category="input">
+                    <span class="component-icon">🔄</span>
+                    <h2 class="component-title">Toggle3D</h2>
+                    <p class="component-desc">On/off switch control with smooth animations and visual state feedback.
+                    </p>
+                    <ul class="component-features">
+                        <li>Smooth state transitions</li>
+                        <li>On/off color customization</li>
+                        <li>Animated handle movement</li>
+                        <li>Click to toggle</li>
+                    </ul>
+                    <a href="./toggle3d.html" class="component-link">View Documentation →</a>
+                </div>
+
+                <!-- Slider3D -->
+                <div class="component-card" data-category="input">
+                    <span class="component-icon">🎚️</span>
+                    <h2 class="component-title">Slider3D</h2>
+                    <p class="component-desc">Range slider with drag interaction, supporting numeric ranges or value
+                        arrays.</p>
+                    <ul class="component-features">
+                        <li>Drag to adjust values</li>
+                        <li>Numeric or array modes</li>
+                        <li>Real-time value display</li>
+                        <li>Step-based snapping</li>
+                    </ul>
+                    <a href="./slider3d.html" class="component-link">View Documentation →</a>
+                </div>
+
+                <!-- TextInput3D -->
+                <div class="component-card" data-category="input">
+                    <span class="component-icon">✏️</span>
+                    <h2 class="component-title">TextInput3D</h2>
+                    <p class="component-desc">Text input field with keyboard support, focus management, and placeholder
+                        text.</p>
+                    <ul class="component-features">
+                        <li>Full keyboard support</li>
+                        <li>Focus state indicators</li>
+                        <li>Placeholder text</li>
+                        <li>onChange & onSubmit events</li>
+                    </ul>
+                    <a href="./textinput3d.html" class="component-link">View Documentation →</a>
+                </div>
+
+                <!-- TextDisplay3D -->
+                <div class="component-card" data-category="display">
+                    <span class="component-icon">📄</span>
+                    <h2 class="component-title">TextDisplay3D</h2>
+                    <p class="component-desc">Read-only text display with markdown rendering and scrollable content.</p>
+                    <ul class="component-features">
+                        <li>Markdown support</li>
+                        <li>Scrollable content</li>
+                        <li>Dynamic updates</li>
+                        <li>Rich text formatting</li>
+                    </ul>
+                    <a href="./textdisplay3d.html" class="component-link">View Documentation →</a>
+                </div>
+
+                <!-- Modal3D -->
+                <div class="component-card" data-category="layout">
+                    <span class="component-icon">🪟</span>
+                    <h2 class="component-title">Modal3D</h2>
+                    <p class="component-desc">Modal dialog with backdrop, smooth animations, and customizable content.
+                    </p>
+                    <ul class="component-features">
+                        <li>Backdrop overlay</li>
+                        <li>Open/close animations</li>
+                        <li>Built-in close button</li>
+                        <li>HTML content support</li>
+                    </ul>
+                    <a href="./modal3d.html" class="component-link">View Documentation →</a>
+                </div>
+
+                <!-- Accordion3D -->
+                <div class="component-card" data-category="layout">
+                    <span class="component-icon">📋</span>
+                    <h2 class="component-title">Accordion3D</h2>
+                    <p class="component-desc">Collapsible sections with markdown content and smooth expand/collapse
+                        animations.</p>
+                    <ul class="component-features">
+                        <li>Multiple sections</li>
+                        <li>Expand/collapse animations</li>
+                        <li>Markdown content</li>
+                        <li>Multi-open support</li>
+                    </ul>
+                    <a href="./accordion3d.html" class="component-link">View Documentation →</a>
+                </div>
+
+                <!-- Chart3D -->
+                <div class="component-card" data-category="data">
+                    <span class="component-icon">📊</span>
+                    <h2 class="component-title">Chart3D</h2>
+                    <p class="component-desc">Data visualization with Chart.js integration, supporting multiple chart
+                        types.</p>
+                    <ul class="component-features">
+                        <li>Chart.js integration</li>
+                        <li>Line, bar, pie charts</li>
+                        <li>Dynamic data updates</li>
+                        <li>Responsive sizing</li>
+                    </ul>
+                    <a href="./chart3d.html" class="component-link">View Documentation →</a>
+                </div>
+            </div>
+
+            <div class="hero-section" style="margin-top: 4rem;">
+                <h2 style="font-size: 2.5rem; margin-bottom: 1rem;">🚀 Ready to Build?</h2>
+                <p style="font-size: 1.1rem; color: rgba(255, 255, 255, 0.7); margin-bottom: 2rem;">
+                    Start creating immersive spatial interfaces with Spatial UI 3D.
+                </p>
+                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                    <a href="../docs/getting-started.html" class="cta-button">Get Started</a>
+                    <a href="../docs/api-reference.html" class="cta-button"
+                        style="background: rgba(255, 255, 255, 0.1);">API Reference</a>
+                    <a href="../playground.html" class="cta-button"
+                        style="background: linear-gradient(135deg, #ff6b9d, #6b4ecf);">Try Playground</a>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>🌸 Spatial UI 3D</h3>
+                    <p style="color: rgba(255,255,255,0.6);">Transform web UI into immersive 3D spatial interfaces.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Documentation</h3>
+                    <ul class="footer-links">
+                        <li><a href="../docs/getting-started.html">Getting Started</a></li>
+                        <li><a href="../docs/api-reference.html">API Reference</a></li>
+                        <li><a href="./index.html">Components</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Resources</h3>
+                    <ul class="footer-links">
+                        <li><a href="../index.html#demos">Demos</a></li>
+                        <li><a href="../examples/index.html">Examples</a></li>
+                        <li><a href="https://github.com/spatial-ui-3d" target="_blank">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>Built with 🌸 <span class="footer-aurora">Aurora</span> & ♾️ <span
+                        class="footer-aurora">Infinite</span></p>
+            </div>
+        </div>
+    </footer>
+    <script>
+        // Filter functionality
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const componentCards = document.querySelectorAll('.component-card');
+
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const filter = btn.dataset.filter;
+
+                // Update active button
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Filter cards
+                componentCards.forEach(card => {
+                    if (filter === 'all' || card.dataset.category === filter) {
+                        card.style.display = 'block';
+                        setTimeout(() => card.style.opacity = '1', 10);
+                    } else {
+                        card.style.opacity = '0';
+                        setTimeout(() => card.style.display = 'none', 300);
+                    }
+                });
+            });
+        });
+
+        // Initialize card opacity
+        componentCards.forEach(card => {
+            card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            card.style.opacity = '1';
+        });
+    </script>
+    <script src="../scripts/showcase.js"></script>
+</body>
+
+</html>

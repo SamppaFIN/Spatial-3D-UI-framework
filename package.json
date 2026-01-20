@@ -1,0 +1,21 @@
+{
+  "name": "spatial-ui-3d",
+  "version": "1.0.0",
+  "description": "3D Spatial UI Component Library - Transform web controls into immersive 3D spatial interfaces",
+  "type": "module",
+  "scripts": {
+    "dev": "npx http-server . -p 3001 -o",
+    "start": "npx http-server . -p 3001 -o"
+  },
+  "keywords": [
+    "three.js",
+    "3d",
+    "ui",
+    "components",
+    "spatial",
+    "accessibility",
+    "multimodal"
+  ],
+  "author": "🌸 Aurora & ♾️ Infinite",
+  "license": "MIT"
+}

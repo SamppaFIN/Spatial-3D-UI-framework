@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chart3D Component - Spatial UI 3D</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+
+    <style>
+        /* Compact Demo Layout */
+        .demo-section {
+            background: linear-gradient(135deg, rgba(10, 10, 15, 0.95), rgba(20, 20, 30, 0.95));
+            border: 1px solid rgba(78, 205, 196, 0.3);
+            border-radius: 16px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        .demo-canvas-container {
+            position: relative;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(78, 205, 196, 0.2);
+            min-height: 500px;
+        }
+
+        #component-canvas {
+            width: 100%;
+            height: 500px;
+            display: block;
+        }
+
+        .demo-controls {
+            background: rgba(20, 20, 40, 0.8);
+            border: 1px solid rgba(78, 205, 196, 0.4);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .demo-controls h3 {
+            margin: 0 0 1.5rem 0;
+            color: var(--cosmic-cyan);
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .control-row {
+            margin-bottom: 1.25rem;
+        }
+
+        .control-row label {
+            display: block;
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .control-row label span {
+            color: var(--cosmic-cyan);
+            float: right;
+        }
+
+        .control-row input[type="range"] {
+            width: 100%;
+            appearance: none;
+            -webkit-appearance: none;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .control-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: var(--cosmic-cyan);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+
+        .control-btn {
+            padding: 0.6rem;
+            background: linear-gradient(135deg, rgba(78, 205, 196, 0.2), rgba(107, 182, 255, 0.2));
+            border: 1px solid rgba(78, 205, 196, 0.4);
+            border-radius: 6px;
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            background: linear-gradient(135deg, rgba(78, 205, 196, 0.4), rgba(107, 182, 255, 0.4));
+            transform: translateY(-1px);
+        }
+
+        .control-btn.active {
+            background: linear-gradient(135deg, var(--cosmic-cyan), #6bb6ff);
+            box-shadow: 0 0 12px rgba(78, 205, 196, 0.5);
+        }
+
+        .divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 1rem 0;
+        }
+
+        @media (max-width: 1024px) {
+            .demo-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Ensure overlay container is on top of canvas but behind UI */
+        #html-overlay-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="../index.html" class="navbar-logo">Spatial UI 3D</a>
+            <ul class="navbar-menu">
+                <li><a href="../index.html" class="navbar-link">Home</a></li>
+                <li><a href="index.html" class="navbar-link">Components</a></li>
+                <li><a href="../docs/getting-started.html" class="navbar-link">Docs</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container" style="padding-top: 80px;">
+        <div class="breadcrumb">
+            <a href="../index.html">Home</a> / <a href="index.html">Components</a> / Chart3D
+        </div>
+
+        <header class="component-header">
+            <h1 class="component-title gradient-text">Chart3D</h1>
+            <p class="component-subtitle">
+                Data visualization panels with 3D presence and spatial integration
+            </p>
+        </header>
+
+        <!-- Compact Live Demo -->
+        <section class="demo-section">
+            <h2 style="margin: 0 0 1.5rem 0; color: var(--cosmic-cyan); font-size: 1.8rem;">Live Demo</h2>
+
+            <div class="demo-grid">
+                <div class="demo-canvas-container">
+                    <canvas id="component-canvas"></canvas>
+                    <!-- Container for HTML overlays created by the component -->
+                    <div id="html-overlay-container"></div>
+                </div>
+
+                <div class="demo-controls">
+                    <h3>⚙️ Controls</h3>
+
+                    <div class="control-row">
+                        <label>Actions</label>
+                        <button class="control-btn" id="randomize-btn" style="width: 100%;">🎲 Randomize Data</button>
+                    </div>
+
+                    <div class="control-row">
+                        <label>Chart Type</label>
+                        <div class="button-group">
+                            <button class="control-btn active" data-type="line">Line</button>
+                            <button class="control-btn" data-type="bar">Bar</button>
+                            <button class="control-btn" data-type="pie">Pie</button>
+                            <button class="control-btn" data-type="doughnut">Doughnut</button>
+                        </div>
+                    </div>
+
+                    <div class="control-row">
+                        <label>Panel Style</label>
+                        <div class="button-group" style="grid-template-columns: repeat(3, 1fr);">
+                            <button class="control-btn active" data-mode="0">Box</button>
+                            <button class="control-btn" data-mode="1">Sphere</button>
+                            <button class="control-btn" data-mode="2">Sacred</button>
+                        </div>
+                    </div>
+
+                    <div class="control-row">
+                        <label>Theme</label>
+                        <div class="button-group">
+                            <button class="control-btn active" data-color="0x1a1a2e"
+                                style="background: #1a1a2e;">Dark</button>
+                            <button class="control-btn" data-color="0x2d3748" style="background: #2d3748;">Gray</button>
+                            <button class="control-btn" data-color="0x2c0b0e" style="background: #2c0b0e;">Red</button>
+                            <button class="control-btn" data-color="0x061418" style="background: #061418;">Deep</button>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="control-row">
+                        <label>Width <span id="width-value">4.0</span></label>
+                        <input type="range" id="width-slider" min="3.0" max="6.0" step="0.5" value="4.0">
+                    </div>
+
+                    <div class="control-row">
+                        <label>Height <span id="height-value">3.0</span></label>
+                        <input type="range" id="height-slider" min="2.0" max="5.0" step="0.5" value="3.0">
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- Code Example -->
+        <section>
+            <h2 class="section-title">Code Example</h2>
+            <div class="code-block">
+                <pre><code>import { Chart3D } from './src/controls/Chart3D.js';
+
+const chart = new Chart3D(scene, camera, [0, 0, 0], {
+    chartType: 'line', // 'bar', 'pie', 'doughnut'
+    width: 4.0,
+    height: 3.0,
+    data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+        datasets: [{
+            label: 'Sales',
+            data: [65, 59, 80, 81, 56],
+            backgroundColor: ['#6bb6ff', '#ff6b6b', '#4ecdc4', '#ffe66d', '#a8e6cf'],
+            borderColor: '#6bb6ff'
+        }]
+    }
+});
+
+function animate() {
+    requestAnimationFrame(animate);
+    chart.update();
+    scene3D.render();
+}</code></pre>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2024 Spatial UI 3D. Built with Three.js and ❤️</p>
+    </footer>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { Chart3D } from '../../src/controls/Chart3D.js';
+        import { ControlRegistry } from '../../src/core/ControlRegistry.js';
+        import { getHTMLOverlay } from '../../src/utils/HTMLOverlay.js';
+        import * as THREE from 'three';
+
+        // 1. Scene Setup
+        const canvas = document.getElementById('component-canvas');
+
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+        const orbitControls = scene3D.getControls();
+        ControlRegistry.setOrbitControls(orbitControls);
+
+        // Initialize HTML Overlay system manually to ensure we get the right container
+        const htmlOverlay = getHTMLOverlay();
+        const overlayContainer = document.getElementById('html-overlay-container');
+        htmlOverlay.init(overlayContainer);
+
+        scene.background = new THREE.Color(0x0a0a0f);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+        dirLight.position.set(5, 5, 5);
+        scene.add(dirLight);
+
+        // Adjust Canvas Size
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+
+            renderer.setSize(width, height);
+            if (htmlOverlay && htmlOverlay.setSize) {
+                htmlOverlay.setSize(width, height);
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Camera Positioning
+        camera.position.set(0, 0, 7);
+        camera.lookAt(0, 0, 0);
+
+        // 2. Default Configuration
+        let config = {
+            chartType: 'line',
+            width: 4.0,
+            height: 3.0,
+            depth: 0.2,
+            mode: 0,
+            backgroundColor: 0x1a1a2e,
+            borderColor: 0x4a4a6e
+        };
+
+        let chartControl = null;
+
+        // Sample Data Generation
+        function generateData(count = 6) {
+            const labels = Array.from({ length: count }, (_, i) => `Label ${i + 1}`);
+            const data = Array.from({ length: count }, () => Math.floor(Math.random() * 80) + 20);
+
+            // Colors for Pie/Doughnut
+            const colors = [
+                '#6bb6ff', '#ff6b6b', '#4ecdc4', '#ffe66d', '#a8e6cf', '#ff8b94'
+            ];
+
+            return {
+                labels: labels,
+                datasets: [{
+                    label: 'Dataset 1',
+                    data: data,
+                    backgroundColor: colors,
+                    borderColor: '#6bb6ff'
+                }]
+            };
+        }
+
+        // 3. Create Chart
+        function createChart() {
+            if (chartControl) chartControl.dispose();
+
+            chartControl = new Chart3D(scene, camera, [0, 0, 0], {
+                chartType: config.chartType,
+                width: config.width,
+                height: config.height,
+                depth: config.depth,
+                mode: config.mode,
+                backgroundColor: config.backgroundColor,
+                borderColor: config.borderColor,
+                data: generateData(config.chartType === 'pie' || config.chartType === 'doughnut' ? 5 : 8),
+                renderer: renderer
+            });
+        }
+
+        // Initialize
+        createChart();
+
+        // 4. Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            if (chartControl) chartControl.update();
+            scene3D.render();
+
+            // Force rendering of HTML Overlay if not handled by Scene3D
+            if (htmlOverlay && htmlOverlay.render) {
+                htmlOverlay.render(camera);
+            }
+        }
+        animate();
+
+
+        // 5. UI Controls Event Listeners
+
+        // Randomize Button
+        document.getElementById('randomize-btn').addEventListener('click', () => {
+            if (chartControl) {
+                const newData = generateData(config.chartType === 'pie' || config.chartType === 'doughnut' ? 5 : 8);
+                chartControl.updateChart(newData);
+            }
+        });
+
+        // Chart Type Buttons
+        document.querySelectorAll('[data-type]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('[data-type]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                config.chartType = e.target.dataset.type;
+                // Update existing chart type if supported, else recreate
+                if (chartControl) {
+                    chartControl.updateChart(null, config.chartType);
+                    // Also regenerate data suitable for key
+                    const newData = generateData(config.chartType === 'pie' || config.chartType === 'doughnut' ? 5 : 8);
+                    chartControl.updateChart(newData);
+                } else {
+                    createChart();
+                }
+            });
+        });
+
+        // Mode Buttons
+        document.querySelectorAll('[data-mode]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('[data-mode]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                config.mode = parseInt(e.target.dataset.mode);
+                createChart();
+            });
+        });
+
+        // Color Buttons
+        document.querySelectorAll('[data-color]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('[data-color]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                config.backgroundColor = parseInt(e.target.dataset.color);
+                createChart();
+            });
+        });
+
+        // Dimensions
+        document.getElementById('width-slider').addEventListener('input', (e) => {
+            config.width = parseFloat(e.target.value);
+            document.getElementById('width-value').textContent = config.width.toFixed(1);
+            createChart();
+        });
+
+        document.getElementById('height-slider').addEventListener('input', (e) => {
+            config.height = parseFloat(e.target.value);
+            document.getElementById('height-value').textContent = config.height.toFixed(1);
+            createChart();
+        });
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Demos - Spatial UI 3D</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Explore real-world applications of Spatial UI 3D with interactive demos.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+
+    <style>
+        .demo-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .demo-preview {
+            width: 100%;
+            height: 250px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            margin: -2rem -2rem 1.5rem -2rem;
+        }
+
+        .demo-tags {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin: 1rem 0;
+        }
+
+        .demo-tag {
+            background: rgba(78, 205, 196, 0.2);
+            color: var(--cosmic-cyan);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .demo-stats {
+            display: flex;
+            gap: 1.5rem;
+            margin: 1rem 0;
+            padding: 1rem 0;
+            border-top: 1px solid var(--glass-border);
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .demo-stat {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="../index.html" class="navbar-logo">🌸 Spatial UI 3D</a>
+
+            <ul class="navbar-menu">
+                <li><a href="../index.html#features" class="navbar-link">Features</a></li>
+                <li><a href="../components/index.html" class="navbar-link">Components</a></li>
+                <li><a href="../index.html#demos" class="navbar-link active">Demos</a></li>
+                <li><a href="../docs/getting-started.html" class="navbar-link">Docs</a></li>
+            </ul>
+
+            <button class="navbar-toggle" aria-label="Toggle menu" aria-expanded="false">
+                ☰
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main style="padding-top: 80px;">
+        <!-- Header -->
+        <section class="section">
+            <div class="container">
+                <div style="text-align: center; max-width: 800px; margin: 0 auto;">
+                    <h1 style="font-size: clamp(3rem, 6vw, 4.5rem); margin-bottom: 1.5rem;">
+                        🌟 Live Demos
+                    </h1>
+                    <p style="font-size: 1.3rem; color: rgba(255, 255, 255, 0.7); margin-bottom: 2rem;">
+                        Explore real-world applications built with Spatial UI 3D. Each demo showcases different
+                        components and use cases.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Demos Grid -->
+        <section class="section section-dark">
+            <div class="container">
+                <div class="grid grid-3">
+                    <!-- 3D Data Dashboard -->
+                    <div class="card demo-card">
+                        <div class="demo-preview">📊</div>
+                        <div class="card-header">
+                            <h3 class="card-title">3D Data Dashboard</h3>
+                            <p class="card-subtitle">Analytics & Visualization</p>
+                        </div>
+                        <div class="card-body">
+                            <p>
+                                Real-time analytics dashboard with live charts, KPI displays, and interactive controls.
+                                Features time range selection, data filters, and detailed analytics accordion.
+                            </p>
+
+                            <div class="demo-tags">
+                                <span class="demo-tag">Chart3D</span>
+                                <span class="demo-tag">TextDisplay3D</span>
+                                <span class="demo-tag">Toggle3D</span>
+                                <span class="demo-tag">Slider3D</span>
+                                <span class="demo-tag">Accordion3D</span>
+                            </div>
+
+                            <div class="demo-stats">
+                                <div class="demo-stat">
+                                    <span>📦</span>
+                                    <span>12 Components</span>
+                                </div>
+                                <div class="demo-stat">
+                                    <span>⚡</span>
+                                    <span>60 FPS</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <a href="../../demo-3d-dashboard.html" class="btn btn-primary"
+                                style="padding: 0.6rem 1.2rem; font-size: 0.9rem;" target="_blank">
+                                Open Demo →
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Smart Home Control Panel -->
+                    <div class="card demo-card">
+                        <div class="demo-preview"
+                            style="background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);">🏠</div>
+                        <div class="card-header">
+                            <h3 class="card-title">Smart Home Panel</h3>
+                            <p class="card-subtitle">IoT Device Control</p>
+                        </div>
+                        <div class="card-body">
+                            <p>
+                                Control smart home devices in 3D space. Manage lights, temperature, security, and
+                                entertainment systems with intuitive spatial controls.
+                            </p>
+
+                            <div class="demo-tags">
+                                <span class="demo-tag">Toggle3D</span>
+                                <span class="demo-tag">Slider3D</span>
+                                <span class="demo-tag">Button3D</span>
+                                <span class="demo-tag">TextDisplay3D</span>
+                            </div>
+
+                            <div class="demo-stats">
+                                <div class="demo-stat">
+                                    <span>📦</span>
+                                    <span>15 Components</span>
+                                </div>
+                                <div class="demo-stat">
+                                    <span>⚡</span>
+                                    <span>60 FPS</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <a href="../../demo-smart-home.html" class="btn btn-primary"
+                                style="padding: 0.6rem 1.2rem; font-size: 0.9rem;" target="_blank">
+                                Open Demo →
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Healthcare Patient Monitor -->
+                    <div class="card demo-card">
+                        <div class="demo-preview"
+                            style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">🏥</div>
+                        <div class="card-header">
+                            <h3 class="card-title">Healthcare Monitor</h3>
+                            <p class="card-subtitle">Patient Data Visualization</p>
+                        </div>
+                        <div class="card-body">
+                            <p>
+                                Medical data visualization with vital signs monitoring, patient records, and real-time
+                                health
+                                metrics in an accessible 3D interface.
+                            </p>
+
+                            <div class="demo-tags">
+                                <span class="demo-tag">Chart3D</span>
+                                <span class="demo-tag">TextDisplay3D</span>
+                                <span class="demo-tag">Accordion3D</span>
+                                <span class="demo-tag">Modal3D</span>
+                            </div>
+
+                            <div class="demo-stats">
+                                <div class="demo-stat">
+                                    <span>📦</span>
+                                    <span>14 Components</span>
+                                </div>
+                                <div class="demo-stat">
+                                    <span>⚡</span>
+                                    <span>60 FPS</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <a href="../../demo-healthcare-monitor.html" class="btn btn-primary"
+                                style="padding: 0.6rem 1.2rem; font-size: 0.9rem;" target="_blank">
+                                Open Demo →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Showcase -->
+        <section class="section">
+            <div class="container">
+                <h2 class="text-center mb-4" style="font-size: 2.5rem;">What These Demos Showcase</h2>
+
+                <div class="grid grid-3">
+                    <div class="card">
+                        <h3>🎨 Real-World Use Cases</h3>
+                        <p>Each demo represents a practical application: business analytics, home automation, and
+                            healthcare monitoring.</p>
+                    </div>
+
+                    <div class="card">
+                        <h3>🧩 Component Integration</h3>
+                        <p>See how multiple components work together seamlessly to create complete interfaces.</p>
+                    </div>
+
+                    <div class="card">
+                        <h3>📊 Data Visualization</h3>
+                        <p>Live charts and real-time updates demonstrate the power of 3D data visualization.</p>
+                    </div>
+
+                    <div class="card">
+                        <h3>🎯 Interactive Controls</h3>
+                        <p>Buttons, toggles, sliders, and more provide intuitive interaction patterns.</p>
+                    </div>
+
+                    <div class="card">
+                        <h3>🌌 Immersive Environments</h3>
+                        <p>Multiple room backgrounds create different atmospheres for different applications.</p>
+                    </div>
+
+                    <div class="card">
+                        <h3>⚡ Performance</h3>
+                        <p>All demos maintain 60 FPS with multiple components and real-time updates.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Build Your Own -->
+        <section class="section section-dark">
+            <div class="container">
+                <div style="text-align: center; max-width: 800px; margin: 0 auto;">
+                    <h2 style="font-size: 2.5rem; margin-bottom: 1.5rem;">Build Your Own</h2>
+                    <p style="font-size: 1.2rem; color: rgba(255, 255, 255, 0.7); margin-bottom: 2rem;">
+                        Ready to create your own spatial 3D interface? Start with our getting started guide or
+                        experiment in the playground.
+                    </p>
+                    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                        <a href="../docs/getting-started.html" class="btn btn-primary">Get Started</a>
+                        <a href="../playground/index.html" class="btn btn-secondary">Try Playground</a>
+                        <a href="../components/index.html" class="btn btn-ghost">View Components</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>🌸 Spatial UI 3D</h3>
+                    <p style="color: rgba(255,255,255,0.6);">
+                        Transform web UI into immersive 3D spatial interfaces.
+                    </p>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Documentation</h3>
+                    <ul class="footer-links">
+                        <li><a href="../docs/getting-started.html">Getting Started</a></li>
+                        <li><a href="../docs/api-reference.html">API Reference</a></li>
+                        <li><a href="../components/index.html">Components</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Resources</h3>
+                    <ul class="footer-links">
+                        <li><a href="./index.html">Demos</a></li>
+                        <li><a href="../examples/index.html">Examples</a></li>
+                        <li><a href="https://github.com/spatial-ui-3d" target="_blank">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>Built with 🌸 <span class="footer-aurora">Aurora</span> & ♾️ <span
+                        class="footer-aurora">Infinite</span></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Showcase JavaScript -->
+    <script src="../scripts/showcase.js"></script>
+</body>
+
+</html>

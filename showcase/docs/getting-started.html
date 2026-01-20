@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getting Started - Spatial UI 3D</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description"
+        content="Get started with Spatial UI 3D - Learn how to create immersive 3D spatial interfaces in minutes.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+
+    <style>
+        .doc-nav {
+            position: sticky;
+            top: 100px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+        }
+
+        .doc-nav h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: var(--cosmic-cyan);
+        }
+
+        .doc-nav ul {
+            list-style: none;
+        }
+
+        .doc-nav li {
+            margin-bottom: 0.5rem;
+        }
+
+        .doc-nav a {
+            color: rgba(255, 255, 255, 0.7);
+            transition: color var(--transition-fast);
+            display: block;
+            padding: 0.3rem 0;
+        }
+
+        .doc-nav a:hover,
+        .doc-nav a.active {
+            color: var(--cosmic-cyan);
+        }
+
+        .doc-content {
+            max-width: 800px;
+        }
+
+        .doc-content h2 {
+            margin-top: 3rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--cosmic-cyan);
+        }
+
+        .doc-content h3 {
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .step-number {
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            background: var(--gradient-cosmic);
+            border-radius: 50%;
+            text-align: center;
+            line-height: 2rem;
+            font-weight: 700;
+            margin-right: 0.5rem;
+        }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius-md);
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+        }
+
+        .alert-info {
+            background: rgba(78, 205, 196, 0.1);
+            border-color: var(--cosmic-cyan);
+        }
+
+        .alert-warning {
+            background: rgba(255, 215, 0, 0.1);
+            border-color: var(--cosmic-gold);
+        }
+
+        .alert-success {
+            background: rgba(78, 205, 196, 0.1);
+            border-color: #4ecdc4;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="../index.html" class="navbar-logo">🌸 Spatial UI 3D</a>
+
+            <ul class="navbar-menu">
+                <li><a href="../index.html#features" class="navbar-link">Features</a></li>
+                <li><a href="../components/index.html" class="navbar-link">Components</a></li>
+                <li><a href="../index.html#demos" class="navbar-link">Demos</a></li>
+                <li><a href="./getting-started.html" class="navbar-link active">Docs</a></li>
+            </ul>
+
+            <button class="navbar-toggle" aria-label="Toggle menu" aria-expanded="false">
+                ☰
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main style="padding-top: 80px;">
+        <div class="container-wide">
+            <div style="display: grid; grid-template-columns: 250px 1fr; gap: 3rem; padding: 3rem 0;">
+                <!-- Sidebar Navigation -->
+                <aside class="doc-nav">
+                    <h3>📚 Documentation</h3>
+                    <ul>
+                        <li><a href="#introduction" class="active">Introduction</a></li>
+                        <li><a href="#installation">Installation</a></li>
+                        <li><a href="#quick-start">Quick Start</a></li>
+                        <li><a href="#basic-concepts">Basic Concepts</a></li>
+                        <li><a href="#first-component">First Component</a></li>
+                        <li><a href="#geometry-modes">Geometry Modes</a></li>
+                        <li><a href="#tooltips">Tooltips</a></li>
+                        <li><a href="#edit-mode">Edit Mode</a></li>
+                        <li><a href="#next-steps">Next Steps</a></li>
+                    </ul>
+
+                    <h3 style="margin-top: 2rem;">🔗 Quick Links</h3>
+                    <ul>
+                        <li><a href="./api-reference.html">API Reference</a></li>
+                        <li><a href="../components/index.html">Components</a></li>
+                        <li><a href="../examples/index.html">Examples</a></li>
+                        <li><a href="../playground/index.html">Playground</a></li>
+                    </ul>
+                </aside>
+
+                <!-- Main Documentation Content -->
+                <article class="doc-content">
+                    <h1 id="introduction" style="font-size: 3rem; margin-bottom: 1rem;">
+                        🚀 Getting Started
+                    </h1>
+                    <p style="font-size: 1.2rem; color: rgba(255, 255, 255, 0.7); margin-bottom: 3rem;">
+                        Learn how to create immersive 3D spatial interfaces with Spatial UI 3D in just a few minutes.
+                    </p>
+
+                    <!-- Introduction -->
+                    <section>
+                        <h2 id="installation">Installation</h2>
+                        <p>
+                            Spatial UI 3D is a lightweight library built on Three.js. You can get started in two ways:
+                        </p>
+
+                        <h3><span class="step-number">1</span> Clone the Repository</h3>
+                        <div class="code-block">
+                            <div class="code-block-header">
+                                <span class="code-block-language">Bash</span>
+                                <button class="code-copy-btn">Copy</button>
+                            </div>
+                            <pre><code>git clone https://github.com/spatial-ui-3d/spatial-ui-3d.git
+cd spatial-ui-3d
+npm install
+npm start</code></pre>
+                        </div>
+
+                        <h3><span class="step-number">2</span> Use CDN (Quickest)</h3>
+                        <p>For quick prototyping, use the CDN version with ES modules:</p>
+                        <div class="code-block">
+                            <div class="code-block-header">
+                                <span class="code-block-language">HTML</span>
+                                <button class="code-copy-btn">Copy</button>
+                            </div>
+                            <pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;My Spatial UI App&lt;/title&gt;
+    &lt;style&gt;
+        body { margin: 0; overflow: hidden; }
+        #canvas { width: 100vw; height: 100vh; display: block; }
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;canvas id="canvas"&gt;&lt;/canvas&gt;
+
+    &lt;!-- Three.js Import Map --&gt;
+    &lt;script type="importmap"&gt;
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    &lt;/script&gt;
+
+    &lt;!-- Your app --&gt;
+    &lt;script type="module" src="./app.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <strong>💡 Note:</strong> Make sure to include the Three.js import map before your
+                            application code.
+                        </div>
+                    </section>
+
+                    <!-- Quick Start -->
+                    <section>
+                        <h2 id="quick-start">Quick Start</h2>
+                        <p>
+                            Create your first 3D button in less than 30 lines of code:
+                        </p>
+
+                        <div class="code-block">
+                            <div class="code-block-header">
+                                <span class="code-block-language">JavaScript</span>
+                                <button class="code-copy-btn">Copy</button>
+                            </div>
+                            <pre><code>// app.js
+import { Scene3D } from './src/core/Scene3D.js';
+import { Button3D } from './src/controls/Button3D.js';
+import { ControlRegistry } from './src/core/ControlRegistry.js';
+
+// Initialize 3D scene
+const canvas = document.getElementById('canvas');
+const scene3D = new Scene3D(canvas);
+const scene = scene3D.getScene();
+const camera = scene3D.getCamera();
+const renderer = scene3D.getRenderer();
+const orbitControls = scene3D.getControls();
+
+// Initialize ControlRegistry
+ControlRegistry.setOrbitControls(orbitControls);
+
+// Create a 3D button
+const button = new Button3D(scene, camera, [0, 0, 0], {
+    label: 'Click Me!',
+    width: 2.5,
+    height: 1.0,
+    mode: 0,
+    renderer: renderer,
+    onClick: (btn) => {
+        console.log('Button clicked!');
+        btn.setLabel('Clicked! ✓');
+    }
+});
+
+// Animation loop
+function animate() {
+    requestAnimationFrame(animate);
+    
+    // Update all controls
+    ControlRegistry.getAll().forEach(control => {
+        if (control && control.update) {
+            control.update();
+        }
+    });
+    
+    scene3D.render();
+}
+
+animate();</code></pre>
+                        </div>
+
+                        <div class="alert alert-success">
+                            <strong>✅ Success!</strong> You now have a working 3D button. Try clicking it and dragging
+                            to rotate the view!
+                        </div>
+                    </section>
+
+                    <!-- Basic Concepts -->
+                    <section>
+                        <h2 id="basic-concepts">Basic Concepts</h2>
+
+                        <h3>Scene3D</h3>
+                        <p>
+                            The <code>Scene3D</code> class manages your 3D environment, including the WebGL renderer,
+                            camera, lighting, and OrbitControls.
+                        </p>
+                        <div class="code-block">
+                            <pre><code>const scene3D = new Scene3D(canvas);
+const scene = scene3D.getScene();      // Three.js Scene
+const camera = scene3D.getCamera();    // PerspectiveCamera
+const renderer = scene3D.getRenderer(); // WebGLRenderer
+const controls = scene3D.getControls(); // OrbitControls</code></pre>
+                        </div>
+
+                        <h3>ControlRegistry</h3>
+                        <p>
+                            The <code>ControlRegistry</code> manages all UI controls globally. It handles OrbitControls
+                            coordination and edit mode.
+                        </p>
+                        <div class="code-block">
+                            <pre><code>// Initialize with OrbitControls
+ControlRegistry.setOrbitControls(orbitControls);
+
+// Get all controls
+const allControls = ControlRegistry.getAll();
+
+// Enable edit mode
+ControlRegistry.setEditMode(true);</code></pre>
+                        </div>
+
+                        <h3>Component Lifecycle</h3>
+                        <p>
+                            All components follow a simple lifecycle:
+                        </p>
+                        <ol style="padding-left: 2rem; color: rgba(255, 255, 255, 0.8);">
+                            <li><strong>Create:</strong> Instantiate with <code>new ComponentName()</code></li>
+                            <li><strong>Update:</strong> Call <code>component.update()</code> in animation loop</li>
+                            <li><strong>Dispose:</strong> Call <code>component.dispose()</code> when done</li>
+                        </ol>
+                    </section>
+
+                    <!-- First Component -->
+                    <section>
+                        <h2 id="first-component">Creating Your First Component</h2>
+                        <p>
+                            Let's create a more complete example with multiple components:
+                        </p>
+
+                        <div class="code-block">
+                            <div class="code-block-header">
+                                <span class="code-block-language">JavaScript</span>
+                                <button class="code-copy-btn">Copy</button>
+                            </div>
+                            <pre><code>import { Scene3D } from './src/core/Scene3D.js';
+import { Button3D } from './src/controls/Button3D.js';
+import { Toggle3D } from './src/controls/Toggle3D.js';
+import { TextDisplay3D } from './src/controls/TextDisplay3D.js';
+import { ControlRegistry } from './src/core/ControlRegistry.js';
+
+// Setup scene
+const canvas = document.getElementById('canvas');
+const scene3D = new Scene3D(canvas);
+const scene = scene3D.getScene();
+const camera = scene3D.getCamera();
+const renderer = scene3D.getRenderer();
+
+ControlRegistry.setOrbitControls(scene3D.getControls());
+
+// Create a button
+const saveButton = new Button3D(scene, camera, [-3, 0, 0], {
+    label: 'Save',
+    width: 2.0,
+    height: 0.8,
+    renderer: renderer,
+    onClick: () => console.log('Saving...')
+});
+
+// Create a toggle
+const darkModeToggle = new Toggle3D(scene, camera, [0, 0, 0], {
+    label: 'Dark Mode',
+    width: 2.5,
+    height: 0.6,
+    isOn: true,
+    renderer: renderer,
+    onClick: (toggle) => {
+        console.log('Dark mode:', toggle.isOn);
+    }
+});
+
+// Create a text display
+const infoDisplay = new TextDisplay3D(scene, camera, [3, 0, 0], {
+    content: '# Welcome!\\n\\nThis is a **3D UI** demo.',
+    width: 3.0,
+    height: 2.5,
+    renderer: renderer
+});
+
+// Animation loop
+function animate() {
+    requestAnimationFrame(animate);
+    
+    ControlRegistry.getAll().forEach(control => {
+        if (control && control.update) {
+            control.update();
+        }
+    });
+    
+    scene3D.render();
+}
+
+animate();</code></pre>
+                        </div>
+                    </section>
+
+                    <!-- Geometry Modes -->
+                    <section>
+                        <h2 id="geometry-modes">Geometry Modes</h2>
+                        <p>
+                            All components support three geometry modes for different aesthetics:
+                        </p>
+
+                        <div class="grid grid-3" style="margin: 2rem 0;">
+                            <div class="card">
+                                <h3>📦 Box Mode (0)</h3>
+                                <p>Classic rectangular geometry. Clean, professional, and familiar.</p>
+                                <div class="code-block" style="margin-top: 1rem;">
+                                    <pre><code>mode: 0</code></pre>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <h3>🌟 Sphere Mode (1)</h3>
+                                <p>Rounded spherical geometry. Soft, organic, and friendly.</p>
+                                <div class="code-block" style="margin-top: 1rem;">
+                                    <pre><code>mode: 1</code></pre>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <h3>🔮 Sacred Mode (2)</h3>
+                                <p>Sacred geometry patterns. Unique, spiritual, and eye-catching.</p>
+                                <div class="code-block" style="margin-top: 1rem;">
+                                    <pre><code>mode: 2</code></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p>You can change the mode dynamically:</p>
+                        <div class="code-block">
+                            <pre><code>button.setMode(1); // Switch to sphere mode</code></pre>
+                        </div>
+                    </section>
+
+                    <!-- Tooltips -->
+                    <section>
+                        <h2 id="tooltips">Adding Tooltips</h2>
+                        <p>
+                            Tooltips provide contextual help and support markdown formatting:
+                        </p>
+
+                        <div class="code-block">
+                            <div class="code-block-header">
+                                <span class="code-block-language">JavaScript</span>
+                                <button class="code-copy-btn">Copy</button>
+                            </div>
+                            <pre><code>const button = new Button3D(scene, camera, [0, 0, 0], {
+    label: 'Save',
+    renderer: renderer,
+    tooltip: {
+        content: '**Save** 💾\\n\\nSave your current work',
+        position: 'top',    // 'top', 'bottom', 'left', 'right'
+        offset: [0, 1.5, 0] // [x, y, z] offset
+    }
+});</code></pre>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <strong>💡 Tip:</strong> Use <code>\\n</code> for line breaks and markdown for formatting
+                            (<code>**bold**</code>, <code>*italic*</code>, <code>`code`</code>).
+                        </div>
+                    </section>
+
+                    <!-- Edit Mode -->
+                    <section>
+                        <h2 id="edit-mode">Edit Mode</h2>
+                        <p>
+                            Edit mode enables TransformControls for easy positioning during development:
+                        </p>
+
+                        <div class="code-block">
+                            <div class="code-block-header">
+                                <span class="code-block-language">JavaScript</span>
+                                <button class="code-copy-btn">Copy</button>
+                            </div>
+                            <pre><code>// Enable edit mode globally
+ControlRegistry.setEditMode(true);
+
+// Or create a toggle for it
+const editToggle = new Toggle3D(scene, camera, [0, -3, 0], {
+    label: 'Edit Mode',
+    renderer: renderer,
+    onClick: (toggle) => {
+        ControlRegistry.setEditMode(toggle.isOn);
+    }
+});</code></pre>
+                        </div>
+
+                        <p>
+                            In edit mode, click any component to see TransformControls. Use them to:
+                        </p>
+                        <ul style="padding-left: 2rem; color: rgba(255, 255, 255, 0.8);">
+                            <li><strong>Translate:</strong> Press <code>T</code> or click the translate icon</li>
+                            <li><strong>Rotate:</strong> Press <code>R</code> or click the rotate icon</li>
+                            <li><strong>Scale:</strong> Press <code>S</code> or click the scale icon</li>
+                        </ul>
+
+                        <div class="alert alert-warning">
+                            <strong>⚠️ Important:</strong> Disable edit mode in production. It's meant for development
+                            only.
+                        </div>
+                    </section>
+
+                    <!-- Next Steps -->
+                    <section>
+                        <h2 id="next-steps">Next Steps</h2>
+                        <p>
+                            Now that you understand the basics, explore these resources:
+                        </p>
+
+                        <div class="grid grid-2" style="margin: 2rem 0;">
+                            <a href="../components/index.html" class="card">
+                                <h3>🧩 Component Library</h3>
+                                <p>Explore all 8 components with live examples and API documentation.</p>
+                            </a>
+
+                            <a href="./api-reference.html" class="card">
+                                <h3>📖 API Reference</h3>
+                                <p>Complete API documentation for all classes and methods.</p>
+                            </a>
+
+                            <a href="../index.html#demos" class="card">
+                                <h3>🎨 Live Demos</h3>
+                                <p>See real-world applications: Dashboard, Smart Home, Healthcare.</p>
+                            </a>
+
+                            <a href="../playground/index.html" class="card">
+                                <h3>🎮 Playground</h3>
+                                <p>Experiment with components in an interactive environment.</p>
+                            </a>
+                        </div>
+                    </section>
+
+                    <!-- Help Section -->
+                    <section
+                        style="margin-top: 4rem; padding: 2rem; background: var(--glass-bg); border-radius: var(--radius-lg); border: 1px solid var(--glass-border);">
+                        <h2 style="margin-top: 0;">Need Help?</h2>
+                        <p>
+                            If you run into issues or have questions:
+                        </p>
+                        <ul style="padding-left: 2rem; color: rgba(255, 255, 255, 0.8);">
+                            <li>Check the <a href="./api-reference.html">API Reference</a></li>
+                            <li>Browse <a href="../examples/index.html">Examples</a></li>
+                            <li>Visit <a href="https://github.com/spatial-ui-3d/discussions" target="_blank">GitHub
+                                    Discussions</a></li>
+                            <li>Report bugs on <a href="https://github.com/spatial-ui-3d/issues" target="_blank">GitHub
+                                    Issues</a></li>
+                        </ul>
+                    </section>
+                </article>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>🌸 Spatial UI 3D</h3>
+                    <p style="color: rgba(255,255,255,0.6);">
+                        Transform web UI into immersive 3D spatial interfaces.
+                    </p>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Documentation</h3>
+                    <ul class="footer-links">
+                        <li><a href="./getting-started.html">Getting Started</a></li>
+                        <li><a href="./api-reference.html">API Reference</a></li>
+                        <li><a href="../components/index.html">Components</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h3>Resources</h3>
+                    <ul class="footer-links">
+                        <li><a href="../index.html#demos">Demos</a></li>
+                        <li><a href="../examples/index.html">Examples</a></li>
+                        <li><a href="https://github.com/spatial-ui-3d" target="_blank">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>Built with 🌸 <span class="footer-aurora">Aurora</span> & ♾️ <span
+                        class="footer-aurora">Infinite</span></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Showcase JavaScript -->
+    <script src="../scripts/showcase.js"></script>
+
+    <!-- Smooth scroll for sidebar links -->
+    <script>
+        document.querySelectorAll('.doc-nav a[href^="#"]').forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                    // Update active state
+                    document.querySelectorAll('.doc-nav a').forEach(a => a.classList.remove('active'));
+                    this.classList.add('active');
+                }
+            });
+        });
+
+        // Update active link on scroll
+        const sections = document.querySelectorAll('h2[id]');
+        const navLinks = document.querySelectorAll('.doc-nav a[href^="#"]');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop - 100;
+                if (window.scrollY >= sectionTop) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

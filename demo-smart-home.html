@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏠 Smart Home Control Panel - Spatial UI Demo</title>
+    <link rel="stylesheet" href="/styles/main.css">
+    <style>
+        /* Tooltip and Label Styles */
+        .spatial-tooltip {
+            background: linear-gradient(145deg, rgba(20, 20, 40, 0.95), rgba(10, 10, 30, 0.95));
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: #ffffff;
+            font-family: 'Arial', sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            max-width: 250px;
+            box-shadow:
+                0 0 20px rgba(0, 0, 0, 0.5),
+                0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            pointer-events: none;
+            user-select: none;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+
+        .spatial-tooltip strong {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .spatial-label {
+            background: linear-gradient(145deg, rgba(30, 30, 50, 0.9), rgba(20, 20, 40, 0.9));
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: #ffffff;
+            font-family: 'Arial', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.4;
+            box-shadow:
+                0 0 15px rgba(0, 0, 0, 0.4),
+                0 4px 16px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(8px);
+            pointer-events: none;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .spatial-text-display {
+            background: linear-gradient(145deg, rgba(20, 20, 40, 0.95), rgba(10, 10, 30, 0.95));
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: #ffffff;
+            font-family: 'Arial', sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .spatial-text-display h1,
+        .spatial-text-display h2,
+        .spatial-text-display h3 {
+            color: #ffffff;
+            margin-top: 0.5em;
+            margin-bottom: 0.3em;
+        }
+
+        .spatial-chart {
+            background: rgba(20, 20, 40, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .html-overlay {
+            pointer-events: none;
+        }
+
+        .demo-title {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+            z-index: 100;
+        }
+
+        .demo-subtitle {
+            position: absolute;
+            top: 55px;
+            left: 20px;
+            color: rgba(255, 255, 255, 0.8);
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+            z-index: 100;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div class="demo-title">🏠 Smart Home Control Panel</div>
+    <div class="demo-subtitle">Control your IoT devices in 3D space</div>
+
+    <div id="background-switcher" class="background-switcher">
+        <button class="room-btn" data-room="coordinate">📐 Coordinate</button>
+        <button class="room-btn" data-room="landscape">🏔️ Landscape</button>
+        <button class="room-btn" data-room="space">🌌 Space</button>
+    </div>
+
+    <div id="fps-counter" class="fps-counter">FPS: --</div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import { Scene3D } from './src/core/Scene3D.js';
+        import { RoomManager } from './src/core/RoomManager.js';
+        import { Button3D } from './src/controls/Button3D.js';
+        import { ButtonFactory } from './src/utils/ButtonFactory.js';
+        import { Toggle3D } from './src/controls/Toggle3D.js';
+        import { TextDisplay3D } from './src/controls/TextDisplay3D.js';
+        import { Chart3D } from './src/controls/Chart3D.js';
+        import { Slider3D } from './src/controls/Slider3D.js';
+        import { Modal3D } from './src/controls/Modal3D.js';
+        import { Accordion3D } from './src/controls/Accordion3D.js';
+        import { ControlRegistry } from './src/core/ControlRegistry.js';
+        import * as THREE from 'three';
+
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+        const orbitControls = scene3D.getControls();
+
+        ControlRegistry.setOrbitControls(orbitControls);
+
+        const roomManager = new RoomManager(scene, camera);
+        roomManager.initialize();
+
+        // ============================================
+        // SMART HOME DATA
+        // ============================================
+        const homeData = {
+            livingRoom: {
+                lights: true,
+                brightness: 75,
+                temperature: 22,
+                energyUsage: []
+            },
+            bedroom: {
+                lights: false,
+                brightness: 50,
+                temperature: 20,
+                energyUsage: []
+            },
+            kitchen: {
+                lights: true,
+                brightness: 100,
+                temperature: 21,
+                energyUsage: []
+            }
+        };
+
+        // Generate initial energy usage data
+        function generateEnergyData(points = 24) {
+            const data = [];
+            for (let i = 0; i < points; i++) {
+                data.push(Math.round(Math.random() * 50 + 20));
+            }
+            return data;
+        }
+
+        homeData.livingRoom.energyUsage = generateEnergyData();
+        homeData.bedroom.energyUsage = generateEnergyData();
+        homeData.kitchen.energyUsage = generateEnergyData();
+
+        // ============================================
+        // LIVING ROOM ZONE (X = -8, Z = -1)
+        // ============================================
+        const LIVING_ROOM_X = -8;
+        const LIVING_ROOM_Z = -1;
+
+        const livingRoomLabel = new TextDisplay3D(scene, camera, [LIVING_ROOM_X, 3.5, LIVING_ROOM_Z], {
+            content: `# 🛋️ Living Room\\n\\n*Control your living room devices*`,
+            width: 3.5,
+            height: 1.5,
+            mode: 0,
+            renderer: renderer
+        });
+
+        const livingRoomLights = new Toggle3D(scene, camera, [LIVING_ROOM_X, 2, LIVING_ROOM_Z], {
+            label: '💡 Lights',
+            width: 3.5,
+            height: 0.7,
+            mode: 1,
+            isOn: homeData.livingRoom.lights,
+            onColor: 0xffdd44,
+            offColor: 0x444444,
+            renderer: renderer,
+            tooltip: {
+                content: '**Living Room Lights** 💡\\n\\nToggle lights on/off',
+                position: 'top',
+                offset: [0, 1.2, 0]
+            },
+            onClick: (toggle) => {
+                homeData.livingRoom.lights = toggle.isOn;
+                console.log('Living room lights:', toggle.isOn ? 'ON' : 'OFF');
+            }
+        });
+
+        const livingRoomBrightness = new Slider3D(scene, camera, [LIVING_ROOM_X, 0.8, LIVING_ROOM_Z], {
+            label: '🔆 Brightness',
+            width: 3.5,
+            height: 0.3,
+            min: 0,
+            max: 100,
+            step: 5,
+            value: homeData.livingRoom.brightness,
+            mode: 0,
+            renderer: renderer,
+            tooltip: {
+                content: '**Brightness** 🔆\\n\\nAdjust light brightness',
+                position: 'top',
+                offset: [0, 1.0, 0]
+            },
+            onChange: (slider, value) => {
+                homeData.livingRoom.brightness = value;
+            }
+        });
+
+        const livingRoomTemp = new Slider3D(scene, camera, [LIVING_ROOM_X, -0.5, LIVING_ROOM_Z], {
+            label: '🌡️ Temperature',
+            width: 3.5,
+            height: 0.3,
+            min: 16,
+            max: 30,
+            step: 0.5,
+            value: homeData.livingRoom.temperature,
+            mode: 0,
+            renderer: renderer,
+            tooltip: {
+                content: '**Temperature** 🌡️\\n\\nSet room temperature',
+                position: 'top',
+                offset: [0, 1.0, 0]
+            },
+            onChange: (slider, value) => {
+                homeData.livingRoom.temperature = value;
+            }
+        });
+
+        // ============================================
+        // BEDROOM ZONE (X = 0, Z = -1)
+        // ============================================
+        const BEDROOM_X = 0;
+        const BEDROOM_Z = -1;
+
+        const bedroomLabel = new TextDisplay3D(scene, camera, [BEDROOM_X, 3.5, BEDROOM_Z], {
+            content: `# 🛏️ Bedroom\\n\\n*Control your bedroom devices*`,
+            width: 3.5,
+            height: 1.5,
+            mode: 0,
+            renderer: renderer
+        });
+
+        const bedroomLights = new Toggle3D(scene, camera, [BEDROOM_X, 2, BEDROOM_Z], {
+            label: '💡 Lights',
+            width: 3.5,
+            height: 0.7,
+            mode: 1,
+            isOn: homeData.bedroom.lights,
+            onColor: 0xffdd44,
+            offColor: 0x444444,
+            renderer: renderer,
+            tooltip: {
+                content: '**Bedroom Lights** 💡\\n\\nToggle lights on/off',
+                position: 'top',
+                offset: [0, 1.2, 0]
+            },
+            onClick: (toggle) => {
+                homeData.bedroom.lights = toggle.isOn;
+                console.log('Bedroom lights:', toggle.isOn ? 'ON' : 'OFF');
+            }
+        });
+
+        const bedroomBrightness = new Slider3D(scene, camera, [BEDROOM_X, 0.8, BEDROOM_Z], {
+            label: '🔆 Brightness',
+            width: 3.5,
+            height: 0.3,
+            min: 0,
+            max: 100,
+            step: 5,
+            value: homeData.bedroom.brightness,
+            mode: 0,
+            renderer: renderer,
+            tooltip: {
+                content: '**Brightness** 🔆\\n\\nAdjust light brightness',
+                position: 'top',
+                offset: [0, 1.0, 0]
+            },
+            onChange: (slider, value) => {
+                homeData.bedroom.brightness = value;
+            }
+        });
+
+        const bedroomTemp = new Slider3D(scene, camera, [BEDROOM_X, -0.5, BEDROOM_Z], {
+            label: '🌡️ Temperature',
+            width: 3.5,
+            height: 0.3,
+            min: 16,
+            max: 30,
+            step: 0.5,
+            value: homeData.bedroom.temperature,
+            mode: 0,
+            renderer: renderer,
+            tooltip: {
+                content: '**Temperature** 🌡️\\n\\nSet room temperature',
+                position: 'top',
+                offset: [0, 1.0, 0]
+            },
+            onChange: (slider, value) => {
+                homeData.bedroom.temperature = value;
+            }
+        });
+
+        // ============================================
+        // KITCHEN ZONE (X = 8, Z = -1)
+        // ============================================
+        const KITCHEN_X = 8;
+        const KITCHEN_Z = -1;
+
+        const kitchenLabel = new TextDisplay3D(scene, camera, [KITCHEN_X, 3.5, KITCHEN_Z], {
+            content: `# 🍳 Kitchen\\n\\n*Control your kitchen devices*`,
+            width: 3.5,
+            height: 1.5,
+            mode: 0,
+            renderer: renderer
+        });
+
+        const kitchenLights = new Toggle3D(scene, camera, [KITCHEN_X, 2, KITCHEN_Z], {
+            label: '💡 Lights',
+            width: 3.5,
+            height: 0.7,
+            mode: 1,
+            isOn: homeData.kitchen.lights,
+            onColor: 0xffdd44,
+            offColor: 0x444444,
+            renderer: renderer,
+            tooltip: {
+                content: '**Kitchen Lights** 💡\\n\\nToggle lights on/off',
+                position: 'top',
+                offset: [0, 1.2, 0]
+            },
+            onClick: (toggle) => {
+                homeData.kitchen.lights = toggle.isOn;
+                console.log('Kitchen lights:', toggle.isOn ? 'ON' : 'OFF');
+            }
+        });
+
+        const kitchenBrightness = new Slider3D(scene, camera, [KITCHEN_X, 0.8, KITCHEN_Z], {
+            label: '🔆 Brightness',
+            width: 3.5,
+            height: 0.3,
+            min: 0,
+            max: 100,
+            step: 5,
+            value: homeData.kitchen.brightness,
+            mode: 0,
+            renderer: renderer,
+            tooltip: {
+                content: '**Brightness** 🔆\\n\\nAdjust light brightness',
+                position: 'top',
+                offset: [0, 1.0, 0]
+            },
+            onChange: (slider, value) => {
+                homeData.kitchen.brightness = value;
+            }
+        });
+
+        const kitchenTemp = new Slider3D(scene, camera, [KITCHEN_X, -0.5, KITCHEN_Z], {
+            label: '🌡️ Temperature',
+            width: 3.5,
+            height: 0.3,
+            min: 16,
+            max: 30,
+            step: 0.5,
+            value: homeData.kitchen.temperature,
+            mode: 0,
+            renderer: renderer,
+            tooltip: {
+                content: '**Temperature** 🌡️\\n\\nSet room temperature',
+                position: 'top',
+                offset: [0, 1.0, 0]
+            },
+            onChange: (slider, value) => {
+                homeData.kitchen.temperature = value;
+            }
+        });
+
+        // ============================================
+        // ENERGY DASHBOARD (X = 0, Z = 3)
+        // ============================================
+        const ENERGY_X = 0;
+        const ENERGY_Z = 3;
+
+        const energyChart = new Chart3D(scene, camera, [ENERGY_X, 1, ENERGY_Z], {
+            chartType: 'line',
+            data: {
+                labels: Array.from({ length: 24 }, (_, i) => `${i}:00`),
+                datasets: [
+                    {
+                        label: 'Living Room',
+                        data: homeData.livingRoom.energyUsage,
+                        backgroundColor: 'rgba(255, 221, 68, 0.2)',
+                        borderColor: '#ffdd44',
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Bedroom',
+                        data: homeData.bedroom.energyUsage,
+                        backgroundColor: 'rgba(107, 182, 255, 0.2)',
+                        borderColor: '#6bb6ff',
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Kitchen',
+                        data: homeData.kitchen.energyUsage,
+                        backgroundColor: 'rgba(78, 205, 196, 0.2)',
+                        borderColor: '#4ecdc4',
+                        tension: 0.4
+                    }
+                ]
+            },
+            width: 6.0,
+            height: 4.0,
+            mode: 0,
+            renderer: renderer,
+            tooltip: {
+                content: '**Energy Usage** ⚡\\n\\n24-hour consumption by room',
+                position: 'top',
+                offset: [0, 2.5, 0]
+            }
+        });
+
+        // ============================================
+        // SETTINGS PANEL (X = 10, Z = 3)
+        // ============================================
+        const SETTINGS_X = 10;
+        const SETTINGS_Z = 3;
+
+        const settingsAccordion = new Accordion3D(scene, camera, [SETTINGS_X, 0, SETTINGS_Z], {
+            width: 5.0,
+            itemHeight: 0.8,
+            itemSpacing: 0.2,
+            mode: 0,
+            items: [
+                {
+                    title: '⚙️ System Settings',
+                    contentHeight: 3.0,
+                    content: `# System Settings\\n\\n## Options:\\n- Auto Mode: Enabled\\n- Energy Saving: On\\n- Notifications: Enabled\\n\\n*Configure your smart home*`
+                },
+                {
+                    title: '🔐 Security',
+                    contentHeight: 3.0,
+                    content: `# Security Status\\n\\n## Status:\\n- Alarm: Armed\\n- Cameras: Active\\n- Door Locks: Secured\\n\\n*All systems secure*`
+                },
+                {
+                    title: '📊 Statistics',
+                    contentHeight: 3.0,
+                    content: `# Usage Statistics\\n\\n## Today:\\n- Energy: 45.2 kWh\\n- Cost: $5.42\\n- Savings: 12%\\n\\n*Compared to yesterday*`
+                }
+            ],
+            openItems: [0],
+            renderer: renderer,
+            tooltip: {
+                content: '**Settings** ⚙️\\n\\nConfigure your smart home',
+                position: 'left',
+                offset: [-3.0, 0, 0]
+            }
+        });
+
+        // Device Settings Modal
+        const deviceModal = new Modal3D(scene, camera, [0, 0, 5], {
+            title: 'Device Settings',
+            width: 5.0,
+            height: 4.0,
+            mode: 0,
+            isOpen: false,
+            renderer: renderer
+        });
+
+        // Factory-created Settings Button (Hexagon)
+        const settingsBtnConfig = {
+            width: 1.0, height: 0.3, depth: 1.0, // Radius/Depth for Hexagon
+            color: 0x4ecdc4,
+            rippleEffect: true,
+            onClick: () => deviceModal.open()
+        };
+        const settingsBtnGeo = ButtonFactory.createGeometry('hexagon', settingsBtnConfig.width, settingsBtnConfig.height, settingsBtnConfig.depth);
+        const settingsBtnMat = ButtonFactory.createMaterial(settingsBtnConfig.color);
+        const settingsBtnMesh = new THREE.Mesh(settingsBtnGeo, settingsBtnMat);
+        settingsBtnMesh.position.set(SETTINGS_X, -3, SETTINGS_Z);
+        // Rotate hexagon to face nicely?
+        settingsBtnMesh.rotation.x = Math.PI / 2; // Lie flat? No, standard buttons face +Z usually. 
+        // Hexagon geometry is normally flat on XZ plane if cylinder-like? Let's assume standard orientation.
+        // Actually typical buttons in this scene are vertical billboard-ish?
+        // TextDisplay3D are vertical.
+        // Let's check toggle orientation. 
+        // This is a dashboard. Vertical buttons.
+        settingsBtnMesh.rotation.x = Math.PI / 2; // Cylinder/Hexagon geometries might be created along Y axis. 
+        // If I want it facing the camera (Z), I need to rotate it X=90deg.
+
+        scene.add(settingsBtnMesh);
+
+        const settingsButton = ButtonFactory.enhanceButton(settingsBtnMesh, settingsBtnConfig, scene);
+        window.settingsButton = settingsButton;
+
+        // Add Label
+        const settingsLabel = new TextDisplay3D(scene, camera, [SETTINGS_X, -3, SETTINGS_Z + 0.2], {
+            content: "Device Settings",
+            width: 2.5,
+            height: 0.8,
+            mode: 0,
+            renderer: renderer,
+            // Make text display transparent/no background so it looks like label on button? 
+            // Or just place it in front.
+        });
+        // TextDisplay3D usually has a background.
+        // Let's just use it as a label above or below?
+        // In the original code it was inside Button3D.
+        // ButtonFactory doesn't support text.
+        // I'll place the TextDisplay3D slightly offset.
+
+        // Add manual raycasting for Factory buttons
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        window.addEventListener('click', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+
+            if (window.settingsButton) {
+                const intersects = raycaster.intersectObject(window.settingsButton.mesh);
+                if (intersects.length > 0) {
+                    window.settingsButton.onClick();
+                }
+            }
+        });
+
+        // Edit Mode Toggle
+        const editModeToggle = new Toggle3D(scene, camera, [0, -3.5, ENERGY_Z], {
+            label: 'Edit Mode',
+            width: 2.5,
+            height: 0.7,
+            mode: 0,
+            isOn: false,
+            onColor: 0xffaa00,
+            offColor: 0x666666,
+            renderer: renderer,
+            tooltip: {
+                content: '**Edit Mode** ✏️\\n\\nRearrange devices',
+                position: 'top',
+                offset: [0, 1.2, 0]
+            },
+            onClick: (toggle) => {
+                roomManager.setEditMode(toggle.isOn);
+                ControlRegistry.setEditMode(toggle.isOn);
+            }
+        });
+
+        // ============================================
+        // BACKGROUND SWITCHER
+        // ============================================
+        const roomButtons = document.querySelectorAll('.room-btn');
+        roomButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const roomName = btn.dataset.room;
+                roomManager.switchRoom(roomName);
+
+                if (roomName === 'coordinate') {
+                    scene.background = new THREE.Color(0x0a0a0f);
+                } else if (roomName === 'landscape') {
+                    scene.background = new THREE.Color(0x87CEEB);
+                } else if (roomName === 'space') {
+                    scene.background = new THREE.Color(0x000000);
+                }
+
+                roomButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        document.querySelector('.room-btn[data-room="landscape"]').classList.add('active');
+        scene.background = new THREE.Color(0x87CEEB);
+
+        // ============================================
+        // FPS COUNTER
+        // ============================================
+        let lastTime = performance.now();
+        let frameCount = 0;
+        let fps = 0;
+
+        function updateFPS() {
+            frameCount++;
+            const currentTime = performance.now();
+            const delta = currentTime - lastTime;
+
+            if (delta >= 1000) {
+                fps = Math.round((frameCount * 1000) / delta);
+                document.getElementById('fps-counter').textContent = `FPS: ${fps}`;
+                frameCount = 0;
+                lastTime = currentTime;
+            }
+        }
+
+        // ============================================
+        // ANIMATION LOOP
+        // ============================================
+        function animate() {
+            requestAnimationFrame(animate);
+
+            roomManager.update();
+
+            ControlRegistry.getAll().forEach(control => {
+                if (control && control.update) {
+                    control.update();
+                }
+                if (control && control.updateTooltipAndLabelPositions) {
+                    control.updateTooltipAndLabelPositions();
+                }
+            });
+
+            // Update Factory Buttons
+            if (window.settingsButton && window.settingsButton.update) {
+                window.settingsButton.update();
+            }
+
+            if (ControlRegistry.getEditMode()) {
+                ControlRegistry.getAll().forEach(control => {
+                    if (control && control.isEditMode && control.updateTransformControls) {
+                        try {
+                            control.updateTransformControls();
+                        } catch (error) {
+                            console.warn('Error updating TransformControls:', error);
+                        }
+                    }
+                });
+            }
+
+            scene3D.render();
+            updateFPS();
+        }
+
+        animate();
+    </script>
+</body>
+
+</html>

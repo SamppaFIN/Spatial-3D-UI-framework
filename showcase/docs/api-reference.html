@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Reference - Spatial UI 3D</title>
+    <meta name="description"
+        content="Complete API reference for Spatial UI 3D components, core classes, and utilities.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/responsive.css">
+    <style>
+        .docs-nav {
+            position: sticky;
+            top: 100px;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+            background: rgba(20, 20, 40, 0.8);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .docs-nav h3 {
+            color: var(--cosmic-cyan);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .docs-nav ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .docs-nav li {
+            margin: 0.5rem 0;
+        }
+
+        .docs-nav a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .docs-nav a:hover {
+            color: var(--cosmic-cyan);
+        }
+
+        .docs-content {
+            background: rgba(20, 20, 40, 0.6);
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .api-section {
+            margin: 3rem 0;
+            padding: 2rem;
+            background: rgba(30, 30, 50, 0.5);
+            border-radius: 12px;
+            border-left: 4px solid var(--cosmic-cyan);
+        }
+
+        .api-section h2 {
+            color: var(--cosmic-cyan);
+            margin-top: 0;
+        }
+
+        .api-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+
+        .api-table th,
+        .api-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .api-table th {
+            background: rgba(78, 205, 196, 0.1);
+            color: var(--cosmic-cyan);
+            font-weight: 600;
+        }
+
+        .api-table code {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #ffd700;
+        }
+
+        .code-block {
+            margin: 1.5rem 0;
+        }
+
+        .param-required {
+            color: #ff6b9d;
+            font-weight: 600;
+        }
+
+        .param-optional {
+            color: rgba(255, 255, 255, 0.5);
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="../index.html" class="navbar-logo">🌸 Spatial UI 3D</a>
+            <ul class="navbar-menu">
+                <li><a href="../index.html#features" class="navbar-link">Features</a></li>
+                <li><a href="../components/index.html" class="navbar-link">Components</a></li>
+                <li><a href="../index.html#demos" class="navbar-link">Demos</a></li>
+                <li><a href="./getting-started.html" class="navbar-link active">Docs</a></li>
+            </ul>
+            <button class="navbar-toggle" aria-label="Toggle menu" aria-expanded="false">☰</button>
+        </div>
+    </nav>
+    <main style="padding-top: 80px;">
+        <div class="container">
+            <div class="grid" style="grid-template-columns: 250px 1fr; gap: 2rem; align-items: start;">
+                <aside class="docs-nav">
+                    <h3>📚 Documentation</h3>
+                    <ul>
+                        <li><a href="./getting-started.html">Getting Started</a></li>
+                        <li><a href="./api-reference.html" style="color: var(--cosmic-cyan);">API Reference</a></li>
+                        <li><a href="./architecture.html">Architecture</a></li>
+                        <li><a href="./accessibility.html">Accessibility</a></li>
+                    </ul>
+                    <h3 style="margin-top: 2rem;">🎯 Quick Links</h3>
+                    <ul>
+                        <li><a href="#core">Core Classes</a></li>
+                        <li><a href="#components">Components</a></li>
+                        <li><a href="#utilities">Utilities</a></li>
+                    </ul>
+                </aside>
+                <div class="docs-content">
+                    <h1 style="font-size: 3rem; margin-bottom: 1rem;">📖 API Reference</h1>
+                    <p style="font-size: 1.2rem; color: rgba(255, 255, 255, 0.7); margin-bottom: 3rem;">
+                        Complete API documentation for all Spatial UI 3D classes, methods, and utilities.
+                    </p>
+
+                    <div id="core" class="api-section">
+                        <h2>🏗️ Core Classes</h2>
+
+                        <h3 style="color: var(--cosmic-cyan); margin-top: 2rem;">Scene3D</h3>
+                        <p>Main 3D scene manager that handles WebGL rendering, camera, and controls.</p>
+                        <div class="code-block">
+                            <div class="code-block-header"><span class="code-block-language">JavaScript</span></div>
+                            <pre><code>new Scene3D(canvas: HTMLCanvasElement)</code></pre>
+                        </div>
+                        <h4>Methods</h4>
+                        <table class="api-table">
+                            <thead>
+                                <tr>
+                                    <th>Method</th>
+                                    <th>Returns</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>getScene()</code></td>
+                                    <td>THREE.Scene</td>
+                                    <td>Get the Three.js scene</td>
+                                </tr>
+                                <tr>
+                                    <td><code>getCamera()</code></td>
+                                    <td>THREE.PerspectiveCamera</td>
+                                    <td>Get the camera</td>
+                                </tr>
+                                <tr>
+                                    <td><code>getRenderer()</code></td>
+                                    <td>THREE.WebGLRenderer</td>
+                                    <td>Get the renderer</td>
+                                </tr>
+                                <tr>
+                                    <td><code>getControls()</code></td>
+                                    <td>OrbitControls</td>
+                                    <td>Get OrbitControls</td>
+                                </tr>
+                                <tr>
+                                    <td><code>render()</code></td>
+                                    <td>void</td>
+                                    <td>Render the scene</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3 style="color: var(--cosmic-cyan); margin-top: 2rem;">BaseControl3D</h3>
+                        <p>Base class for all 3D controls. Provides common functionality like tooltips, edit mode, and
+                            raycasting.</p>
+                        <div class="code-block">
+                            <div class="code-block-header"><span class="code-block-language">JavaScript</span></div>
+                            <pre><code>class YourControl extends BaseControl3D {
+    constructor(scene, camera, position, config) {
+        super(scene, camera, position, config);
+    }
+}</code></pre>
+                        </div>
+                        <h4>Common Options</h4>
+                        <table class="api-table">
+                            <thead>
+                                <tr>
+                                    <th>Property</th>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>renderer</code> <span class="param-required">*</span></td>
+                                    <td>WebGLRenderer</td>
+                                    <td>Three.js renderer (required)</td>
+                                </tr>
+                                <tr>
+                                    <td><code>tooltip</code></td>
+                                    <td>object</td>
+                                    <td>Tooltip configuration</td>
+                                </tr>
+                                <tr>
+                                    <td><code>onClick</code></td>
+                                    <td>function</td>
+                                    <td>Click callback</td>
+                                </tr>
+                                <tr>
+                                    <td><code>onHover</code></td>
+                                    <td>function</td>
+                                    <td>Hover callback</td>
+                                </tr>
+                                <tr>
+                                    <td><code>onHoverEnd</code></td>
+                                    <td>function</td>
+                                    <td>Hover end callback</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3 style="color: var(--cosmic-cyan); margin-top: 2rem;">ControlRegistry</h3>
+                        <p>Global registry for managing all 3D controls and edit mode.</p>
+                        <div class="code-block">
+                            <div class="code-block-header"><span class="code-block-language">JavaScript</span></div>
+                            <pre><code>import { ControlRegistry } from './src/core/ControlRegistry.js';
+
+// Set OrbitControls reference
+ControlRegistry.setOrbitControls(orbitControls);
+
+// Enable edit mode
+ControlRegistry.setEditMode(true);
+
+// Get all controls
+const controls = ControlRegistry.getAll();</code></pre>
+                        </div>
+                        <h4>Static Methods</h4>
+                        <table class="api-table">
+                            <thead>
+                                <tr>
+                                    <th>Method</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>setOrbitControls(controls)</code></td>
+                                    <td>Set OrbitControls reference</td>
+                                </tr>
+                                <tr>
+                                    <td><code>setEditMode(enabled)</code></td>
+                                    <td>Toggle edit mode for all controls</td>
+                                </tr>
+                                <tr>
+                                    <td><code>getEditMode()</code></td>
+                                    <td>Check if edit mode is enabled</td>
+                                </tr>
+                                <tr>
+                                    <td><code>getAll()</code></td>
+                                    <td>Get array of all registered controls</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3 style="color: var(--cosmic-cyan); margin-top: 2rem;">RoomManager</h3>
+                        <p>Manages 3D environment backgrounds (Coordinate, Landscape, Space rooms).</p>
+                        <div class="code-block">
+                            <div class="code-block-header"><span class="code-block-language">JavaScript</span></div>
+                            <pre><code>const roomManager = new RoomManager(scene, camera);
+roomManager.initialize();
+roomManager.switchRoom('space');</code></pre>
+                        </div>
+                    </div>
+
+                    <div id="components" class="api-section">
+                        <h2>🎨 Components</h2>
+                        <p>All components extend <code>BaseControl3D</code> and share common options. See individual
+                            component pages for detailed documentation.</p>
+
+                        <h3 style="color: var(--cosmic-cyan); margin-top: 2rem;">Button3D</h3>
+                        <p>Interactive 3D button with click feedback and hover states.</p>
+                        <div class="code-block">
+                            <div class="code-block-header"><span class="code-block-language">JavaScript</span></div>
+                            <pre><code>new Button3D(scene, camera, [x, y, z], {
+    label: 'Click Me',
+    width: 2.5,
+    height: 1.0,
+    mode: 0, // 0=box, 1=sphere, 2=sacred
+    color: 0x4ecdc4,
+    renderer: renderer,
+    onClick: (btn) => console.log('Clicked!')
+})</code></pre>
+                        </div>
+                        <p><a href="../components/button3d.html" style="color: var(--cosmic-cyan);">→ Full Button3D
+                                Documentation</a></p>
+
+                        <h3 style="color: var(--cosmic-cyan); margin-top: 2rem;">Toggle3D</h3>
+                        <p>On/off switch with smooth animations.</p>
+                        <div class="code-block">
+                            <div class="code-block-header"><span class="code-block-language">JavaScript</span></div>
+                            <pre><code>new Toggle3D(scene, camera, [x, y, z], {
+    label: 'Dark Mode',
+    isOn: false,
+    onColor: 0x4ecdc4,
+    offColor: 0x666666,
+    renderer: renderer,
+    onClick: (toggle) => console.log(toggle.isOn)
+})</code></pre>
+                        </div>
+                        <p><a href="../components/toggle3d.html" style="color: var(--cosmic-cyan);">→ Full Toggle3D
+                                Documentation</a></p>
+
+                        <h3 style="color: var(--cosmic-cyan); margin-top: 2rem;">Slider3D</h3>
+                        <p>Range slider for numeric values or value arrays.</p>
+                        <div class="code-block">
+                            <div class="code-block-header"><span class="code-block-language">JavaScript</span></div>
+                            <pre><code>// Numeric range
+new Slider3D(scene, camera, [x, y, z], {
+    label: 'Volume',
+    min: 0, max: 100, step: 1, value: 50,
+    renderer: renderer,
+    onChange: (slider, value) => console.log(value)
+})
+
+// Value array
+new Slider3D(scene, camera, [x, y, z], {
+    label: 'Size',
+    values: ['S', 'M', 'L', 'XL'],
+    valueIndex: 1,
+    renderer: renderer
+})</code></pre>
+                        </div>
+                        <p><a href="../components/slider3d.html" style="color: var(--cosmic-cyan);">→ Full Slider3D
+                                Documentation</a></p>
+
+                        <h3 style="color: var(--cosmic-cyan); margin-top: 2rem;">TextInput3D</h3>
+                        <p>Text input field with keyboard support.</p>
+                        <div class="code-block">
+                            <div class="code-block-header"><span class="code-block-language">JavaScript</span></div>
+                            <pre><code>new TextInput3D(scene, camera, [x, y, z], {
+    placeholder: 'Enter text...',
+    value: '',
+    renderer: renderer,
+    onChange: (input, value) => console.log(value),
+    onSubmit: (input, value) => console.log('Submitted:', value)
+})</code></pre>
+                        </div>
+                        <p><a href="../components/textinput3d.html" style="color: var(--cosmic-cyan);">→ Full
+                                TextInput3D Documentation</a></p>
+
+                        <h3 style="color: var(--cosmic-cyan); margin-top: 2rem;">TextDisplay3D</h3>
+                        <p>Read-only text display with markdown support.</p>
+                        <div class="code-block">
+                            <div class="code-block-header"><span class="code-block-language">JavaScript</span></div>
+                            <pre><code>new TextDisplay3D(scene, camera, [x, y, z], {
+    content: '# Title\\n\\nMarkdown **content**',
+    width: 4.0,
+    height: 3.0,
+    renderer: renderer
+})</code></pre>
+                        </div>
+                        <p><a href="../components/textdisplay3d.html" style="color: var(--cosmic-cyan);">→ Full
+                                TextDisplay3D Documentation</a></p>
+
+                        <h3 style="color: var(--cosmic-cyan); margin-top: 2rem;">Modal3D</h3>
+                        <p>Modal dialog with backdrop and animations.</p>
+                        <div class="code-block">
+                            <div class="code-block-header"><span class="code-block-language">JavaScript</span></div>
+                            <pre><code>const modal = new Modal3D(scene, camera, [x, y, z], {
+    title: 'Confirm',
+    width: 5.0,
+    height: 4.0,
+    isOpen: false,
+    renderer: renderer,
+    onOpen: () => console.log('Opened'),
+    onClose: () => console.log('Closed')
+});
+
+modal.open();
+modal.close();</code></pre>
+                        </div>
+                        <p><a href="../components/modal3d.html" style="color: var(--cosmic-cyan);">→ Full Modal3D
+                                Documentation</a></p>
+
+                        <h3 style="color: var(--cosmic-cyan); margin-top: 2rem;">Accordion3D</h3>
+                        <p>Collapsible sections with markdown content.</p>
+                        <div class="code-block">
+                            <div class="code-block-header"><span class="code-block-language">JavaScript</span></div>
+                            <pre><code>new Accordion3D(scene, camera, [x, y, z], {
+    width: 5.0,
+    items: [
+        { title: 'Section 1', contentHeight: 3.0, content: '# Content' },
+        { title: 'Section 2', contentHeight: 2.5, content: '# More' }
+    ],
+    openItems: [0],
+    renderer: renderer
+})</code></pre>
+                        </div>
+                        <p><a href="../components/accordion3d.html" style="color: var(--cosmic-cyan);">→ Full
+                                Accordion3D Documentation</a></p>
+
+                        <h3 style="color: var(--cosmic-cyan); margin-top: 2rem;">Chart3D</h3>
+                        <p>Chart.js integration for data visualization.</p>
+                        <div class="code-block">
+                            <div class="code-block-header"><span class="code-block-language">JavaScript</span></div>
+                            <pre><code>new Chart3D(scene, camera, [x, y, z], {
+    chartType: 'line', // 'line', 'bar', 'pie', etc.
+    data: {
+        labels: ['Jan', 'Feb', 'Mar'],
+        datasets: [{
+            label: 'Sales',
+            data: [12, 19, 15],
+            borderColor: '#4ecdc4'
+        }]
+    },
+    width: 4.5,
+    height: 3.5,
+    renderer: renderer
+})</code></pre>
+                        </div>
+                        <p><a href="../components/chart3d.html" style="color: var(--cosmic-cyan);">→ Full Chart3D
+                                Documentation</a></p>
+                    </div>
+
+                    <div id="utilities" class="api-section">
+                        <h2>🛠️ Utilities</h2>
+
+                        <h3 style="color: var(--cosmic-cyan); margin-top: 2rem;">HTMLOverlay</h3>
+                        <p>Manages HTML overlays in 3D space using CSS3DRenderer.</p>
+                        <div class="code-block">
+                            <div class="code-block-header"><span class="code-block-language">JavaScript</span></div>
+                            <pre><code>import { getHTMLOverlay } from './src/utils/HTMLOverlay.js';
+
+const overlay = getHTMLOverlay();
+overlay.createOverlay('myId', element, position, options);
+overlay.setVisible('myId', true);
+overlay.removeOverlay('myId');</code></pre>
+                        </div>
+
+                        <h3 style="color: var(--cosmic-cyan); margin-top: 2rem;">MarkdownRenderer</h3>
+                        <p>Simple markdown to HTML converter.</p>
+                        <div class="code-block">
+                            <div class="code-block-header"><span class="code-block-language">JavaScript</span></div>
+                            <pre><code>import { MarkdownRenderer } from './src/utils/MarkdownRenderer.js';
+
+const html = MarkdownRenderer.render('# Title\\n\\n**Bold** text');</code></pre>
+                        </div>
+
+                        <h3 style="color: var(--cosmic-cyan); margin-top: 2rem;">Tooltip Configuration</h3>
+                        <p>All components support tooltips with the following options:</p>
+                        <table class="api-table">
+                            <thead>
+                                <tr>
+                                    <th>Property</th>
+                                    <th>Type</th>
+                                    <th>Default</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>content</code></td>
+                                    <td>string</td>
+                                    <td>''</td>
+                                    <td>Tooltip text (supports markdown)</td>
+                                </tr>
+                                <tr>
+                                    <td><code>position</code></td>
+                                    <td>string</td>
+                                    <td>'top'</td>
+                                    <td>'top', 'bottom', 'left', 'right'</td>
+                                </tr>
+                                <tr>
+                                    <td><code>offset</code></td>
+                                    <td>array</td>
+                                    <td>[0, 1, 0]</td>
+                                    <td>Offset from control [x, y, z]</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="code-block">
+                            <div class="code-block-header"><span class="code-block-language">JavaScript</span></div>
+                            <pre><code>tooltip: {
+    content: '**Title** 🎯\\n\\nDescription here',
+    position: 'top',
+    offset: [0, 1.5, 0]
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="api-section">
+                        <h2>📝 Common Patterns</h2>
+
+                        <h3 style="color: var(--cosmic-cyan);">Animation Loop</h3>
+                        <div class="code-block">
+                            <div class="code-block-header"><span class="code-block-language">JavaScript</span></div>
+                            <pre><code>function animate() {
+    requestAnimationFrame(animate);
+    
+    // Update all controls
+    ControlRegistry.getAll().forEach(control => {
+        if (control && control.update) {
+            control.update();
+        }
+        if (control && control.updateTooltipAndLabelPositions) {
+            control.updateTooltipAndLabelPositions();
+        }
+    });
+    
+    scene3D.render();
+}
+animate();</code></pre>
+                        </div>
+
+                        <h3 style="color: var(--cosmic-cyan); margin-top: 2rem;">Edit Mode</h3>
+                        <div class="code-block">
+                            <div class="code-block-header"><span class="code-block-language">JavaScript</span></div>
+                            <pre><code>// Enable edit mode for all controls
+ControlRegistry.setEditMode(true);
+
+// Or use a toggle
+const editToggle = new Toggle3D(scene, camera, [0, 0, 0], {
+    label: 'Edit Mode',
+    renderer: renderer,
+    onClick: (toggle) => {
+        ControlRegistry.setEditMode(toggle.isOn);
+    }
+});</code></pre>
+                        </div>
+
+                        <h3 style="color: var(--cosmic-cyan); margin-top: 2rem;">Responsive Resize</h3>
+                        <div class="code-block">
+                            <div class="code-block-header"><span class="code-block-language">JavaScript</span></div>
+                            <pre><code>window.addEventListener('resize', () => {
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+    renderer.setSize(width, height);
+});</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="api-section"
+                        style="background: linear-gradient(135deg, rgba(78, 205, 196, 0.1), rgba(107, 182, 255, 0.1)); border-left-color: #4ecdc4;">
+                        <h2>💡 Best Practices</h2>
+                        <ul style="line-height: 2;">
+                            <li>✅ Always call <code>update()</code> in your animation loop</li>
+                            <li>✅ Set <code>ControlRegistry.setOrbitControls()</code> before creating controls</li>
+                            <li>✅ Use <code>dispose()</code> when removing controls to prevent memory leaks</li>
+                            <li>✅ Keep renderer reference consistent across all controls</li>
+                            <li>✅ Use tooltips to provide context and improve UX</li>
+                            <li>✅ Test with edit mode enabled during development</li>
+                            <li>✅ Handle window resize for responsive layouts</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>🌸 Spatial UI 3D</h3>
+                    <p style="color: rgba(255,255,255,0.6);">Transform web UI into immersive 3D spatial interfaces.</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Documentation</h3>
+                    <ul class="footer-links">
+                        <li><a href="./getting-started.html">Getting Started</a></li>
+                        <li><a href="./api-reference.html">API Reference</a></li>
+                        <li><a href="../components/index.html">Components</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Resources</h3>
+                    <ul class="footer-links">
+                        <li><a href="../index.html#demos">Demos</a></li>
+                        <li><a href="../examples/index.html">Examples</a></li>
+                        <li><a href="https://github.com/spatial-ui-3d" target="_blank">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>Built with 🌸 <span class="footer-aurora">Aurora</span> & ♾️ <span
+                        class="footer-aurora">Infinite</span></p>
+            </div>
+        </div>
+    </footer>
+    <script src="../scripts/showcase.js"></script>
+</body>
+
+</html>
