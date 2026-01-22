@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Component Playground - All 25 Controls - Spatial UI 3D</title>
+    <title>Component Playground - All Controls - Spatial UI 3D</title>
     <style>
         * {
             margin: 0;
@@ -167,21 +167,6 @@
             font-size: 12px;
             color: #ccc;
         }
-
-        /* Section Labels */
-        .section-label {
-            position: fixed;
-            top: 50%;
-            left: 20px;
-            transform: translateY(-50%);
-            background: rgba(10, 10, 26, 0.8);
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-size: 16px;
-            font-weight: bold;
-            z-index: 99;
-            opacity: 0.7;
-        }
     </style>
 </head>
 
@@ -194,12 +179,11 @@
         <div class="section-tabs">
             <div class="tab active" data-section="basic">Basic (6)</div>
             <div class="tab" data-section="cards">Cards (7)</div>
-            <div class="tab" data-section="menus">Menus (3)</div>
-            <div class="tab" data-section="data">Data (4)</div>
-            <div class="tab" data-section="advanced">Advanced (5)</div>
+            <div class="tab" data-section="data">Data (2)</div>
+            <div class="tab" data-section="advanced">Advanced (3)</div>
         </div>
         <div class="info-text">
-            Explore all 25 Spatial UI 3D controls in one interactive playground.
+            Explore Spatial UI 3D controls in one interactive playground.
             Click tabs to navigate between sections.
         </div>
     </div>
@@ -208,10 +192,10 @@
     <div class="component-info">
         <div class="info-title" id="current-component">All Components</div>
         <div class="info-text" id="component-desc">
-            This playground showcases every control in the Spatial UI 3D library.
-            Each component is interactive and demonstrates its core functionality.
+            This playground showcases the core controls in the Spatial UI 3D library.
+            Each component is interactive and demonstrates its functionality.
         </div>
-        <div class="component-count">25 Controls</div>
+        <div class="component-count">18+ Controls</div>
     </div>
 
     <!-- Navigation -->
@@ -229,10 +213,6 @@
             <span id="fps">60</span>
         </div>
         <div class="setting-item">
-            <span>Components:</span>
-            <span id="visible-count">6</span>
-        </div>
-        <div class="setting-item">
             <span>Camera:</span>
             <span>Free</span>
         </div>
@@ -248,32 +228,25 @@
     </script>
 
     <script type="module">
-        import { Scene3D } from '../../src/core/Scene3D.js';
-        import { Button3D } from '../../src/controls/Button3D.js';
-        import { Toggle3D } from '../../src/controls/Toggle3D.js';
-        import { Slider3D } from '../../src/controls/Slider3D.js';
-        import { TextInput3D } from '../../src/controls/TextInput3D.js';
-        import { TextDisplay3D } from '../../src/controls/TextDisplay3D.js';
-        import { Modal3D } from '../../src/controls/Modal3D.js';
-        import { VolumetricCard3D } from '../../src/controls/VolumetricCard3D.js';
-        import { HaloCard3D } from '../../src/controls/HaloCard3D.js';
-        import { PortalCard3D } from '../../src/controls/PortalCard3D.js';
-        import { MagneticCard3D } from '../../src/controls/MagneticCard3D.js';
-        import { AIPortal3D } from '../../src/controls/AIPortal3D.js';
-        import { Accordion3D } from '../../src/controls/Accordion3D.js';
-        import { RadialMenu3D } from '../../src/controls/RadialMenu3D.js';
-        import { Chart3D } from '../../src/controls/Chart3D.js';
-        import { DataVolume3D } from '../../src/controls/DataVolume3D.js';
-        import { NetworkGraph3D } from '../../src/controls/NetworkGraph3D.js';
-        import { HoloMap3D } from '../../src/controls/HoloMap3D.js';
-        import { EchoInteraction3D } from '../../src/controls/EchoInteraction3D.js';
-        import { HapticHorizon3D } from '../../src/controls/HapticHorizon3D.js';
-        import { KineticSculpture3D } from '../../src/controls/KineticSculpture3D.js';
-        import { IKManipulator3D } from '../../src/controls/IKManipulator3D.js';
-        import { FlowFieldController3D } from '../../src/controls/FlowFieldController3D.js';
-        import { SpatialScrubber3D } from '../../src/controls/SpatialScrubber3D.js';
-        import { TimeRibbon3D } from '../../src/controls/TimeRibbon3D.js';
         import * as THREE from 'three';
+        import Scene3D from '../../src/core/Scene3D.js';
+        import Button3D from '../../src/controls/Button3D.js';
+        import Toggle3D from '../../src/controls/Toggle3D.js';
+        import Slider3D from '../../src/controls/Slider3D.js';
+        import TextInput3D from '../../src/controls/TextInput3D.js';
+        import TextDisplay3D from '../../src/controls/TextDisplay3D.js';
+        import Modal3D from '../../src/controls/Modal3D.js';
+        import VolumetricCard3D from '../../src/controls/VolumetricCard3D.js';
+        import HaloCard3D from '../../src/controls/HaloCard3D.js';
+        import PortalCard3D from '../../src/controls/PortalCard3D.js';
+        import MagneticCard3D from '../../src/controls/MagneticCard3D.js';
+        import AIPortal3D from '../../src/controls/AIPortal3D.js';
+        import Accordion3D from '../../src/controls/Accordion3D.js';
+        import RadialMenu3D from '../../src/controls/RadialMenu3D.js';
+        import Chart3D from '../../src/controls/Chart3D.js';
+        import KineticSculpture3D from '../../src/controls/KineticSculpture3D.js';
+        import EchoInteraction3D from '../../src/controls/EchoInteraction3D.js';
+        import HapticHorizon3D from '../../src/controls/HapticHorizon3D.js';
 
         const canvas = document.getElementById('canvas');
         const scene3D = new Scene3D(canvas);
@@ -308,7 +281,6 @@
         const components = {
             basic: [],
             cards: [],
-            menus: [],
             data: [],
             advanced: []
         };
@@ -435,7 +407,7 @@
         );
 
         // ===== SECTION 3: DATA VISUALIZATION =====
-        // Position: X=5 to 15
+        // Position: X=8 to 15
         components.data.push(
             new Chart3D(scene, camera, [8, 3, 0], {
                 chartType: 'line',
@@ -448,27 +420,6 @@
                     }]
                 },
                 width: 4, height: 3,
-                mode: 0, renderer: renderer
-            })
-        );
-
-        components.data.push(
-            new DataVolume3D(scene, camera, [13, 3, 0], {
-                width: 2.5, height: 2.5, depth: 2.5,
-                mode: 0, renderer: renderer
-            })
-        );
-
-        components.data.push(
-            new NetworkGraph3D(scene, camera, [8, -1, 0], {
-                width: 3, height: 3,
-                mode: 0, renderer: renderer
-            })
-        );
-
-        components.data.push(
-            new HoloMap3D(scene, camera, [12, -1, 0], {
-                width: 3, height: 3,
                 mode: 0, renderer: renderer
             })
         );
@@ -496,25 +447,10 @@
             })
         );
 
-        components.advanced.push(
-            new FlowFieldController3D(scene, camera, [18, 0, 0], {
-                width: 3, height: 2.5,
-                mode: 0, renderer: renderer
-            })
-        );
-
-        components.advanced.push(
-            new TimeRibbon3D(scene, camera, [22, 0, 0], {
-                width: 4, height: 1.5,
-                mode: 0, renderer: renderer
-            })
-        );
-
         // Section camera positions
         const sectionPositions = {
             basic: { x: -11, y: 5, z: 20 },
             cards: { x: 0, y: 5, z: 20 },
-            menus: { x: 0, y: 5, z: 20 },
             data: { x: 10, y: 5, z: 20 },
             advanced: { x: 21, y: 5, z: 20 }
         };
@@ -551,7 +487,6 @@
             const sectionNames = {
                 basic: 'Basic Controls',
                 cards: 'Cards & Displays',
-                menus: 'Menus & Navigation',
                 data: 'Data Visualization',
                 advanced: 'Advanced Controls'
             };
@@ -563,7 +498,7 @@
             tab.addEventListener('click', () => moveToSection(tab.dataset.section));
         });
 
-        const sections = ['basic', 'cards', 'menus', 'data', 'advanced'];
+        const sections = ['basic', 'cards', 'data', 'advanced'];
         document.getElementById('prev-section').addEventListener('click', () => {
             const idx = sections.indexOf(currentSection);
             moveToSection(sections[(idx - 1 + sections.length) % sections.length]);
