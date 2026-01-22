@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IKManipulator3D - Spatial UI 3D</title>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            cursor: default;
+        }
+
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 20, 40, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            color: white;
+            max-width: 350px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .info-panel h2 {
+            margin: 0 0 10px 0;
+            color: #00ffff;
+            font-size: 1.5rem;
+        }
+
+        .info-panel p {
+            margin: 5px 0;
+            line-height: 1.5;
+            font-size: 0.9rem;
+        }
+
+        .stats-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 20, 40, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            color: white;
+            font-family: 'Courier New', monospace;
+            min-width: 220px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 0.9rem;
+        }
+
+        .stat-label {
+            color: #00ffff;
+        }
+
+        .stat-value {
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        .controls-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 20, 40, 0.9);
+            padding: 15px 30px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            color: white;
+            text-align: center;
+        }
+
+        .control-button {
+            background: linear-gradient(135deg, #00ffff, #0080ff);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px;
+            transition: transform 0.2s;
+        }
+
+        .control-button:hover {
+            transform: scale(1.05);
+        }
+
+        .control-button:active {
+            transform: scale(0.95);
+        }
+
+        .control-button.active {
+            background: linear-gradient(135deg, #ff6b9d, #ff00ff);
+        }
+
+        .instruction {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px dashed rgba(0, 255, 255, 0.5);
+            padding: 30px;
+            border-radius: 15px;
+            color: #00ffff;
+            font-size: 1.2rem;
+            text-align: center;
+            pointer-events: none;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 0.6;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="info-panel">
+        <h2>🦾 IKManipulator3D</h2>
+        <p>Inverse Kinematics Control</p>
+        <p style="margin-top: 15px;"><strong>Instructions:</strong></p>
+        <ul style="margin: 10px 0; padding-left: 20px; line-height: 1.8;">
+            <li>Drag the pink sphere to move the arm</li>
+            <li>Cyan lines show the skeleton</li>
+            <li>Switch between CCD and FABRIK solvers</li>
+            <li>Constraints prevent unnatural poses</li>
+        </ul>
+    </div>
+
+    <div class="stats-panel">
+        <div class="stat-row">
+            <span class="stat-label">Solver:</span>
+            <span class="stat-value" id="solverValue">CCD</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Target X:</span>
+            <span class="stat-value" id="targetX">0.00</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Target Y:</span>
+            <span class="stat-value" id="targetY">0.00</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Target Z:</span>
+            <span class="stat-value" id="targetZ">0.00</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Distance:</span>
+            <span class="stat-value" id="distance">0.00</span>
+        </div>
+    </div>
+
+    <div class="controls-panel">
+        <button class="control-button" id="resetPose">🔄 Reset Pose</button>
+        <button class="control-button active" id="solverCCD">CCD Solver</button>
+        <button class="control-button" id="solverFABRIK">FABRIK Solver</button>
+        <button class="control-button" id="toggleBones">👁️ Toggle Bones</button>
+    </div>
+
+    <div class="instruction" id="instruction">
+        Drag the pink sphere to control the robotic arm
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { IKManipulator3D } from '../../src/controls/IKManipulator3D.js';
+
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000510);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(5, 3, 8);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+
+        // Orbit controls
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+
+        const pointLight1 = new THREE.PointLight(0x00ffff, 1, 100);
+        pointLight1.position.set(5, 5, 5);
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0xff00ff, 0.5, 100);
+        pointLight2.position.set(-5, -5, 5);
+        scene.add(pointLight2);
+
+        // Create simple robotic arm skeleton
+        const shoulder = new THREE.Bone();
+        shoulder.position.set(0, 0, 0);
+
+        const upperArm = new THREE.Bone();
+        upperArm.position.set(0, 2, 0);
+        shoulder.add(upperArm);
+
+        const elbow = new THREE.Bone();
+        elbow.position.set(0, 2, 0);
+        upperArm.add(elbow);
+
+        const forearm = new THREE.Bone();
+        forearm.position.set(0, 1.5, 0);
+        elbow.add(forearm);
+
+        const wrist = new THREE.Bone();
+        wrist.position.set(0, 1, 0);
+        forearm.add(wrist);
+
+        // Add skeleton to scene
+        const skeleton = new THREE.Skeleton([shoulder, upperArm, elbow, forearm, wrist]);
+        const skeletonHelper = new THREE.SkeletonHelper(shoulder);
+        skeletonHelper.visible = false;
+        scene.add(skeletonHelper);
+        scene.add(shoulder);
+
+        // Update matrices
+        shoulder.updateMatrixWorld(true);
+
+        // State tracking
+        let currentSolver = 'CCD';
+        let showBones = true;
+        let hasInteracted = false;
+
+        // Create IK Manipulator
+        const ikManipulator = new IKManipulator3D(scene, camera, [0, 0, 0], {
+            bones: [shoulder, upperArm, elbow, forearm, wrist],
+            endEffectors: [{
+                bone: wrist,
+                chainLength: 4
+            }],
+            solver: 'CCD',
+            constraints: {
+                [upperArm.uuid]: {
+                    type: 'ball',
+                    maxAngle: Math.PI / 3  // 60 degrees
+                },
+                [elbow.uuid]: {
+                    type: 'hinge',
+                    axis: new THREE.Vector3(1, 0, 0),
+                    minAngle: 0,
+                    maxAngle: Math.PI * 0.8  // 144 degrees
+                },
+                [forearm.uuid]: {
+                    type: 'ball',
+                    maxAngle: Math.PI / 4  // 45 degrees
+                }
+            },
+            iterations: 15,
+            tolerance: 0.01,
+            showBones: true,
+            handleRadius: 0.3,
+            onUpdate: (chain, target) => {
+                updateStats(target);
+
+                if (!hasInteracted) {
+                    hasInteracted = true;
+                    document.getElementById('instruction').style.display = 'none';
+                }
+            }
+        });
+
+        // UI Controls
+        document.getElementById('resetPose').addEventListener('click', () => {
+            // Reset all bone rotations
+            shoulder.quaternion.identity();
+            upperArm.quaternion.identity();
+            elbow.quaternion.identity();
+            forearm.quaternion.identity();
+            wrist.quaternion.identity();
+
+            shoulder.updateMatrixWorld(true);
+            ikManipulator.updateBoneVisualization();
+
+            // Reset handle position
+            const wristPos = new THREE.Vector3();
+            wrist.getWorldPosition(wristPos);
+            ikManipulator.handles[0].position.copy(wristPos);
+        });
+
+        document.getElementById('solverCCD').addEventListener('click', () => {
+            currentSolver = 'CCD';
+            ikManipulator.solver = 'CCD';
+            document.getElementById('solverValue').textContent = 'CCD';
+            document.getElementById('solverCCD').classList.add('active');
+            document.getElementById('solverFABRIK').classList.remove('active');
+        });
+
+        document.getElementById('solverFABRIK').addEventListener('click', () => {
+            currentSolver = 'FABRIK';
+            ikManipulator.solver = 'FABRIK';
+            document.getElementById('solverValue').textContent = 'FABRIK';
+            document.getElementById('solverFABRIK').classList.add('active');
+            document.getElementById('solverCCD').classList.remove('active');
+        });
+
+        document.getElementById('toggleBones').addEventListener('click', () => {
+            showBones = !showBones;
+            ikManipulator.showBones = showBones;
+
+            if (showBones) {
+                ikManipulator.updateBoneVisualization();
+            } else {
+                ikManipulator.boneLines.forEach(line => ikManipulator.group.remove(line));
+                ikManipulator.boneLines = [];
+            }
+        });
+
+        // Update stats display
+        function updateStats(target) {
+            document.getElementById('targetX').textContent = target.x.toFixed(2);
+            document.getElementById('targetY').textContent = target.y.toFixed(2);
+            document.getElementById('targetZ').textContent = target.z.toFixed(2);
+
+            const wristPos = new THREE.Vector3();
+            wrist.getWorldPosition(wristPos);
+            const distance = wristPos.distanceTo(target);
+            document.getElementById('distance').textContent = distance.toFixed(2);
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Update controls
+            controls.update();
+
+            // Update IK manipulator
+            ikManipulator.update();
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            ikManipulator.dispose();
+        });
+    </script>
+</body>
+
+</html>

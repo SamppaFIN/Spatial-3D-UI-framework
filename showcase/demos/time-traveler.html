@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Traveler's Dashboard - Spatial UI 3D Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0520;
+            color: #8080ff;
+            overflow: hidden;
+        }
+
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .time-info {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(10, 5, 32, 0.95);
+            border: 2px solid #8080ff;
+            padding: 20px;
+            max-width: 400px;
+            z-index: 100;
+            box-shadow: 0 0 20px rgba(128, 128, 255, 0.5);
+        }
+
+        .time-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #8080ff;
+            text-shadow: 0 0 10px #8080ff;
+        }
+
+        .time-text {
+            color: #a0a0ff;
+            line-height: 1.6;
+            font-size: 13px;
+        }
+
+        .timeline-display {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(10, 5, 32, 0.95);
+            border: 2px solid #ff80ff;
+            padding: 15px;
+            z-index: 100;
+            min-width: 300px;
+        }
+
+        .timeline-title {
+            color: #ff80ff;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .timeline-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 12px;
+        }
+
+        .timeline-label {
+            color: #ff80ff;
+        }
+
+        .timeline-value {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .paradox-warning {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(10, 5, 32, 0.95);
+            border: 2px solid #ff4040;
+            padding: 15px;
+            z-index: 100;
+            max-width: 350px;
+        }
+
+        .warning-title {
+            color: #ff4040;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .warning-text {
+            color: #ff8080;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .era-selector {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(10, 5, 32, 0.95);
+            border: 2px solid #80ff80;
+            padding: 15px;
+            z-index: 100;
+            min-width: 280px;
+        }
+
+        .era-title {
+            color: #80ff80;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .era-item {
+            color: #a0ffa0;
+            margin: 5px 0;
+            font-size: 12px;
+            padding: 5px;
+            cursor: pointer;
+        }
+
+        .era-item:hover {
+            background: rgba(128, 255, 128, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div class="time-info">
+        <div class="time-title">⏰ TEMPORAL NAVIGATION SYSTEM</div>
+        <div class="time-text">
+            <strong>CHRONONAUT ID:</strong> TN-2077-AURORA<br>
+            <strong>MISSION:</strong> Temporal Research & Paradox Prevention<br><br>
+
+            You are a licensed time traveler, navigating the timestream to study historical
+            events and prevent temporal paradoxes. Your dashboard allows you to jump between
+            eras, monitor timeline stability, and track your temporal coordinates.<br><br>
+
+            <strong>CURRENT STATUS:</strong> Stable temporal anchor<br>
+            <strong>PARADOX RISK:</strong> <span style="color: #ff4040;">MODERATE</span>
+        </div>
+    </div>
+
+    <div class="timeline-display">
+        <div class="timeline-title">📅 TEMPORAL COORDINATES</div>
+        <div class="timeline-item">
+            <span class="timeline-label">Current Era:</span>
+            <span class="timeline-value" id="era">2077 CE</span>
+        </div>
+        <div class="timeline-item">
+            <span class="timeline-label">Timeline:</span>
+            <span class="timeline-value" id="timeline">Prime-Alpha</span>
+        </div>
+        <div class="timeline-item">
+            <span class="timeline-label">Stability:</span>
+            <span class="timeline-value" id="stability">87%</span>
+        </div>
+        <div class="timeline-item">
+            <span class="timeline-label">Jumps Today:</span>
+            <span class="timeline-value" id="jumps">7</span>
+        </div>
+        <div class="timeline-item">
+            <span class="timeline-label">Energy:</span>
+            <span class="timeline-value" id="energy">65%</span>
+        </div>
+    </div>
+
+    <div class="paradox-warning">
+        <div class="warning-title">⚠️ PARADOX ALERT</div>
+        <div class="warning-text">
+            Temporal anomaly detected in sector 7G. Multiple versions of the same object
+            exist in this timeline. Recommend immediate investigation to prevent cascade failure.
+        </div>
+    </div>
+
+    <div class="era-selector">
+        <div class="era-title">🌍 QUICK JUMP DESTINATIONS</div>
+        <div class="era-item">🏛️ Ancient Rome (44 BCE)</div>
+        <div class="era-item">🏰 Medieval Europe (1215 CE)</div>
+        <div class="era-item">🎩 Victorian Era (1850 CE)</div>
+        <div class="era-item">🚀 Space Age (1969 CE)</div>
+        <div class="era-item">💻 Digital Age (2000 CE)</div>
+        <div class="era-item">🌌 Far Future (2500 CE)</div>
+    </div>
+
+    <script type="importmap">
+    { "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }}
+    </script>
+
+    <script type="module">
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { Slider3D } from '../../src/controls/Slider3D.js';
+        import { Chart3D } from '../../src/controls/Chart3D.js';
+        import { Button3D } from '../../src/controls/Button3D.js';
+        import { TextDisplay3D } from '../../src/controls/TextDisplay3D.js';
+        import * as THREE from 'three';
+
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+
+        scene.background = new THREE.Color(0x0a0520);
+        scene.fog = new THREE.Fog(0x0a0520, 10, 50);
+
+        const blueLight = new THREE.PointLight(0x8080ff, 2, 20);
+        blueLight.position.set(-5, 5, 5);
+        scene.add(blueLight);
+
+        const pinkLight = new THREE.PointLight(0xff80ff, 2, 20);
+        pinkLight.position.set(5, 5, 5);
+        scene.add(pinkLight);
+
+        camera.position.set(0, 2, 12);
+
+        // Timeline Slider
+        const timelineSlider = new Slider3D(scene, camera, [-6, 3, 0], {
+            label: '⏰ TIME PERIOD',
+            width: 5,
+            height: 0.4,
+            values: ['Ancient', 'Medieval', 'Renaissance', 'Industrial', 'Modern', 'Future'],
+            valueIndex: 4,
+            mode: 0,
+            renderer: renderer,
+            onChange: (slider, value, index) => {
+                console.log(`Jumped to: ${value}`);
+            }
+        });
+
+        // Energy Slider
+        const energySlider = new Slider3D(scene, camera, [-6, 1.8, 0], {
+            label: '⚡ TEMPORAL ENERGY',
+            width: 5,
+            height: 0.4,
+            min: 0,
+            max: 100,
+            value: 65,
+            mode: 0,
+            renderer: renderer
+        });
+
+        // Jump Button
+        const jumpButton = new Button3D(scene, camera, [-6, 0.5, 0], {
+            label: '🌀 INITIATE JUMP',
+            width: 3,
+            height: 1,
+            mode: 0,
+            renderer: renderer,
+            onClick: () => {
+                console.log('Time jump initiated!');
+            }
+        });
+
+        // Stabilize Button
+        const stabilizeButton = new Button3D(scene, camera, [-6, -0.8, 0], {
+            label: '🔧 STABILIZE TIMELINE',
+            width: 3,
+            height: 1,
+            mode: 0,
+            renderer: renderer
+        });
+
+        // Timeline Stability Chart
+        const stabilityChart = new Chart3D(scene, camera, [3, 2, 0], {
+            chartType: 'line',
+            data: {
+                labels: ['T-6h', 'T-5h', 'T-4h', 'T-3h', 'T-2h', 'T-1h', 'NOW'],
+                datasets: [{
+                    label: 'Timeline Stability %',
+                    data: [95, 92, 88, 85, 87, 89, 87],
+                    borderColor: '#8080ff',
+                    backgroundColor: 'rgba(128, 128, 255, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            width: 5,
+            height: 4,
+            mode: 0,
+            renderer: renderer
+        });
+
+        // Historical Events Display
+        const eventsDisplay = new TextDisplay3D(scene, camera, [3, -2, 0], {
+            content: `# 📜 Historical Events Log
+
+## Recent Observations
+
+### Ancient Rome (44 BCE)
+- Witnessed Caesar's assassination
+- Timeline integrity: STABLE
+- Paradox risk: NONE
+
+### Victorian Era (1850 CE)
+- Industrial revolution documentation
+- Timeline integrity: STABLE
+- Paradox risk: LOW
+
+### Space Age (1969 CE)
+- Moon landing observation
+- Timeline integrity: UNSTABLE
+- Paradox risk: MODERATE
+
+*Warning: Multiple temporal echoes detected*`,
+            width: 5,
+            height: 4,
+            mode: 0,
+            renderer: renderer
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            timelineSlider.update();
+            energySlider.update();
+            jumpButton.update();
+            stabilizeButton.update();
+            stabilityChart.update();
+            eventsDisplay.update();
+
+            blueLight.intensity = 2 + Math.sin(Date.now() * 0.003) * 0.5;
+            pinkLight.intensity = 2 + Math.cos(Date.now() * 0.003) * 0.5;
+
+            scene3D.render();
+        }
+
+        animate();
+    </script>
+</body>
+
+</html>

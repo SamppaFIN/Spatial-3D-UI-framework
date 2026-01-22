@@ -104,7 +104,7 @@ export class TextDisplay3D extends BaseControl3D {
     }
 
     createContent() {
-        if (!this.content) return;
+        if (this.content === undefined || this.content === null) this.content = '';
 
         // Use HTML overlay for markdown content
         const htmlOverlay = getHTMLOverlay();

@@ -204,19 +204,46 @@
                         <div class="layer">
                             <h3>4. Component Layer</h3>
                             <p><strong>Purpose:</strong> User-facing UI components that extend BaseControl3D.</p>
-                            <p><strong>Key Components:</strong></p>
+                            <p><strong>Key Categories:</strong></p>
                             <ul>
-                                <li><code>Button3D</code> - Interactive buttons</li>
-                                <li><code>Toggle3D</code> - On/off switches</li>
-                                <li><code>Slider3D</code> - Range sliders</li>
-                                <li><code>TextInput3D</code> - Text input fields</li>
-                                <li><code>TextDisplay3D</code> - Read-only text displays</li>
-                                <li><code>Modal3D</code> - Dialog overlays</li>
-                                <li><code>Accordion3D</code> - Collapsible sections</li>
-                                <li><code>Chart3D</code> - Data visualization</li>
+                                <li><strong>Core:</strong> Button3D, Toggle3D, Slider3D, TextInput3D, etc.</li>
+                                <li><strong>Advanced:</strong>
+                                    <ul>
+                                        <li><code>MagneticCard3D</code> - Physics-based tilt interactions.</li>
+                                        <li><code>PortalCard3D</code> - Multi-scene rendering via RenderTargets.</li>
+                                        <li><code>VolumetricCard3D</code> - Integration with 3D models (GLTF).</li>
+                                        <li><code>HaloCard3D</code> - Dynamic billboarding and anchor-following.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Generative:</strong> <code>AIPortal3D</code> - Environment traversal logic
+                                    and custom Shaders.</li>
                             </ul>
-                            <p><strong>Why:</strong> Provides reusable, consistent UI components for building spatial
-                                interfaces.</p>
+                            <p><strong>Why:</strong> Provides a modular ecosystem where components can be swapped or
+                                combined for complex spatial experiences.</p>
+                        </div>
+                    </div>
+
+                    <div id="advanced-patterns" class="layer">
+                        <h2 style="color: var(--cosmic-cyan); margin: 3rem 0 1.5rem;">🌌 Advanced Architectural Patterns
+                        </h2>
+
+                        <div class="principle-card" style="border-left-color: var(--cosmic-cyan);">
+                            <h3>1. Render-Target Viewports (Portals)</h3>
+                            <p>Used in <code>PortalCard3D</code> and <code>AIPortal3D</code> to create "windows" into
+                                separate dimensions without affecting the main scene's state.</p>
+                        </div>
+
+                        <div class="principle-card" style="border-left-color: var(--cosmic-cyan);">
+                            <h3>2. Physics-Based Lerping (Magnetic)</h3>
+                            <p>Physics-like movement in <code>MagneticCard3D</code> is achieved via high-frequency
+                                LERPing and damping factors applied to local rotations.</p>
+                        </div>
+
+                        <div class="principle-card" style="border-left-color: var(--electric-blue);">
+                            <h3>3. World-Swapper Logic</h3>
+                            <p>A declarative pattern where a component (like <code>AIPortal3D</code>) can coordinate
+                                with the <code>RoomManager</code> to hot-swap environment variables (skybox, fog,
+                                lighting) based on camera proximity.</p>
                         </div>
                     </div>
 
@@ -414,7 +441,8 @@ htmlOverlay.createOverlay(id, element, position, {
                     <ul class="footer-links">
                         <li><a href="../index.html#demos">Demos</a></li>
                         <li><a href="../examples/index.html">Examples</a></li>
-                        <li><a href="https://github.com/spatial-ui-3d" target="_blank">GitHub</a></li>
+                        <li><a href="https://github.com/SamppaFIN/Spatial-3D-UI-framework" target="_blank">GitHub</a>
+                        </li>
                     </ul>
                 </div>
             </div>

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spatial Layout & Zones - Spatial UI 3D</title>
+    <link rel="stylesheet" href="../../showcase/styles/showcase.css">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+            text-align: left;
+        }
+
+        .hud h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            color: #fff;
+            text-shadow: 0 0 10px #00aaff;
+            margin: 0;
+        }
+
+        .hud p {
+            font-family: 'Inter', sans-serif;
+            color: #88ccff;
+            margin-top: 5px;
+        }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+
+    <div class="hud">
+        <h1>Spatial Environment</h1>
+        <p>Starfield + Coordinate Grid Reference</p>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        import { StarfieldBackground } from '../../src/environments/StarfieldBackground.js';
+        import { CoordinatePlane } from '../../src/environments/CoordinatePlane.js';
+        import { SpatialLayout } from '../../src/core/SpatialLayout.js';
+        import { SpatialControls } from '../../src/controls/SpatialControls.js';
+        import { PortalWindow } from '../../src/components/PortalWindow.js';
+        import { LiquidContainer } from '../../src/components/LiquidContainer.js';
+        import { SemanticGhost } from '../../src/ai/SemanticGhost.js';
+
+        // Scene
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000005);
+        scene.fog = new THREE.FogExp2(0x000005, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 1.6, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // Environment
+        const stars = new StarfieldBackground(scene);
+        const grid = new CoordinatePlane(scene, 100, 100);
+
+        // Layout Manager
+        const layout = new SpatialLayout(scene, camera);
+
+        // --- Demo Objects ---
+
+        // 1. Direct Zone (Hand reachable) - Body Locked
+        const btnGeo = new THREE.BoxGeometry(0.2, 0.1, 0.02);
+        const btnMat = new THREE.MeshStandardMaterial({ color: 0xff00aa, emissive: 0x440022 });
+        const directBtn = new THREE.Mesh(btnGeo, btnMat);
+
+        // Add to layout: 'direct' zone, 'body' anchor (follows user)
+        layout.add(directBtn, 'direct', 'body');
+
+        // Metadata for AI Ghost
+        directBtn.userData.helpText = "Click to Activate Protocol";
+
+        // 2. Primary Zone (Focus) - World Locked
+        const panelGeo = new THREE.PlaneGeometry(0.8, 0.6);
+        const panelMat = new THREE.MeshStandardMaterial({
+            color: 0x00aaff,
+            transparent: true,
+            opacity: 0.5,
+            side: THREE.DoubleSide
+        });
+        const primaryPanel = new THREE.Mesh(panelGeo, panelMat);
+
+        // Add to layout: 'primary' zone, 'world' anchor (fixed)
+        // Positioned slightly to the right to not block initial view
+        layout.add(primaryPanel, 'primary', 'world');
+        primaryPanel.position.x += 1.0; // Offset manually after placement if needed
+        primaryPanel.userData.helpText = "Status: Optimal. Shields: 100%.";
+
+        // 3. Peripheral Zone (Background) - World Locked
+        const orbGeo = new THREE.IcosahedronGeometry(1, 1);
+        const orbMat = new THREE.MeshStandardMaterial({ color: 0x00ff88, wireframe: true });
+        const peripheralOrb = new THREE.Mesh(orbGeo, orbMat);
+
+        layout.add(peripheralOrb, 'peripheral', 'world');
+        peripheralOrb.position.set(-3, 2, -4); // Manual override for specific ambiance
+
+        // 4. Portal Zone - Fixed in World
+        const activePortal = new PortalWindow(2, 3);
+        layout.add(activePortal, 'primary', 'world');
+        activePortal.position.set(-2, 1.6, -1); // Left side
+        activePortal.lookAt(camera.position);  // Face user initially
+        activePortal.addBorder(0.05, 0x00ffff);
+
+        // Add fun stuff inside the portal
+        const torusKnot = new THREE.Mesh(
+            new THREE.TorusKnotGeometry(0.4, 0.15, 100, 16),
+            new THREE.MeshStandardMaterial({ color: 0xffaa00, roughness: 0.2, metalness: 0.8 })
+        );
+        activePortal.addContent(torusKnot);
+
+        // 5. Liquid Zone - Floating on right
+        const liquidUI = new LiquidContainer(3, 3, renderer);
+        layout.add(liquidUI, 'primary', 'world');
+        liquidUI.position.set(2.5, 1.6, 0); // Right side
+        liquidUI.lookAt(camera.position);
+
+        // Add drifting blobs to liquid UI
+        const blobGeo = new THREE.SphereGeometry(0.2, 16, 16);
+        const blobMat = new THREE.MeshBasicMaterial({ color: 0x00ff88 });
+        const blobs = [];
+        for (let i = 0; i < 3; i++) {
+            const b = new THREE.Mesh(blobGeo, blobMat);
+            liquidUI.addContent(b);
+            blobs.push(b);
+        }
+        liquidUI.userData.helpText = "Caution: Radioactive Liquid Material";
+
+        // 6. Semantic Ghost (AI Helper)
+        const ghost = new SemanticGhost(camera, scene, renderer);
+        scene.add(ghost);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404040, 1.0);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        dirLight.position.set(5, 10, 5);
+        scene.add(dirLight);
+
+        // Controls
+        const controls = new SpatialControls(camera, renderer.domElement, scene);
+
+        // Animation Loop
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = clock.getElapsedTime();
+            const delta = clock.getDelta();
+
+            stars.update(time);
+            layout.update(time, delta); // Update layout physics (body locking)
+
+            // Portal Animation
+            if (activePortal) {
+                // Example: simple rotation for portal contents
+                activePortal.portalWorld.children.forEach((child, i) => {
+                    child.rotation.x = time * 0.5 * (i + 1);
+                    child.rotation.y = time * 0.3 * (i + 1);
+                });
+            }
+
+            // Cloud/Liquid Animation
+            blobs.forEach((b, i) => {
+                b.position.x = Math.sin(time * (1 + i * 0.5)) * 0.8;
+                b.position.y = Math.cos(time * (0.8 + i * 0.3)) * 0.8;
+            });
+            liquidUI.update(camera); // Render liquid pass
+
+            // Update Ghost
+            ghost.update(delta, time);
+
+            controls.update(delta);
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+
+</html>

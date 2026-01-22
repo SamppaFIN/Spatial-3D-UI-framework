@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EchoInteraction3D - Spatial UI 3D</title>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <style>
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 20, 40, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            color: white;
+            max-width: 300px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .info-panel h2 {
+            margin: 0 0 10px 0;
+            color: #00ffff;
+            font-size: 1.5rem;
+        }
+
+        .info-panel p {
+            margin: 5px 0;
+            line-height: 1.5;
+            font-size: 0.9rem;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+
+        .feature-list li {
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .feature-list li:before {
+            content: "✦";
+            position: absolute;
+            left: 0;
+            color: #00ffff;
+        }
+
+        .stats-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 20, 40, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            color: white;
+            font-family: 'Courier New', monospace;
+            min-width: 200px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 0.9rem;
+        }
+
+        .stat-label {
+            color: #00ffff;
+        }
+
+        .stat-value {
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        .controls-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 20, 40, 0.9);
+            padding: 15px 30px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            color: white;
+            text-align: center;
+        }
+
+        .control-button {
+            background: linear-gradient(135deg, #00ffff, #0080ff);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px;
+            transition: transform 0.2s;
+        }
+
+        .control-button:hover {
+            transform: scale(1.05);
+        }
+
+        .control-button:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="info-panel">
+        <h2>🌊 EchoInteraction3D</h2>
+        <p>Ripple-based Object Discovery</p>
+        <p style="margin-top: 15px; font-style: italic;">Click anywhere to send out a pulse that reveals nearby objects.
+        </p>
+        <ul class="feature-list">
+            <li>Expanding ripple effect</li>
+            <li>Shader-based highlighting</li>
+            <li>Distance-based reveal</li>
+            <li>Audio feedback</li>
+        </ul>
+    </div>
+
+    <div class="stats-panel">
+        <div class="stat-row">
+            <span class="stat-label">Pulse Active:</span>
+            <span class="stat-value" id="pulseActive">No</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Pulse Radius:</span>
+            <span class="stat-value" id="pulseRadius">0.0</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Objects Revealed:</span>
+            <span class="stat-value" id="objectsRevealed">0</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Total Objects:</span>
+            <span class="stat-value" id="totalObjects">0</span>
+        </div>
+    </div>
+
+    <div class="controls-panel">
+        <button class="control-button" id="toggleAudio">🔊 Audio: OFF</button>
+        <button class="control-button" id="resetScene">🔄 Reset Scene</button>
+        <button class="control-button" id="addObjects">➕ Add Objects</button>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+        import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+        import { EchoInteraction3D } from '../../src/controls/EchoInteraction3D.js';
+
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000510);
+        scene.fog = new THREE.Fog(0x000510, 10, 100);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 10, 20);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+
+        // Store renderer in scene for EchoInteraction3D
+        scene.userData.renderer = renderer;
+
+        // Orbit controls
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.7);
+        directionalLight.position.set(5, 10, 5);
+        scene.add(directionalLight);
+
+        // Create EchoInteraction3D system
+        const echoSystem = new EchoInteraction3D(scene, camera, {
+            pulseSpeed: 15,
+            maxRadius: 50,
+            pulseWidth: 3.0,
+            audioEnabled: false,
+            glowColor: new THREE.Color(0x00ffff)
+        });
+
+        // Create interactive objects
+        const objects = [];
+        let revealedCount = 0;
+
+        function createInteractiveObjects() {
+            // Clear existing objects
+            objects.forEach(obj => {
+                scene.remove(obj);
+                echoSystem.unregisterObject(obj);
+            });
+            objects.length = 0;
+            revealedCount = 0;
+
+            // Create a variety of objects scattered in space
+            const geometries = [
+                new THREE.BoxGeometry(2, 2, 2),
+                new THREE.SphereGeometry(1, 16, 16),
+                new THREE.ConeGeometry(1, 2, 16),
+                new THREE.TorusGeometry(1, 0.4, 16, 32),
+                new THREE.OctahedronGeometry(1.5),
+                new THREE.TetrahedronGeometry(1.5)
+            ];
+
+            const colors = [
+                0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xf7b731,
+                0x5f27cd, 0x00d2d3, 0xff9ff3, 0x54a0ff
+            ];
+
+            // Create 20 random objects
+            for (let i = 0; i < 20; i++) {
+                const geometry = geometries[Math.floor(Math.random() * geometries.length)];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+
+                const material = new THREE.MeshStandardMaterial({
+                    color: color,
+                    metalness: 0.3,
+                    roughness: 0.4
+                });
+
+                const mesh = new THREE.Mesh(geometry, material);
+
+                // Random position in a sphere around origin
+                const radius = 10 + Math.random() * 30;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.random() * Math.PI;
+
+                mesh.position.x = radius * Math.sin(phi) * Math.cos(theta);
+                mesh.position.y = radius * Math.sin(phi) * Math.sin(theta);
+                mesh.position.z = radius * Math.cos(phi);
+
+                // Random rotation
+                mesh.rotation.x = Math.random() * Math.PI;
+                mesh.rotation.y = Math.random() * Math.PI;
+                mesh.rotation.z = Math.random() * Math.PI;
+
+                scene.add(mesh);
+                objects.push(mesh);
+
+                // Register with echo system
+                echoSystem.registerObject(mesh, {
+                    id: i,
+                    onReveal: (mesh, metadata) => {
+                        console.log(`Object ${metadata.id} revealed!`);
+                        revealedCount++;
+                        updateStats();
+                    }
+                });
+            }
+
+            updateStats();
+        }
+
+        // Create initial objects
+        createInteractiveObjects();
+
+        // UI Controls
+        let audioEnabled = false;
+        document.getElementById('toggleAudio').addEventListener('click', () => {
+            audioEnabled = !audioEnabled;
+            echoSystem.audioEnabled = audioEnabled;
+            if (audioEnabled && !echoSystem.audioContext) {
+                echoSystem.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            document.getElementById('toggleAudio').textContent = `🔊 Audio: ${audioEnabled ? 'ON' : 'OFF'}`;
+        });
+
+        document.getElementById('resetScene').addEventListener('click', () => {
+            createInteractiveObjects();
+        });
+
+        document.getElementById('addObjects').addEventListener('click', () => {
+            // Add 5 more objects
+            const geometries = [
+                new THREE.BoxGeometry(2, 2, 2),
+                new THREE.SphereGeometry(1, 16, 16),
+                new THREE.ConeGeometry(1, 2, 16)
+            ];
+
+            for (let i = 0; i < 5; i++) {
+                const geometry = geometries[Math.floor(Math.random() * geometries.length)];
+                const material = new THREE.MeshStandardMaterial({
+                    color: Math.random() * 0xffffff,
+                    metalness: 0.3,
+                    roughness: 0.4
+                });
+
+                const mesh = new THREE.Mesh(geometry, material);
+                const radius = 10 + Math.random() * 30;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.random() * Math.PI;
+
+                mesh.position.x = radius * Math.sin(phi) * Math.cos(theta);
+                mesh.position.y = radius * Math.sin(phi) * Math.sin(theta);
+                mesh.position.z = radius * Math.cos(phi);
+
+                scene.add(mesh);
+                objects.push(mesh);
+
+                echoSystem.registerObject(mesh, {
+                    id: objects.length - 1,
+                    onReveal: () => {
+                        revealedCount++;
+                        updateStats();
+                    }
+                });
+            }
+
+            updateStats();
+        });
+
+        // Update stats display
+        function updateStats() {
+            document.getElementById('pulseActive').textContent = echoSystem.isPulsing ? 'Yes' : 'No';
+            document.getElementById('pulseRadius').textContent = echoSystem.pulseRadius.toFixed(1);
+            document.getElementById('objectsRevealed').textContent = revealedCount;
+            document.getElementById('totalObjects').textContent = objects.length;
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Update controls
+            controls.update();
+
+            // Update echo system
+            echoSystem.update();
+
+            // Update stats
+            updateStats();
+
+            // Slowly rotate objects
+            objects.forEach(obj => {
+                obj.rotation.x += 0.001;
+                obj.rotation.y += 0.002;
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            echoSystem.dispose();
+        });
+    </script>
+</body>
+
+</html>

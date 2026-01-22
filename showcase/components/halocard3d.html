@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HaloCard3D Showcase - Spatial UI 3D</title>
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="../../index.html" class="navbar-logo">🌸 Spatial UI 3D</a>
+            <ul class="navbar-menu">
+                <li><a href="../index.html" class="navbar-link">Components</a></li>
+                <li><a href="../../demos/index.html" class="navbar-link">Demos</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="component-showcase">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>HaloCard3D</h2>
+                <p>Smart Info Billboard</p>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">Follow Speed (Lag)</label>
+                <div class="slider-container">
+                    <input type="range" id="lag-slider" min="0.01" max="0.5" step="0.01" value="0.1">
+                    <span class="value-display" id="lag-value">0.1</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="toggle-container">
+                    <input type="checkbox" id="billboard-toggle" checked>
+                    <label>Always Face Camera</label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="toggle-container">
+                    <input type="checkbox" id="float-toggle" checked>
+                    <label>Floating Animation</label>
+                </div>
+            </div>
+
+            <div id="status-log"
+                style="padding:1rem; background:rgba(255,255,255,0.05); border-radius:8px; font-size:0.9rem; color:#888;">
+                The halo cards are anchored to the floating geometric shapes. Rotate the scene to see billboarding.
+            </div>
+
+            <button id="reset-btn" class="btn btn-secondary" style="width:100%; margin-top:20px;">Reset View</button>
+        </aside>
+
+        <main class="preview-area">
+            <canvas id="showcase-canvas"></canvas>
+        </main>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { HaloCard3D } from '../../src/controls/HaloCard3D.js';
+        import { ControlRegistry } from '../../src/core/ControlRegistry.js';
+        import * as THREE from 'three';
+
+        const canvas = document.getElementById('showcase-canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+        const controls = scene3D.getControls();
+
+        ControlRegistry.setOrbitControls(controls);
+        scene.background = new THREE.Color(0x0a0a1a);
+
+        const grid = new THREE.GridHelper(20, 20, 0x444444, 0x111111);
+        grid.position.y = -2;
+        scene.add(grid);
+
+        camera.position.set(0, 2, 8);
+
+        // 1. Create Target Objects
+        const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.5, 32, 32), new THREE.MeshStandardMaterial({ color: 0x00ff88, emissive: 0x004422 }));
+        sphere.position.set(-3, 0, 0);
+        scene.add(sphere);
+
+        const cube = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), new THREE.MeshStandardMaterial({ color: 0xff3366, emissive: 0x441122 }));
+        cube.position.set(0, 0, 0);
+        scene.add(cube);
+
+        const torus = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.2, 16, 100), new THREE.MeshStandardMaterial({ color: 0xffaa00, emissive: 0x442200 }));
+        torus.position.set(3, 0, 0);
+        scene.add(torus);
+
+        scene.add(new THREE.PointLight(0xffffff, 10, 50));
+        scene.add(new THREE.AmbientLight(0xffffff, 0.2));
+
+        // 2. Create Halo Cards
+        const halo1 = new HaloCard3D(scene, camera, [-3, 2, 0], {
+            title: "Sphere Node",
+            anchorObject: sphere,
+            color: 0x00ff88,
+            offset: [0, 1.2, 0]
+        });
+
+        const halo2 = new HaloCard3D(scene, camera, [0, 2, 0], {
+            title: "Main Processor",
+            anchorObject: cube,
+            color: 0xff3366,
+            offset: [0, 1.5, 0]
+        });
+
+        const halo3 = new HaloCard3D(scene, camera, [3, 2, 0], {
+            title: "Encryption Key",
+            anchorObject: torus,
+            color: 0xffaa00,
+            offset: [0, 1.2, 0]
+        });
+
+        const halos = [halo1, halo2, halo3];
+
+        // UI Controls
+        document.getElementById('billboard-toggle').addEventListener('change', (e) => {
+            halos.forEach(h => h.lookAtCamera = e.target.checked);
+        });
+
+        document.getElementById('float-toggle').addEventListener('change', (e) => {
+            halos.forEach(h => h.floatingEffect = e.target.checked);
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            controls.reset();
+            camera.position.set(0, 2, 8);
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = Date.now() * 0.001;
+
+            // Move targets
+            sphere.position.y = Math.sin(time) * 0.5;
+            cube.rotation.y += 0.01;
+            cube.position.y = Math.cos(time * 0.7) * 0.3;
+            torus.rotation.x += 0.01;
+            torus.position.y = Math.sin(time * 1.2) * 0.4;
+
+            halos.forEach(h => h.update());
+
+            scene3D.render();
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skenaario 2: The Infinite Gallery</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+        }
+
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #d8b4fe;
+            font-family: 'Inter', sans-serif;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        h1 {
+            margin: 0;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        p {
+            margin-top: 5px;
+            opacity: 0.7;
+        }
+    </style>
+    <!-- Import Map -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <div id="info">
+        <h1>THE INFINITE GALLERY</h1>
+        <p>Exploration • AI Portals • Spatial Timeline</p>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { SpatialEnvironment } from '../../src/environments/SpatialEnvironment.js';
+
+        // Components
+        import { AIPortal3D } from '../../src/controls/AIPortal3D.js';
+        import { RadialMenu3D } from '../../src/controls/RadialMenu3D.js';
+        import { SpatialScrubber3D } from '../../src/controls/SpatialScrubber3D.js';
+        import { Button3D } from '../../src/controls/Button3D.js';
+
+        // 1. Initialize Environment
+        const env = new SpatialEnvironment(document.body, {
+            cameraPos: [0, 1.6, 5] // Further back to see the wide gallery
+        });
+        env.init();
+
+        // Lighting: Gallery Style (Dramatic)
+        env.scene.fog = new THREE.FogExp2(0x050510, 0.05);
+        const spot1 = new THREE.SpotLight(0xffffff, 10);
+        spot1.position.set(0, 5, 0);
+        spot1.angle = Math.PI / 3;
+        spot1.penumbra = 0.5;
+        env.scene.add(spot1);
+
+
+        // ============================================
+        // SCENARIO 2: THE INFINITE GALLERY
+        // ============================================
+
+        // A. AI PORTALS (The Content)
+        // Three portals at Z=-3, arranged in an arc
+        const portalConfig = [
+            { pos: [-2.5, 1.6, -3], color: 0xff3366, label: "Cyberpunk" },
+            { pos: [0, 1.6, -3], color: 0x33ccff, label: "Ethereal" },
+            { pos: [2.5, 1.6, -3], color: 0xccff33, label: "Organic" }
+        ];
+
+        portalConfig.forEach(cfg => {
+            const portal = new AIPortal3D(env.scene, env.camera, cfg.pos, {
+                width: 1.8,
+                height: 2.5,
+                color: cfg.color,
+                content: cfg.label,
+                renderer: env.renderer, // Required for label overlay
+                portalRadius: 1.5,
+                onTraverse: () => {
+                    console.log(`Entering ${cfg.label} dimension...`);
+                }
+            });
+            // Face camera
+            portal.group.lookAt(env.camera.position.x, portal.group.position.y, env.camera.position.z);
+            env.add(portal.group);
+            env.updatables.push(portal);
+
+            // D. 2D INFO BUTTON (Integrated)
+            // Floating "Info" icon at bottom corner of portal
+            const infoBtn = new Button3D(env.scene, env.camera, [0.7, -1.0, 0.1], {
+                icon: "ℹ️",
+                width: 0.3,
+                height: 0.3,
+                depth: 0.05,
+                color: 0x444444,
+                onClick: () => console.log(`Info for ${cfg.label}`)
+            });
+            // Attach to portal group
+            portal.group.add(infoBtn.group); // Parenting checks might be needed in Button3D but group is standard
+            // Note: Button3D updates might require world position logic, but parenting works for transform
+            // We need to register button for updates too
+            env.updatables.push(infoBtn);
+        });
+
+
+        // C. SPATIAL SCROLLER (Timeline)
+        // Curved strip weaving between portals? Or floor guide?
+        // Let's make a wide curve in front of the portals
+        // Create custom curve for Scrubber
+        const curvePoints = [
+            new THREE.Vector3(-4, 0.5, -2),
+            new THREE.Vector3(0, 0.5, -1.5),
+            new THREE.Vector3(4, 0.5, -2)
+        ];
+        const timelineCurve = new THREE.CatmullRomCurve3(curvePoints);
+
+        const scrubber = new SpatialScrubber3D(env.scene, env.camera, [0, 0, 0], {
+            trackCurve: timelineCurve,
+            handleRadius: 0.15,
+            trackRadius: 0.05,
+            snapDistance: 0.1,
+            color: 0x8844ff,
+            onScrub: (time, velocity) => {
+                // Could act as a filter for the gallery
+            }
+        });
+        env.add(scrubber.group);
+        env.updatables.push(scrubber);
+
+
+        // B. RADIAL MENU (Filter)
+        // "Activated when user grabs air" -> We simulate this by placing it near camera
+        // or toggle with Spacebar. For demo, let's float it at hand level.
+        const radialMenu = new RadialMenu3D(env.scene, env.camera, [0.5, 1.3, 3.5], {
+            radius: 0.4,
+            innerRadius: 0.15,
+            items: [
+                { label: "🎨", color: 0xff4444 }, // Art
+                { label: "🎵", color: 0x44ff44 }, // Music
+                { label: "📝", color: 0x4444ff }, // Text
+                { label: "⚙️", color: 0x888888 }  // Settings
+            ]
+        });
+        // Attach to camera? Or just keep it relative. 
+        // Let's put it in front of view.
+        // For simple demo, fixed position is fine.
+        env.add(radialMenu.group);
+        // radialMenu needs update? It uses onMouseMove primarily.
+
+        // 3. Start Loop
+        env.start();
+    </script>
+</body>
+
+</html>

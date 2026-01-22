@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sami Räisänen - The Journey of an AI Pioneer</title>
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌌</text></svg>">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Inter', sans-serif;
+        }
+
+        #canvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+
+        .hud-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+            color: var(--cosmic-cyan);
+            text-shadow: 0 0 10px var(--cosmic-cyan);
+            letter-spacing: 2px;
+            z-index: 10;
+        }
+
+        .loading-screen {
+            position: fixed;
+            inset: 0;
+            background: #050510;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 1s ease-out;
+        }
+
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 3px solid var(--cosmic-cyan);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="loading-screen" id="loader">
+        <div class="loader"></div>
+        <p style="margin-top:20px; color:#fff; letter-spacing:4px;">LOADING JOURNEY...</p>
+    </div>
+
+    <div class="hud-overlay">
+        <h1>THE JOURNEY</h1>
+        <p>25 Years of Innovation</p>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { RoomManager } from '../../src/core/RoomManager.js';
+        import { ControlRegistry } from '../../src/core/ControlRegistry.js';
+        import { Button3D } from '../../src/controls/Button3D.js';
+        import { Toggle3D } from '../../src/controls/Toggle3D.js';
+        import { Slider3D } from '../../src/controls/Slider3D.js';
+        import { TextInput3D } from '../../src/controls/TextInput3D.js';
+        import { TextDisplay3D } from '../../src/controls/TextDisplay3D.js';
+        import { Modal3D } from '../../src/controls/Modal3D.js';
+        import { Accordion3D } from '../../src/controls/Accordion3D.js';
+        import { Chart3D } from '../../src/controls/Chart3D.js';
+        import { RadialMenu3D } from '../../src/controls/RadialMenu3D.js';
+        import { MagneticCard3D } from '../../src/controls/MagneticCard3D.js';
+        import { PortalCard3D } from '../../src/controls/PortalCard3D.js';
+        import { VolumetricCard3D } from '../../src/controls/VolumetricCard3D.js';
+        import { HaloCard3D } from '../../src/controls/HaloCard3D.js';
+        import { AIPortal3D } from '../../src/controls/AIPortal3D.js';
+        import { TimeRibbon3D } from '../../src/controls/TimeRibbon3D.js';
+
+        try {
+            const canvas = document.getElementById('canvas');
+            const scene3D = new Scene3D(canvas);
+            const scene = scene3D.getScene();
+            const camera = scene3D.getCamera();
+            const renderer = scene3D.getRenderer();
+            const controls = scene3D.getControls();
+
+            ControlRegistry.setOrbitControls(controls);
+            camera.position.set(0, 3, 15);
+
+            const roomManager = new RoomManager(scene, camera);
+            roomManager.initialize();
+            roomManager.switchRoom('space');
+
+            // Remove ground and grid for pure space
+            scene.traverse((object) => {
+                if (object.name === 'ground' || object.name === 'grid' || object.type === 'GridHelper') {
+                    scene.remove(object);
+                }
+            });
+
+            // === CHAPTER 1: THE ENTRANCE - "Who Am I?" ===
+            const entrancePortal = new AIPortal3D(scene, camera, [0, 2, -25], {
+                width: 10, height: 12, color: 0x00ffff,
+                onTraverse: () => console.log("Entering Sami's Universe")
+            });
+            new HaloCard3D(scene, camera, [0, 8, -25], {
+                label: "CHAPTER 1: THE ARCHITECT", lookAtCamera: true, scale: [6, 1.5, 1], color: 0x00ffff
+            });
+
+            // Identity Card - Magnetic with parallax
+            const identityCard = new MagneticCard3D(scene, camera, [0, 2, -15], {
+                width: 8, height: 5, title: "Sami Räisänen",
+                description: "📍 Tampere, Finland\n📧 raisanen.sami@gmail.com\n📱 050-5465573\n\n💻 Portfolio: samppafin.github.io/CV-Site\n🐙 GitHub: github.com/SamppaFIN\n\n🎯 AI-Assisted Development Pioneer\n🏗️ Full-Stack Architect\n🤖 RAG Systems Specialist",
+                renderer: renderer
+            });
+
+            // === THE TIME RIBBON - 25 Years of Journey ===
+            const careerTimeline = new TimeRibbon3D(scene, camera, [0, 0, 0], {
+                timeline: [
+                    { time: 2000, label: 'E-Bros Oy', description: 'The Foundation - Where it all began' },
+                    { time: 2004, label: 'Mid-Career Growth', description: 'Enterprise systems mastery' },
+                    { time: 2008, label: 'Symbio/Flander', description: 'Industrial automation - Sandvik AutoMine' },
+                    { time: 2010, label: 'Senior Developer', description: 'Critical systems for mining & oil' },
+                    { time: 2012, label: 'TeamUp Oy', description: 'Lead Developer - Full ownership' },
+                    { time: 2014, label: 'Solita Oy', description: 'Consulting era begins' },
+                    { time: 2017, label: 'Azure Architect', description: 'Cloud transformation leader' },
+                    { time: 2020, label: 'Mentorship', description: 'Power Platform team lead' },
+                    { time: 2023, label: 'AI Pioneer', description: 'Cursor AI daily driver' },
+                    { time: 2024, label: 'RAG Systems', description: 'LegalInsights, Software Factory' },
+                    { time: 2025, label: 'Present', description: '30 AI agents, infinite possibilities' }
+                ],
+                radius: 12,
+                turns: 4,
+                ribbonWidth: 0.25,
+                onTimeChange: (year) => {
+                    console.log(`Viewing year: ${Math.round(year)}`);
+                    // Could update UI to show relevant projects/skills for that year
+                }
+            });
+            new HaloCard3D(scene, camera, [0, 12, 0], {
+                label: "⏰ THE TIME RIBBON - Grab & Scrub Through 25 Years",
+                lookAtCamera: true, scale: [8, 1.5, 1], color: 0xffd700
+            });
+
+            // === CHAPTER 2: THE PHILOSOPHY - "What Drives Me?" ===
+            new HaloCard3D(scene, camera, [-12, 6, -5], {
+                label: "CHAPTER 2: THE PHILOSOPHY", lookAtCamera: true, scale: [6, 1.5, 1], color: 0xff00ff
+            });
+
+            const philosophyDisplay = new TextDisplay3D(scene, camera, [-12, 2, -5], {
+                content: "# My Core Beliefs\n\n**Technology evolves, but principles remain:**\n\n✨ User understanding comes first\n🎯 Quality code is non-negotiable\n🚀 Deliver solutions that work\n💡 Share knowledge, grow together\n\n*From Solita's 'heimokulttuuri' I learned that mentoring and collaboration create the best outcomes.*",
+                width: 7, height: 6, renderer: renderer
+            });
+
+            // === CHAPTER 3: THE TIMELINE - "Where Have I Been?" ===
+            new HaloCard3D(scene, camera, [12, 6, -5], {
+                label: "CHAPTER 3: THE TIMELINE", lookAtCamera: true, scale: [6, 1.5, 1], color: 0xffff00
+            });
+
+            const timeline = new Accordion3D(scene, camera, [12, 0, -5], {
+                width: 8,
+                items: [
+                    {
+                        title: '2014-2025: Solita Oy - The Consulting Era',
+                        contentHeight: 4.5,
+                        content: '**Senior Software Developer & Architect**\n\n🏢 Major Clients:\n• Kesko - Retail financial solutions (Power Platform, Azure)\n• Ramirent - Equipment management systems\n• Motoral - Automotive industry solutions (C#, Episerver)\n• TLOIK - Traffic control systems\n\n🎯 Key Responsibilities:\n• Mentoring Power Platform developers\n• POC design and implementation\n• RFI/RFP documentation\n• Architecture design\n• Direct client collaboration'
+                    },
+                    {
+                        title: '2012-2014: TeamUp Oy - The Leadership Chapter',
+                        contentHeight: 3,
+                        content: '**Lead Developer & Architect**\n\n🚀 Built a social media platform from scratch\n🏗️ Full ownership: design → deployment\n☁️ Scalable Azure architecture\n⚡ End-to-end solution responsibility\n\n**Tech:** Azure, C#, MVC4, Entity Framework'
+                    },
+                    {
+                        title: '2008-2012: Flander/Symbio - The Industrial Years',
+                        contentHeight: 3.5,
+                        content: '**Senior Software Developer**\n\n⛏️ Sandvik/AutoMine - Mining automation\n  Production-grade code for critical systems\n  C#, WPF, WCF\n\n🛢️ Neste Oil - Test automation software\n🛡️ Patria - UI localization\n💻 Fujitsu - Webfront management tool (C++, Java)'
+                    },
+                    {
+                        title: '2000-2008: E-Bros Oy - The Foundation',
+                        contentHeight: 2.5,
+                        content: '**Software Developer**\n\n🏭 Production control systems\n💰 Financial management software\n🔗 Enterprise system integrations\n\n**Tech:** C++, Oracle, SQL Server\n\n*Where it all began - 8 years of building fundamentals*'
+                    }
+                ],
+                renderer: renderer
+            });
+
+            // === CHAPTER 4: THE ARSENAL - "What Can I Do?" ===
+            new HaloCard3D(scene, camera, [-10, 8, 5], {
+                label: "CHAPTER 4: THE ARSENAL", lookAtCamera: true, scale: [6, 1.5, 1], color: 0x00ff00
+            });
+
+            // Tech Stack Distribution Chart
+            const techChart = new Chart3D(scene, camera, [-10, 4, 5], {
+                chartType: 'doughnut', width: 6, height: 6,
+                data: {
+                    labels: ['AI/ML & RAG', 'Full Stack Web', 'Cloud & DevOps', 'Enterprise C#/.NET', 'Low-Code Platforms'],
+                    datasets: [{
+                        data: [30, 25, 20, 15, 10],
+                        backgroundColor: ['#00ffff', '#ff00ff', '#ffff00', '#00ff00', '#ff6b9d']
+                    }]
+                },
+                renderer: renderer
+            });
+
+            // Skill Sliders - Interactive proficiency levels
+            const aiSkill = new Slider3D(scene, camera, [-10, 0, 5], {
+                label: 'AI/RAG Systems (Cursor AI, OpenAI, Qdrant)', min: 0, max: 100, value: 95, renderer: renderer
+            });
+            const fullStackSkill = new Slider3D(scene, camera, [-10, -1, 5], {
+                label: 'Full Stack (React, TypeScript, Node, Python)', min: 0, max: 100, value: 90, renderer: renderer
+            });
+            const azureSkill = new Slider3D(scene, camera, [-10, -2, 5], {
+                label: 'Azure & Cloud Architecture (10+ years)', min: 0, max: 100, value: 88, renderer: renderer
+            });
+            const csharpSkill = new Slider3D(scene, camera, [-10, -3, 5], {
+                label: 'C# / .NET Enterprise (20+ years)', min: 0, max: 100, value: 92, renderer: renderer
+            });
+
+            // === CHAPTER 5: THE CREATIONS - "What Have I Built?" ===
+            new HaloCard3D(scene, camera, [10, 8, 5], {
+                label: "CHAPTER 5: THE CREATIONS", lookAtCamera: true, scale: [6, 1.5, 1], color: 0xff6b9d
+            });
+
+            // Project Showcase - Multiple VolumetricCards
+            const softwareFactory = new VolumetricCard3D(scene, camera, [7, 4, 5], {
+                width: 4.5, height: 3.5,
+                title: "Software Factory Infinite",
+                description: "🤖 30 AI Agents\n🏭 13 Departments\n♾️ Autonomous R&D\n\nMulti-agent orchestration for software development. The ultimate AI collaboration experiment.",
+                renderer: renderer
+            });
+
+            const legalInsights = new VolumetricCard3D(scene, camera, [13, 4, 5], {
+                width: 4.5, height: 3.5,
+                title: "LegalInsights",
+                description: "⚖️ RAG-powered legal search\n🔍 Semantic document retrieval\n📊 Qdrant vector DB\n\nReact + TypeScript + RAG pipeline for juridical document analysis.",
+                renderer: renderer
+            });
+
+            const healthConnect = new VolumetricCard3D(scene, camera, [7, 0, 5], {
+                width: 4.5, height: 3.5,
+                title: "Health-Connect",
+                description: "🏥 AI health platform\n💬 OpenRouter integration\n🔐 Privacy-first design\n\nReact + Node.js telemedicine assistant.",
+                renderer: renderer
+            });
+
+            const electricBilling = new VolumetricCard3D(scene, camera, [13, 0, 5], {
+                width: 4.5, height: 3.5,
+                title: "Electric-Billing",
+                description: "⚡ Housing association billing\n📊 Prisma ORM\n🎯 Real-world SaaS\n\nReact + Node.js production app for Finnish housing cooperatives.",
+                renderer: renderer
+            });
+
+            // Portal to live projects
+            const dummyScene = new THREE.Scene();
+            const geometry = new THREE.IcosahedronGeometry(0.8, 1);
+            const material = new THREE.MeshNormalMaterial({ wireframe: true });
+            const mesh = new THREE.Mesh(geometry, material);
+            dummyScene.add(mesh);
+
+            const livePortal = new PortalCard3D(scene, camera, [10, -3.5, 5], {
+                width: 5, height: 4,
+                portalScene: dummyScene,
+                renderer: renderer
+            });
+            new TextDisplay3D(scene, camera, [10, -5.8, 5], {
+                content: "**Live Deployments**\nsamppafin.github.io/CV-Site\nEldritch Sanctuary\nAurora Security Dojo",
+                width: 4, height: 1.5, renderer: renderer
+            });
+
+            // === MORE PROJECT POST-ITS scattered around ===
+            // Tech Stack Post-its
+            new TextDisplay3D(scene, camera, [-15, 6, 0], {
+                content: "**React Expertise**\n✓ Hooks & Context\n✓ TypeScript\n✓ Performance optimization\n✓ State management",
+                width: 3, height: 2.5, renderer: renderer
+            });
+
+            new TextDisplay3D(scene, camera, [-15, 3, 0], {
+                content: "**Python Skills**\n🐍 FastAPI\n🤖 AI/ML integrations\n📊 Data processing\n🔧 Automation",
+                width: 3, height: 2.5, renderer: renderer
+            });
+
+            new TextDisplay3D(scene, camera, [-15, 0, 0], {
+                content: "**Azure Mastery**\n☁️ App Services\n⚡ Functions\n🗄️ SQL Database\n🔄 DevOps Pipelines",
+                width: 3, height: 2.5, renderer: renderer
+            });
+
+            new TextDisplay3D(scene, camera, [-15, -3, 0], {
+                content: "**Power Platform**\n⚡ Power Apps\n🔄 Power Automate\n📊 Power BI\n5+ years experience",
+                width: 3, height: 2.5, renderer: renderer
+            });
+
+            // Achievement Post-its
+            new TextDisplay3D(scene, camera, [15, 6, -5], {
+                content: "**2024 Achievements**\n🏆 30 AI agents orchestrated\n🚀 5 production apps deployed\n📚 Mentored 10+ developers",
+                width: 3.5, height: 2.5, renderer: renderer
+            });
+
+            new TextDisplay3D(scene, camera, [15, 3, -5], {
+                content: "**Certifications**\n✓ Azure Fundamentals\n✓ Scrum Master\n✓ 15+ years Agile",
+                width: 3.5, height: 2.5, renderer: renderer
+            });
+
+            new TextDisplay3D(scene, camera, [15, 0, -5], {
+                content: "**Languages**\n🇫🇮 Finnish - Native\n🇬🇧 English - Excellent\n💻 Code - Fluent",
+                width: 3.5, height: 2.5, renderer: renderer
+            });
+
+            // More Project Cards
+            const insuranceAnalyzer = new VolumetricCard3D(scene, camera, [-5, 6, 10], {
+                width: 4, height: 3,
+                title: "Insurance Gap Analyzer",
+                description: "🛡️ SvelteKit + Supabase\n📊 Finnish insurance analysis\n🎯 Real-time calculations\n\nHelps Finns understand insurance coverage.",
+                renderer: renderer
+            });
+
+            const blazorCRM = new VolumetricCard3D(scene, camera, [0, 6, 10], {
+                width: 4, height: 3,
+                title: "BlazorCRM",
+                description: "💼 C# + Blazor + .NET\n🔐 Enterprise-grade\n📊 Customer management\n\nFull-featured CRM system.",
+                renderer: renderer
+            });
+
+            const lieDetector = new VolumetricCard3D(scene, camera, [5, 6, 10], {
+                width: 4, height: 3,
+                title: "LieDetector",
+                description: "🤖 AI content moderation\n🔍 OpenRouter API\n⚡ Python + FastAPI\n\nDetects misinformation patterns.",
+                renderer: renderer
+            });
+
+            const documentSearch = new VolumetricCard3D(scene, camera, [-5, 2, 10], {
+                width: 4, height: 3,
+                title: "Document Search Tool",
+                description: "🔍 Semantic search\n🧠 RAG architecture\n📄 Vector embeddings\n\nReact + TypeScript document finder.",
+                renderer: renderer
+            });
+
+            // Client Work Post-its
+            new TextDisplay3D(scene, camera, [-8, -6, 8], {
+                content: "**Kesko Project**\n🏪 Retail solutions\n💰 Financial systems\n⚡ Power Platform\n☁️ Azure integration",
+                width: 3.5, height: 2.5, renderer: renderer
+            });
+
+            new TextDisplay3D(scene, camera, [-4, -6, 8], {
+                content: "**Ramirent**\n🏗️ Equipment management\n📊 Inventory tracking\n🔧 Maintenance scheduling",
+                width: 3.5, height: 2.5, renderer: renderer
+            });
+
+            new TextDisplay3D(scene, camera, [0, -6, 8], {
+                content: "**Motoral**\n🚗 Automotive solutions\n💻 C# + Episerver\n🎯 E-commerce platform",
+                width: 3.5, height: 2.5, renderer: renderer
+            });
+
+            new TextDisplay3D(scene, camera, [4, -6, 8], {
+                content: "**TLOIK**\n🚦 Traffic control\n🏙️ City infrastructure\n⚡ Real-time systems",
+                width: 3.5, height: 2.5, renderer: renderer
+            });
+
+            new TextDisplay3D(scene, camera, [8, -6, 8], {
+                content: "**Sandvik AutoMine**\n⛏️ Mining automation\n🤖 Critical systems\n🎯 Production code\n💻 C# + WPF + WCF",
+                width: 3.5, height: 2.5, renderer: renderer
+            });
+
+            // Philosophy & Values Post-its
+            new MagneticCard3D(scene, camera, [-12, -3, 12], {
+                width: 4, height: 3,
+                title: "Core Values",
+                description: "💡 Innovation over tradition\n🤝 Collaboration over competition\n📚 Learning over knowing\n🎯 Impact over activity",
+                renderer: renderer
+            });
+
+            new MagneticCard3D(scene, camera, [12, -3, 12], {
+                width: 4, height: 3,
+                title: "Work Style",
+                description: "🚀 Fast iteration\n🧪 Test-driven\n📖 Documentation-first\n🎨 User-centric design",
+                renderer: renderer
+            });
+
+            // Tech Stack Details
+            new TextDisplay3D(scene, camera, [-10, 8, -10], {
+                content: "**Databases**\n🐘 PostgreSQL\n🗄️ SQL Server\n🔮 Oracle\n⚡ Supabase\n🧠 Qdrant (Vector DB)",
+                width: 3, height: 3, renderer: renderer
+            });
+
+            new TextDisplay3D(scene, camera, [-6, 8, -10], {
+                content: "**DevOps**\n🐳 Docker\n🔄 CI/CD\n☁️ Azure DevOps\n📦 npm/pip\n🔧 Git workflows",
+                width: 3, height: 3, renderer: renderer
+            });
+
+            new TextDisplay3D(scene, camera, [-2, 8, -10], {
+                content: "**Frontend**\n⚛️ React 18\n📘 TypeScript\n🎨 CSS/Tailwind\n⚡ Vite\n🔥 SvelteKit",
+                width: 3, height: 3, renderer: renderer
+            });
+
+            new TextDisplay3D(scene, camera, [2, 8, -10], {
+                content: "**Backend**\n🟢 Node.js\n🐍 Python\n#️⃣ C# / .NET\n⚡ FastAPI\n🔥 Express",
+                width: 3, height: 3, renderer: renderer
+            });
+
+            new TextDisplay3D(scene, camera, [6, 8, -10], {
+                content: "**AI/ML**\n🤖 OpenAI API\n🧠 RAG Systems\n📊 Qdrant\n🔮 Perplexity\n💬 LLM Agents",
+                width: 3, height: 3, renderer: renderer
+            });
+
+            new TextDisplay3D(scene, camera, [10, 8, -10], {
+                content: "**Tools**\n💻 Cursor AI (daily)\n🎨 VS Code\n🐙 GitHub\n📊 Postman\n🔍 Chrome DevTools",
+                width: 3, height: 3, renderer: renderer
+            });
+
+            // === CHAPTER 6: THE MISSION - "Why AI?" ===
+            new HaloCard3D(scene, camera, [0, 6, 12], {
+                label: "CHAPTER 6: THE MISSION", lookAtCamera: true, scale: [6, 1.5, 1], color: 0x6bb6ff
+            });
+
+            const missionCard = new MagneticCard3D(scene, camera, [0, 2, 12], {
+                width: 9, height: 6,
+                title: "Why I'm an AI Pioneer",
+                description: "🚀 I use Cursor AI daily as my primary development environment\n\n🧠 I've built:\n  • RAG systems with vector databases (Qdrant)\n  • LLM integrations in production apps\n  • Multi-agent architectures (30 AI agents)\n  • AI-powered UIs and analytics tools\n\n📡 I follow GenAI developments actively\n💡 I see the massive innovation potential\n⚡ I know how to implement it in practice\n\n**I'm not just using AI — I'm shaping how it transforms software development.**",
+                renderer: renderer
+            });
+
+            // === CHAPTER 7: THE CONTACT - "Let's Connect" ===
+            new HaloCard3D(scene, camera, [-8, 4, 18], {
+                label: "CHAPTER 7: CONNECT", lookAtCamera: true, scale: [5, 1.5, 1], color: 0xffd700
+            });
+
+            const contactModal = new Modal3D(scene, camera, [-8, 0, 18], {
+                title: "📬 Send Me a Message", width: 7, height: 5, renderer: renderer
+            });
+
+            const messageInput = new TextInput3D(scene, camera, [0, 0.5, 0.1], {
+                placeholder: "Your message to Sami...", width: 5.5, renderer: renderer
+            });
+            contactModal.contentGroup.add(messageInput.group);
+
+            const sendBtn = new Button3D(scene, camera, [-1.5, -1.5, 0.1], {
+                label: "Send", width: 2, height: 0.6, renderer: renderer,
+                onClick: () => {
+                    console.log("Message sent!");
+                    contactModal.close();
+                }
+            });
+            contactModal.contentGroup.add(sendBtn.group);
+
+            const cancelBtn = new Button3D(scene, camera, [1.5, -1.5, 0.1], {
+                label: "Cancel", width: 2, height: 0.6, renderer: renderer,
+                onClick: () => contactModal.close()
+            });
+            contactModal.contentGroup.add(cancelBtn.group);
+
+            // === NAVIGATION HUB ===
+            const navMenu = new RadialMenu3D(scene, camera, [8, 0, 18], {
+                items: ['Identity', 'Timeline', 'Skills', 'Projects', 'Mission', 'Contact', 'Settings'],
+                radius: 2.5,
+                onSelect: (item) => {
+                    console.log("Navigating to:", item);
+                    if (item === 'Contact') contactModal.open();
+                    if (item === 'Settings') settingsModal.open();
+                }
+            });
+            new HaloCard3D(scene, camera, [8, 3, 18], {
+                label: "NAVIGATION", lookAtCamera: true, scale: [4, 1, 1], color: 0xffd700
+            });
+
+            // === SETTINGS & PREFERENCES ===
+            const settingsModal = new Modal3D(scene, camera, [0, -5, 10], {
+                title: "⚙️ Experience Settings", width: 6, height: 5, renderer: renderer
+            });
+
+            const nebulaToggle = new Toggle3D(scene, camera, [0, 0.8, 0.1], {
+                label: 'Nebula Background', isOn: true, renderer: renderer,
+                onClick: (t) => { scene.background = t.isOn ? new THREE.Color(0x050510) : new THREE.Color(0x000000); }
+            });
+            settingsModal.contentGroup.add(nebulaToggle.group);
+
+            const rotationToggle = new Toggle3D(scene, camera, [0, 0, 0.1], {
+                label: 'Auto-Rotate Camera', isOn: false, renderer: renderer,
+                onClick: (t) => { controls.autoRotate = t.isOn; }
+            });
+            settingsModal.contentGroup.add(rotationToggle.group);
+
+            const closeSettingsBtn = new Button3D(scene, camera, [0, -1.5, 0.1], {
+                label: "Close", width: 2.5, height: 0.6, renderer: renderer,
+                onClick: () => settingsModal.close()
+            });
+            settingsModal.contentGroup.add(closeSettingsBtn.group);
+
+            // === ANIMATION LOOP ===
+            function animate() {
+                requestAnimationFrame(animate);
+                entrancePortal.update();
+                entrancePortal.render(renderer);
+                ControlRegistry.getAll().forEach(control => {
+                    if (control && control.update) control.update();
+                });
+                scene3D.render();
+            }
+
+            setTimeout(() => {
+                const loader = document.getElementById('loader');
+                if (loader) {
+                    loader.style.opacity = 0;
+                    setTimeout(() => loader.remove(), 1000);
+                }
+                animate();
+            }, 1500);
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+        } catch (error) {
+            console.error('Error:', error);
+            const loader = document.getElementById('loader');
+            if (loader) {
+                loader.innerHTML = `<div style="color: #ff6b9d; text-align: center;">
+                    <h2>ERROR</h2><p>${error.message}</p></div>`;
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -16,7 +16,30 @@ export class BaseControl3D {
         this.group = new THREE.Group();
         this.group.position.set(...position);
 
-        // State
+        // State System (New Standard)
+        this.state = {
+            // Core Identity
+            id: this.controlId,
+            type: this.constructor.name,
+
+            // Dimensions (Standardized)
+            width: config.width || 1.0,
+            height: config.height || 1.0,
+            depth: config.depth || 0.1,
+
+            // Visuals
+            visible: true,
+            opacity: 1.0,
+            style: config.style || 'default',
+
+            // Custom Data (Merge config)
+            ...config
+        };
+
+        // Event System
+        this.events = {}; // { 'click': [cb1, cb2] }
+
+        // Legacy State (Keep for compat, but sync where possible)
         this.isHovered = false;
         this.isPressed = false;
         this.isEnabled = config.enabled !== false;
@@ -65,6 +88,98 @@ export class BaseControl3D {
 
         // Setup tooltip and label overlays
         this.setupTooltipAndLabel();
+        // Setup tooltip and label overlays
+        this.setupTooltipAndLabel();
+    }
+
+    // --- 1. Standard Data Interface ---
+
+    /**
+     * Set a property and trigger updates.
+     * @param {string} key - Property name
+     * @param {any} value - New value
+     */
+    set(key, value) {
+        if (this.state[key] === value) return; // No change
+
+        const oldValue = this.state[key];
+        this.state[key] = value;
+
+        // Notify internal handler
+        this.onStateChange(key, value, oldValue);
+
+        // Emit generic change event
+        this.emit('change', { key, value, oldValue });
+
+        // Trigger visual update
+        this.updateVisualState();
+    }
+
+    /**
+     * Get a property value.
+     * @param {string} key 
+     */
+    get(key) {
+        return this.state[key];
+    }
+
+    /**
+     * Virtual method: Handle state changes. Override in subclasses.
+     */
+    onStateChange(key, value, oldValue) {
+        // e.g. if (key === 'width') resizeMesh();
+    }
+
+
+    // --- 2. Event System ---
+
+    on(event, callback) {
+        if (!this.events[event]) this.events[event] = [];
+        this.events[event].push(callback);
+    }
+
+    off(event, callback) {
+        if (!this.events[event]) return;
+        this.events[event] = this.events[event].filter(cb => cb !== callback);
+    }
+
+    emit(event, data = {}) {
+        if (this.events[event]) {
+            this.events[event].forEach(cb => cb(data, this));
+        }
+
+        // Integrity check for Legacy Callbacks
+        if (event === 'click' && this.onClickCallback) this.onClickCallback(this);
+        if (event === 'hover' && this.onHoverCallback) this.onHoverCallback(this);
+        if (event === 'hover-leave' && this.onHoverLeaveCallback) this.onHoverLeaveCallback(this);
+        if (event === 'dblclick' && this.onDoubleClickCallback) this.onDoubleClickCallback(this);
+    }
+
+
+    // --- 3. Serialization ---
+
+    toJSON() {
+        return {
+            id: this.controlId,
+            type: this.constructor.name,
+            position: this.group.position.toArray(),
+            rotation: this.group.rotation.toArray(),
+            scale: this.group.scale.toArray(),
+            state: { ...this.state } // Copy state
+        };
+    }
+
+    fromJSON(data) {
+        if (data.position) this.group.position.fromArray(data.position);
+        if (data.rotation) this.group.rotation.fromArray(data.rotation);
+        if (data.scale) this.group.scale.fromArray(data.scale);
+
+        // Merge state
+        if (data.state) {
+            Object.keys(data.state).forEach(key => {
+                this.set(key, data.state[key]);
+            });
+        }
     }
 
     create() {
@@ -162,9 +277,7 @@ export class BaseControl3D {
     }
 
     handleDoubleClick() {
-        if (this.onDoubleClickCallback) {
-            this.onDoubleClickCallback(this);
-        }
+        this.emit('dblclick', { type: 'dblclick' });
         this.onDoubleClick();
     }
 
@@ -299,9 +412,7 @@ export class BaseControl3D {
     }
 
     handleClick() {
-        if (this.onClickCallback) {
-            this.onClickCallback(this);
-        }
+        this.emit('click', { type: 'click' });
         this.onClick();
     }
 
@@ -318,9 +429,7 @@ export class BaseControl3D {
     }
 
     onHover() {
-        if (this.onHoverCallback) {
-            this.onHoverCallback(this);
-        }
+        this.emit('hover', { type: 'hover' });
         // Show tooltip on hover
         if (this.tooltipConfig) {
             this.updateTooltipVisibility(true);
@@ -328,9 +437,7 @@ export class BaseControl3D {
     }
 
     onHoverLeave() {
-        if (this.onHoverLeaveCallback) {
-            this.onHoverLeaveCallback(this);
-        }
+        this.emit('hover-leave', { type: 'hover-leave' });
         // Hide tooltip when hover leaves
         if (this.tooltipConfig) {
             this.updateTooltipVisibility(false);
@@ -429,7 +536,8 @@ export class BaseControl3D {
 
         // Create overlay
         htmlOverlay.createOverlay(this.labelOverlayId, labelElement, position, {
-            className: 'spatial-label'
+            className: 'spatial-label',
+            scale: [0.01, 0.01, 0.01] // Scale down for CSS3DRenderer
         });
     }
 

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Station Control Center - Spatial UI 3D Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #0ff;
+            overflow: hidden;
+        }
+
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .story-overlay {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 20, 40, 0.9);
+            border: 2px solid #0ff;
+            padding: 20px;
+            max-width: 400px;
+            z-index: 100;
+            font-size: 14px;
+            line-height: 1.6;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+
+        .story-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #0ff;
+            text-shadow: 0 0 10px #0ff;
+        }
+
+        .story-text {
+            color: #8cf;
+            margin-bottom: 15px;
+        }
+
+        .mission-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 20, 40, 0.9);
+            border: 2px solid #0f0;
+            padding: 15px;
+            z-index: 100;
+            min-width: 250px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 12px;
+        }
+
+        .status-label {
+            color: #0f0;
+        }
+
+        .status-value {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .controls-help {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 20, 40, 0.9);
+            border: 2px solid #f80;
+            padding: 15px;
+            z-index: 100;
+            font-size: 12px;
+        }
+
+        .help-title {
+            color: #f80;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .help-item {
+            color: #fa0;
+            margin: 3px 0;
+        }
+
+        .alert-box {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(40, 0, 0, 0.9);
+            border: 2px solid #f00;
+            padding: 15px;
+            z-index: 100;
+            max-width: 300px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .alert-title {
+            color: #f00;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .alert-text {
+            color: #faa;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <!-- Story Overlay -->
+    <div class="story-overlay">
+        <div class="story-title">🚀 SPACE STATION AURORA-7</div>
+        <div class="story-text">
+            <strong>MISSION LOG - DAY 247</strong><br><br>
+            You are the commander of Aurora-7, a deep space research station orbiting Neptune.
+            Your mission: maintain life support systems, monitor solar radiation, and manage
+            the crew's daily operations.<br><br>
+            <strong>CURRENT SITUATION:</strong><br>
+            Solar flare detected. Adjust shields and power distribution to protect the station.
+        </div>
+        <div style="color: #0f0; font-size: 12px;">
+            ✓ All systems operational<br>
+            ⚠ Solar activity: HIGH<br>
+            👥 Crew status: 12/12 healthy
+        </div>
+    </div>
+
+    <!-- Mission Status -->
+    <div class="mission-status">
+        <div style="color: #0f0; font-weight: bold; margin-bottom: 10px;">MISSION STATUS</div>
+        <div class="status-item">
+            <span class="status-label">Oxygen:</span>
+            <span class="status-value" id="oxygen">98%</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Power:</span>
+            <span class="status-value" id="power">87%</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Shields:</span>
+            <span class="status-value" id="shields">65%</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Temperature:</span>
+            <span class="status-value" id="temp">21°C</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Radiation:</span>
+            <span class="status-value" id="radiation">MODERATE</span>
+        </div>
+    </div>
+
+    <!-- Controls Help -->
+    <div class="controls-help">
+        <div class="help-title">🎮 CONTROLS</div>
+        <div class="help-item">🖱️ Drag: Rotate view</div>
+        <div class="help-item">🔘 Click buttons: Activate systems</div>
+        <div class="help-item">🎚️ Drag sliders: Adjust power</div>
+        <div class="help-item">🔄 Toggle switches: Enable/disable</div>
+        <div class="help-item">📊 Charts: Monitor systems</div>
+    </div>
+
+    <!-- Alert Box -->
+    <div class="alert-box">
+        <div class="alert-title">⚠️ SOLAR FLARE WARNING</div>
+        <div class="alert-text">
+            Incoming solar radiation spike detected. Increase shield power to maximum.
+            ETA: 2 minutes 30 seconds.
+        </div>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { Button3D } from '../../src/controls/Button3D.js';
+        import { Toggle3D } from '../../src/controls/Toggle3D.js';
+        import { Slider3D } from '../../src/controls/Slider3D.js';
+        import { Chart3D } from '../../src/controls/Chart3D.js';
+        import { Modal3D } from '../../src/controls/Modal3D.js';
+        import { SpaceRoom } from '../../src/environments/SpaceRoom.js';
+
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+
+        // Set up space environment
+        const spaceRoom = new SpaceRoom(scene);
+        camera.position.set(0, 2, 10);
+
+        // Create control panels
+        // Shield Control
+        const shieldToggle = new Toggle3D(scene, camera, [-6, 3, 0], {
+            label: '🛡️ SHIELDS',
+            width: 2.5,
+            height: 0.8,
+            isOn: true,
+            onColor: 0x00ff00,
+            offColor: 0xff0000,
+            mode: 0,
+            renderer: renderer,
+            onClick: (toggle) => {
+                const status = toggle.isOn ? 'ONLINE' : 'OFFLINE';
+                console.log(`Shields: ${status}`);
+                updateShields(toggle.isOn ? 65 : 0);
+            }
+        });
+
+        // Power Distribution Slider
+        const powerSlider = new Slider3D(scene, camera, [-6, 1.5, 0], {
+            label: '⚡ POWER DISTRIBUTION',
+            width: 4,
+            height: 0.3,
+            min: 0,
+            max: 100,
+            value: 87,
+            mode: 0,
+            renderer: renderer,
+            onChange: (slider, value) => {
+                updatePower(value);
+            }
+        });
+
+        // Life Support Toggle
+        const lifeSupportToggle = new Toggle3D(scene, camera, [-6, 0, 0], {
+            label: '💨 LIFE SUPPORT',
+            width: 2.5,
+            height: 0.8,
+            isOn: true,
+            onColor: 0x00ff00,
+            offColor: 0xff0000,
+            mode: 0,
+            renderer: renderer,
+            onClick: (toggle) => {
+                updateOxygen(toggle.isOn ? 98 : 0);
+            }
+        });
+
+        // Emergency Button
+        const emergencyButton = new Button3D(scene, camera, [-6, -1.5, 0], {
+            label: '🚨 EMERGENCY PROTOCOL',
+            width: 3,
+            height: 1,
+            mode: 0,
+            renderer: renderer,
+            onClick: () => {
+                emergencyModal.open();
+            }
+        });
+
+        // System Monitor Chart
+        const systemChart = new Chart3D(scene, camera, [3, 2, 0], {
+            chartType: 'line',
+            data: {
+                labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+                datasets: [{
+                    label: 'Power Usage',
+                    data: [65, 72, 68, 85, 87, 82, 87],
+                    borderColor: '#00ff00',
+                    backgroundColor: 'rgba(0, 255, 0, 0.1)',
+                    tension: 0.4
+                }, {
+                    label: 'Shield Strength',
+                    data: [80, 78, 75, 70, 65, 63, 65],
+                    borderColor: '#00ffff',
+                    backgroundColor: 'rgba(0, 255, 255, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            width: 5,
+            height: 4,
+            mode: 0,
+            renderer: renderer
+        });
+
+        // Radiation Monitor Chart
+        const radiationChart = new Chart3D(scene, camera, [3, -2.5, 0], {
+            chartType: 'bar',
+            data: {
+                labels: ['Alpha', 'Beta', 'Gamma', 'Cosmic'],
+                datasets: [{
+                    label: 'Radiation Levels (mSv/h)',
+                    data: [2.3, 4.5, 3.1, 5.8],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.8)',
+                        'rgba(255, 159, 64, 0.8)',
+                        'rgba(255, 205, 86, 0.8)',
+                        'rgba(75, 192, 192, 0.8)'
+                    ]
+                }]
+            },
+            width: 5,
+            height: 3.5,
+            mode: 0,
+            renderer: renderer
+        });
+
+        // Emergency Modal
+        const emergencyModal = new Modal3D(scene, camera, [0, 0, 2], {
+            title: '🚨 EMERGENCY PROTOCOL ACTIVATED',
+            width: 6,
+            height: 4,
+            mode: 0,
+            isOpen: false,
+            renderer: renderer,
+            onOpen: () => {
+                console.log('Emergency protocol activated!');
+            },
+            onClose: () => {
+                console.log('Emergency protocol deactivated');
+            }
+        });
+
+        // Set modal content
+        if (emergencyModal.contentElement) {
+            emergencyModal.contentElement.innerHTML = `
+                <div style="color: #fff; padding: 20px; font-family: 'Courier New', monospace;">
+                    <h3 style="color: #f00; margin-bottom: 15px;">⚠️ EMERGENCY PROCEDURES</h3>
+                    <p style="margin-bottom: 10px;">1. All personnel to emergency stations</p>
+                    <p style="margin-bottom: 10px;">2. Seal all airlocks</p>
+                    <p style="margin-bottom: 10px;">3. Divert power to shields</p>
+                    <p style="margin-bottom: 10px;">4. Activate backup life support</p>
+                    <p style="margin-bottom: 10px;">5. Send distress signal</p>
+                    <br>
+                    <p style="color: #0ff;">Status: All systems responding normally</p>
+                </div>
+            `;
+        }
+
+        // Update functions
+        function updateShields(value) {
+            document.getElementById('shields').textContent = value + '%';
+        }
+
+        function updatePower(value) {
+            document.getElementById('power').textContent = Math.round(value) + '%';
+        }
+
+        function updateOxygen(value) {
+            document.getElementById('oxygen').textContent = value + '%';
+        }
+
+        // Simulate dynamic updates
+        let time = 0;
+        setInterval(() => {
+            time++;
+            // Simulate radiation fluctuation
+            const radiationLevel = Math.sin(time * 0.1) * 2 + 5;
+            if (radiationLevel > 6) {
+                document.getElementById('radiation').textContent = 'HIGH';
+                document.getElementById('radiation').style.color = '#f00';
+            } else if (radiationLevel > 4) {
+                document.getElementById('radiation').textContent = 'MODERATE';
+                document.getElementById('radiation').style.color = '#fa0';
+            } else {
+                document.getElementById('radiation').textContent = 'LOW';
+                document.getElementById('radiation').style.color = '#0f0';
+            }
+        }, 1000);
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            shieldToggle.update();
+            powerSlider.update();
+            lifeSupportToggle.update();
+            emergencyButton.update();
+            systemChart.update();
+            radiationChart.update();
+            emergencyModal.update();
+            spaceRoom.update();
+
+            scene3D.render();
+        }
+
+        animate();
+    </script>
+</body>
+
+</html>

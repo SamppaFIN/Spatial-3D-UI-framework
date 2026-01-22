@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIPortal3D Demo - Mars 2100 - Spatial UI 3D</title>
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌌</text></svg>">
+    <style>
+        #overlay-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 3rem;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 1s ease;
+            text-align: center;
+        }
+
+        .instruction {
+            position: absolute;
+            bottom: 2rem;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1.2rem;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="overlay-text">MARS 2100</div>
+    <div class="instruction">Walk into the portal to travel across dimensions (Drag Forward)</div>
+
+    <nav class="navbar" style="background: rgba(0,0,0,0.3); backdrop-filter: blur(5px);">
+        <div class="navbar-container">
+            <a href="../../index.html" class="navbar-logo">🌌 Spatial UI AI Portal</a>
+            <ul class="navbar-menu">
+                <li><a href="../index.html" class="navbar-link">Components</a></li>
+                <li><a href="../../demos/index.html" class="navbar-link">Demos</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="preview-area" style="width: 100%; height: 100vh;">
+        <canvas id="showcase-canvas"></canvas>
+    </main>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { AIPortal3D } from '../../src/controls/AIPortal3D.js';
+        import { ControlRegistry } from '../../src/core/ControlRegistry.js';
+        import * as THREE from 'three';
+
+        const canvas = document.getElementById('showcase-canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+        const controls = scene3D.getControls();
+
+        ControlRegistry.setOrbitControls(controls);
+        scene.background = new THREE.Color(0x0a0a20);
+
+        // --- 1. SETUP TWO WORLDS ---
+
+        // World A: Earth Lab
+        const grid = new THREE.GridHelper(50, 50, 0x4444ff, 0x222244);
+        scene.add(grid);
+
+        // World B: Mars Surface (The Scene inside the portal)
+        const marsScene = new THREE.Scene();
+        marsScene.background = new THREE.Color(0x441100);
+        marsScene.fog = new THREE.FogExp2(0x441100, 0.05);
+
+        // Mars Terrain
+        const terrainGeo = new THREE.PlaneGeometry(100, 100, 50, 50);
+        const posAttr = terrainGeo.attributes.position;
+        for (let i = 0; i < posAttr.count; i++) {
+            const z = Math.random() * 2;
+            posAttr.setZ(i, z);
+        }
+        terrainGeo.computeVertexNormals();
+        const terrain = new THREE.Mesh(terrainGeo, new THREE.MeshStandardMaterial({ color: 0x883300, roughness: 1 }));
+        terrain.rotation.x = -Math.PI / 2;
+        terrain.position.y = -1;
+        marsScene.add(terrain);
+        marsScene.add(new THREE.AmbientLight(0xff4400, 0.5));
+        const marsLight = new THREE.DirectionalLight(0xff6600, 1);
+        marsLight.position.set(5, 10, 5);
+        marsScene.add(marsLight);
+
+        // --- 2. CREATE AI PORTAL ---
+
+        const portal = new AIPortal3D(scene, camera, [0, 1.5, -5], {
+            width: 4, height: 6,
+            portalScene: marsScene,
+            color: 0x00ffff,
+            onTraverse: () => {
+                swapWorld();
+            }
+        });
+
+        camera.position.set(0, 1.5, 5);
+        controls.target.set(0, 1.5, -5);
+        controls.update();
+
+        // --- 3. WORLD SWAPPER LOGIC ---
+
+        let onMars = false;
+        const overlay = document.getElementById('overlay-text');
+
+        function swapWorld() {
+            onMars = !onMars;
+
+            if (onMars) {
+                // To Mars
+                scene.background = marsScene.background;
+                scene.fog = marsScene.fog;
+                grid.visible = false;
+                scene.add(terrain);
+
+                overlay.textContent = "MARS 2100";
+                overlay.style.opacity = 1;
+                setTimeout(() => { overlay.style.opacity = 0; }, 2000);
+
+                // Reposition portal to go BACK
+                portal.group.position.z = 5;
+                portal.group.rotation.y = Math.PI;
+            } else {
+                // Back to Lab
+                scene.background = new THREE.Color(0x0a0a20);
+                scene.fog = null;
+                grid.visible = true;
+                scene.remove(terrain);
+
+                overlay.textContent = "LABORATORY";
+                overlay.style.opacity = 1;
+                setTimeout(() => { overlay.style.opacity = 0; }, 2000);
+
+                portal.group.position.z = -5;
+                portal.group.rotation.y = 0;
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            portal.update();
+            portal.render(renderer); // Render the preview
+            scene3D.render();
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+
+</html>

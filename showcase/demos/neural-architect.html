@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skenaario 3: The Neural Architect</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+        }
+
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #88ffaa;
+            font-family: 'Inter', sans-serif;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        h1 {
+            margin: 0;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        p {
+            margin-top: 5px;
+            opacity: 0.7;
+        }
+    </style>
+    <!-- Import Map -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <div id="info">
+        <h1>THE NEURAL ARCHITECT</h1>
+        <p>Focus • Echo Discovery • Flow State</p>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { SpatialEnvironment } from '../../src/environments/SpatialEnvironment.js';
+
+        // Components
+        import { EchoInteraction3D } from '../../src/controls/EchoInteraction3D.js';
+        import { VolumetricCard3D } from '../../src/controls/VolumetricCard3D.js';
+        import { TimeRibbon3D } from '../../src/controls/TimeRibbon3D.js';
+        import { Slider3D } from '../../src/controls/Slider3D.js';
+
+        // 1. Initialize Environment
+        const env = new SpatialEnvironment(document.body, {
+            cameraPos: [0, 1.6, 2], // Close focus
+            gridSize: 20
+        });
+        env.init();
+
+        // Minimalist Lighting
+        env.scene.background = new THREE.Color(0x050505);
+        const ambient = new THREE.AmbientLight(0x222222);
+        env.scene.add(ambient);
+
+        // Dynamic spotlight aimed at center focus
+        const spot = new THREE.SpotLight(0xffffff, 5);
+        spot.position.set(0, 5, 2);
+        spot.target.position.set(0, 1, 0);
+        spot.angle = 0.5;
+        spot.penumbra = 0.8;
+        env.scene.add(spot);
+        env.scene.add(spot.target);
+
+
+        // ============================================
+        // SCENARIO 3: THE NEURAL ARCHITECT
+        // ============================================
+
+        // A. ECHO INTERACTION (The Revealer)
+        // System that manages visibility/material of hidden objects
+        const echoSystem = new EchoInteraction3D(env.scene, env.camera, {
+            pulseSpeed: 8,
+            maxRadius: 30,
+            glowColor: 0x00ff88,
+            audioEnabled: false
+        });
+
+        // Hook into animation loop
+        env.updatables.push({
+            update: () => echoSystem.update()
+        });
+
+
+        // B. VOLUMETRIC CARD (The Focused Object)
+        // Hidden initially, revealed by Echo
+        const volCard = new VolumetricCard3D(env.scene, env.camera, [0, 1.2, -1.5], {
+            width: 1.5,
+            height: 2.0,
+            baseColor: 0x111111,
+            popHeight: 0.8,
+            popScale: 1.5
+        });
+        // Override material for concealment (start invisible/dark)
+        // The EchoSystem will "register" this and handle the reveal shader
+        echoSystem.registerObject(volCard.baseMesh, {
+            onReveal: () => console.log("Card Revealed")
+        });
+        env.add(volCard.group);
+        env.updatables.push(volCard);
+
+
+        // C. TIME RIBBON (History)
+        // Spirals around the focused object
+        const historyRibbon = new TimeRibbon3D(env.scene, env.camera, [0, 1.2, -1.5], {
+            radius: 1.2,
+            turns: 2,
+            ribbonWidth: 0.1,
+            timeline: [
+                { time: 0, label: "Concept" },
+                { time: 50, label: "Draft" },
+                { time: 100, label: "Final" }
+            ],
+            onTimeChange: (t) => console.log("Time shift:", t)
+        });
+        // Ideally this is also hidden until revealed?
+        // For visual clarity in demo, let's keep it visible but subtle, or register parts.
+        env.add(historyRibbon.group);
+        env.updatables.push(historyRibbon);
+
+
+        // D. MINIMALIST SLIDER (Contextual UI)
+        // "Thin line appearing near finger" -> We'll place it near the card
+        const slider = new Slider3D(env.scene, env.camera, [0.8, 1.2, -1.2], {
+            width: 0.02, // Very thin
+            length: 1.0,
+            color: 0xffffff,
+            min: 0,
+            max: 100,
+            value: 50,
+            orientation: 'vertical',
+            showValue: false // Minimalist
+        });
+        // Register slider base for echo reveal too?
+        // Or just let it be there.
+        env.add(slider.group);
+        env.updatables.push(slider);
+
+
+        // 3. Start Loop
+        env.start();
+    </script>
+</body>
+
+</html>

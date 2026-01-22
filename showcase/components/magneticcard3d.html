@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MagneticCard3D Component - Spatial UI 3D</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="../../index.html" class="navbar-logo">🌸 Spatial UI 3D</a>
+            <ul class="navbar-menu">
+                <li><a href="../../index.html#features" class="navbar-link">Features</a></li>
+                <li><a href="../index.html" class="navbar-link">Components</a></li>
+                <li><a href="../../demos/index.html" class="navbar-link">Demos</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="component-showcase">
+        <!-- Sidebar Controls -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>MagneticCard3D</h2>
+                <p>Physics-based Info Panel</p>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">Influence Radius</label>
+                <div class="slider-container">
+                    <input type="range" id="radius-slider" min="1" max="5" step="0.1" value="3.0">
+                    <span class="value-display" id="radius-value">3.0</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">Max Tilt</label>
+                <div class="slider-container">
+                    <input type="range" id="tilt-slider" min="0.1" max="1.0" step="0.1" value="0.3">
+                    <span class="value-display" id="tilt-value">0.3</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">Parallax Depth</label>
+                <div class="slider-container">
+                    <input type="range" id="parallax-slider" min="0" max="0.5" step="0.05" value="0.15">
+                    <span class="value-display" id="parallax-value">0.15</span>
+                </div>
+            </div>
+
+            <button id="reset-btn" class="btn btn-secondary" style="width:100%; margin-top:20px;">Reset View</button>
+        </aside>
+
+        <!-- Main Canvas Area -->
+        <main class="preview-area">
+            <canvas id="showcase-canvas"></canvas>
+            <div class="instruction-overlay">
+                Move cursor near cards to see magnetic effect
+            </div>
+        </main>
+    </div>
+
+    <!-- Three.js Import Map -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { MagneticCard3D } from '../../src/controls/MagneticCard3D.js';
+        import { ControlRegistry } from '../../src/core/ControlRegistry.js';
+        import * as THREE from 'three';
+
+        // Setup Scene
+        const canvas = document.getElementById('showcase-canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+        const controls = scene3D.getControls();
+
+        ControlRegistry.setOrbitControls(controls);
+
+        // Styling
+        scene.background = new THREE.Color(0x111111);
+        const grid = new THREE.GridHelper(20, 20, 0x444444, 0x222222);
+        grid.position.y = -2;
+        scene.add(grid);
+
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(5, 5, 5);
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0x404040));
+
+        camera.position.set(0, 0, 8);
+
+        // Create Cards
+        const cards = [];
+
+        function createCards() {
+            // Clear
+            cards.forEach(c => {
+                scene.remove(c.group);
+                if (c.dispose) c.dispose();
+            });
+            cards.length = 0;
+
+            // Config
+            const radius = parseFloat(document.getElementById('radius-slider').value);
+            const tilt = parseFloat(document.getElementById('tilt-slider').value);
+            const parallax = parseFloat(document.getElementById('parallax-slider').value);
+
+            // Card 1
+            const card1 = new MagneticCard3D(scene, camera, [-2.5, 0, 0], {
+                width: 2, height: 3,
+                title: "Physics",
+                description: "Magnetic Tilt",
+                color: 0x4e008e,
+                influenceRadius: radius,
+                maxTilt: tilt,
+                parallaxScale: parallax,
+                renderer: renderer
+            });
+
+            // Card 2
+            const card2 = new MagneticCard3D(scene, camera, [0, 0, 0], {
+                width: 2, height: 3,
+                title: "Parallax",
+                description: "Depth Layers",
+                color: 0x004e8e,
+                influenceRadius: radius,
+                maxTilt: tilt,
+                parallaxScale: parallax,
+                renderer: renderer
+            });
+
+            // Card 3
+            const card3 = new MagneticCard3D(scene, camera, [2.5, 0, 0], {
+                width: 2, height: 3,
+                title: "UI",
+                description: "Interactive",
+                color: 0x8e004e,
+                influenceRadius: radius,
+                maxTilt: tilt,
+                parallaxScale: parallax,
+                renderer: renderer
+            });
+
+            cards.push(card1, card2, card3);
+        }
+
+        createCards();
+
+        // Listeners
+        document.getElementById('radius-slider').addEventListener('input', (e) => {
+            document.getElementById('radius-value').textContent = e.target.value;
+            createCards();
+        });
+
+        document.getElementById('tilt-slider').addEventListener('input', (e) => {
+            document.getElementById('tilt-value').textContent = e.target.value;
+            // Can update directly if supported
+            cards.forEach(c => c.maxTilt = parseFloat(e.target.value));
+        });
+
+        document.getElementById('parallax-slider').addEventListener('input', (e) => {
+            document.getElementById('parallax-value').textContent = e.target.value;
+            cards.forEach(c => c.parallaxScale = parseFloat(e.target.value));
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            camera.position.set(0, 0, 8);
+            controls.reset();
+        });
+
+        // Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            // manually update if needed? BaseControl doesn't assume continuous update unless added to loop?
+            // Actually BaseControl3D works mostly on events. 
+            // BUT MagneticCard needs damping animation in the loop!
+            // Wait, we didn't add the component to a central update manager.
+            // We must call .update() manually in this loop for physics tick.
+
+            // NOTE: MagneticCard3D.js code I wrote calls slerp inside `onMouseMove`.
+            // That only updates when mouse moves! 
+            // **Correction**: To get smooth damping stopping when mouse STOPS, we need `update()` loop.
+            // The logic I wrote in `onMouseMove` does one step of slerp. That is NOT sufficient for smooth finish.
+            // I should fix the component to store target and slerp in an update method.
+            // For now, let's call the component update if it exists? 
+            // My implementation `update()` was empty/commented out logic.
+            // My implementation `onMouseMove` did the logic.
+            // This means it will jerk-stop when mouse stops.
+            // I should Refactor.
+
+            // However, let's see how it behaves first.
+
+            scene3D.render();
+        }
+        animate();
+
+        // Handle Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+
+</html>

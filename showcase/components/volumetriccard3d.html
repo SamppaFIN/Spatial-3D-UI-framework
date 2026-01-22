@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VolumetricCard3D Component - Spatial UI 3D</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="../../index.html" class="navbar-logo">🌸 Spatial UI 3D</a>
+            <ul class="navbar-menu">
+                <li><a href="../../index.html#features" class="navbar-link">Features</a></li>
+                <li><a href="../index.html" class="navbar-link">Components</a></li>
+                <li><a href="../../demos/index.html" class="navbar-link">Demos</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="component-showcase">
+        <!-- Sidebar Controls -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>VolumetricCard3D</h2>
+                <p>Pop-out Product Display</p>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">Pop Height</label>
+                <div class="slider-container">
+                    <input type="range" id="height-slider" min="0.1" max="1.5" step="0.1" value="0.8">
+                    <span class="value-display" id="height-value">0.8</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">Pop Scale</label>
+                <div class="slider-container">
+                    <input type="range" id="scale-slider" min="1.0" max="2.0" step="0.1" value="1.2">
+                    <span class="value-display" id="scale-value">1.2</span>
+                </div>
+            </div>
+
+            <div class="instruction-overlay" style="position:static; margin-top:20px;">
+                Hover over cards to see the 3D model pop out and rotate.
+            </div>
+
+            <button id="reset-btn" class="btn btn-secondary" style="width:100%; margin-top:20px;">Reset View</button>
+        </aside>
+
+        <!-- Main Canvas Area -->
+        <main class="preview-area">
+            <canvas id="showcase-canvas"></canvas>
+        </main>
+    </div>
+
+    <!-- Three.js Import Map -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { VolumetricCard3D } from '../../src/controls/VolumetricCard3D.js';
+        import { ControlRegistry } from '../../src/core/ControlRegistry.js';
+        import * as THREE from 'three';
+
+        // Setup Scene
+        const canvas = document.getElementById('showcase-canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+        const controls = scene3D.getControls();
+
+        ControlRegistry.setOrbitControls(controls);
+
+        // Styling
+        scene.background = new THREE.Color(0x111111);
+        const grid = new THREE.GridHelper(20, 20, 0x444444, 0x222222);
+        grid.position.y = -2;
+        scene.add(grid);
+
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(5, 5, 5);
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0x404040));
+
+        camera.position.set(0, 0, 8);
+
+        // --- Models ---
+
+        // 1. Sneaker (Primitive construction)
+        const sneakerGroup = new THREE.Group();
+        const sole = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.15, 1.8), new THREE.MeshStandardMaterial({ color: 0xeeeeee }));
+        sole.position.y = -0.2;
+        const uppers = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.4, 1.2), new THREE.MeshStandardMaterial({ color: 0xff3333 }));
+        uppers.position.set(0, 0.1, 0.1);
+        const tongue = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.6), new THREE.MeshStandardMaterial({ color: 0xcc0000 }));
+        tongue.position.set(0, 0.35, 0.3);
+        tongue.rotation.x = -0.5;
+        sneakerGroup.add(sole, uppers, tongue);
+
+        // 2. Gadget (Phone-ish)
+        const gadgetGroup = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.8, 0.1), new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.8, roughness: 0.2 }));
+        const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 1.6), new THREE.MeshStandardMaterial({ color: 0x00aaff, emissive: 0x0044aa }));
+        screen.position.z = 0.06;
+        gadgetGroup.add(body, screen);
+
+        // 3. Toy (Robot)
+        const toyGroup = new THREE.Group();
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), new THREE.MeshStandardMaterial({ color: 0xffd700 }));
+        head.position.y = 0.5;
+        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.6), new THREE.MeshStandardMaterial({ color: 0x888888 }));
+        toyGroup.add(head, torso);
+
+
+        // Create Cards
+        const card1 = new VolumetricCard3D(scene, camera, [-3, 0, 0], {
+            width: 2.5, height: 3.5,
+            baseColor: 0x222222,
+            modelObject: sneakerGroup,
+            popHeight: 0.8,
+            popScale: 1.2
+        });
+
+        const card2 = new VolumetricCard3D(scene, camera, [0, 0, 0], {
+            width: 2.5, height: 3.5,
+            baseColor: 0x333333,
+            modelObject: gadgetGroup,
+            popHeight: 0.5,
+            popScale: 1.1
+        });
+
+        const card3 = new VolumetricCard3D(scene, camera, [3, 0, 0], {
+            width: 2.5, height: 3.5,
+            baseColor: 0x442222,
+            modelObject: toyGroup,
+            popHeight: 1.0,
+            popScale: 1.5
+        });
+
+        const cards = [card1, card2, card3];
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            camera.position.set(0, 0, 8);
+            controls.reset();
+        });
+
+        // Inputs
+        document.getElementById('height-slider').addEventListener('input', (e) => {
+            document.getElementById('height-value').textContent = e.target.value;
+            cards.forEach(c => c.popHeight = parseFloat(e.target.value));
+        });
+
+        document.getElementById('scale-slider').addEventListener('input', (e) => {
+            document.getElementById('scale-value').textContent = e.target.value;
+            cards.forEach(c => c.popScale = parseFloat(e.target.value));
+        });
+
+        // Loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            cards.forEach(c => c.update());
+
+            scene3D.render();
+        }
+        animate();
+
+        // Handle Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+
+</html>

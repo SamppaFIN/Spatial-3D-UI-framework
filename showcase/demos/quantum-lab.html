@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Computer Lab - Spatial UI 3D Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000510;
+            color: #00aaff;
+            overflow: hidden;
+        }
+
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .lab-info {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 5, 16, 0.95);
+            border: 2px solid #00aaff;
+            padding: 20px;
+            max-width: 420px;
+            z-index: 100;
+            box-shadow: 0 0 30px rgba(0, 170, 255, 0.5);
+        }
+
+        .lab-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #00aaff;
+            text-shadow: 0 0 10px #00aaff;
+        }
+
+        .lab-text {
+            color: #66ccff;
+            line-height: 1.6;
+            font-size: 13px;
+        }
+
+        .quantum-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 5, 16, 0.95);
+            border: 2px solid #aa00ff;
+            padding: 15px;
+            z-index: 100;
+            min-width: 300px;
+        }
+
+        .status-title {
+            color: #aa00ff;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 12px;
+        }
+
+        .status-label {
+            color: #aa00ff;
+        }
+
+        .status-value {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .computation-log {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 5, 16, 0.95);
+            border: 2px solid #00ff00;
+            padding: 15px;
+            z-index: 100;
+            max-width: 400px;
+        }
+
+        .log-title {
+            color: #00ff00;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .log-entry {
+            color: #66ff66;
+            margin: 3px 0;
+            font-size: 11px;
+        }
+
+        .qubit-display {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 5, 16, 0.95);
+            border: 2px solid #ffaa00;
+            padding: 15px;
+            z-index: 100;
+            min-width: 280px;
+        }
+
+        .qubit-title {
+            color: #ffaa00;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .qubit-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .qubit {
+            width: 20px;
+            height: 20px;
+            background: #ffaa00;
+            border-radius: 50%;
+            animation: qubit-pulse 1s infinite;
+        }
+
+        @keyframes qubit-pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div class="lab-info">
+        <div class="lab-title">⚛️ QUANTUM COMPUTING LABORATORY</div>
+        <div class="lab-text">
+            <strong>FACILITY:</strong> CERN Quantum Research Division<br>
+            <strong>SYSTEM:</strong> Q-AURORA Quantum Processor<br>
+            <strong>QUBITS:</strong> 1,024 superconducting qubits<br><br>
+
+            You are operating the world's most advanced quantum computer. Harness
+            the power of quantum superposition and entanglement to solve problems
+            that would take classical computers millions of years.<br><br>
+
+            <strong>CURRENT TASK:</strong> Protein folding simulation<br>
+            <strong>PROGRESS:</strong> 67% complete<br>
+            <strong>QUANTUM ADVANTAGE:</strong> 10^12x faster
+        </div>
+    </div>
+
+    <div class="quantum-status">
+        <div class="status-title">⚛️ QUANTUM STATUS</div>
+        <div class="status-item">
+            <span class="status-label">Temperature:</span>
+            <span class="status-value" id="temp">0.015 K</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Coherence Time:</span>
+            <span class="status-value" id="coherence">120 μs</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Error Rate:</span>
+            <span class="status-value" id="error">0.1%</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Entanglement:</span>
+            <span class="status-value" id="entangle">98.7%</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Fidelity:</span>
+            <span class="status-value" id="fidelity">99.9%</span>
+        </div>
+    </div>
+
+    <div class="computation-log">
+        <div class="log-title">📊 COMPUTATION LOG</div>
+        <div class="log-entry">[12:34:01] Initializing quantum circuit...</div>
+        <div class="log-entry">[12:34:15] Applying Hadamard gates...</div>
+        <div class="log-entry">[12:34:28] Creating entangled pairs...</div>
+        <div class="log-entry">[12:34:42] Running Grover's algorithm...</div>
+        <div class="log-entry">[12:35:01] Measuring qubits...</div>
+        <div class="log-entry">[12:35:15] Quantum advantage achieved!</div>
+    </div>
+
+    <div class="qubit-display">
+        <div class="qubit-title">🔬 QUBIT STATES</div>
+        <div style="color: #ffcc66; font-size: 11px; margin-bottom: 5px;">
+            Active: 1,024 qubits in superposition
+        </div>
+        <div class="qubit-grid">
+            <div class="qubit" style="animation-delay: 0s;"></div>
+            <div class="qubit" style="animation-delay: 0.1s;"></div>
+            <div class="qubit" style="animation-delay: 0.2s;"></div>
+            <div class="qubit" style="animation-delay: 0.3s;"></div>
+            <div class="qubit" style="animation-delay: 0.4s;"></div>
+            <div class="qubit" style="animation-delay: 0.5s;"></div>
+            <div class="qubit" style="animation-delay: 0.6s;"></div>
+            <div class="qubit" style="animation-delay: 0.7s;"></div>
+        </div>
+    </div>
+
+    <script type="importmap">
+    { "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }}
+    </script>
+
+    <script type="module">
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { Chart3D } from '../../src/controls/Chart3D.js';
+        import { Button3D } from '../../src/controls/Button3D.js';
+        import { Modal3D } from '../../src/controls/Modal3D.js';
+        import { Accordion3D } from '../../src/controls/Accordion3D.js';
+        import * as THREE from 'three';
+
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+
+        scene.background = new THREE.Color(0x000510);
+        scene.fog = new THREE.Fog(0x000510, 10, 50);
+
+        const blueLight = new THREE.PointLight(0x00aaff, 2, 20);
+        blueLight.position.set(-5, 5, 5);
+        scene.add(blueLight);
+
+        const purpleLight = new THREE.PointLight(0xaa00ff, 2, 20);
+        purpleLight.position.set(5, 5, 5);
+        scene.add(purpleLight);
+
+        camera.position.set(0, 2, 12);
+
+        // Control Buttons
+        const initButton = new Button3D(scene, camera, [-6, 3, 0], {
+            label: '⚛️ INITIALIZE QUBITS',
+            width: 3,
+            height: 0.9,
+            mode: 0,
+            renderer: renderer,
+            onClick: () => console.log('Qubits initialized')
+        });
+
+        const runButton = new Button3D(scene, camera, [-6, 1.8, 0], {
+            label: '▶️ RUN ALGORITHM',
+            width: 3,
+            height: 0.9,
+            mode: 0,
+            renderer: renderer,
+            onClick: () => resultsModal.open()
+        });
+
+        const measureButton = new Button3D(scene, camera, [-6, 0.6, 0], {
+            label: '📊 MEASURE STATE',
+            width: 3,
+            height: 0.9,
+            mode: 0,
+            renderer: renderer
+        });
+
+        const resetButton = new Button3D(scene, camera, [-6, -0.6, 0], {
+            label: '🔄 RESET SYSTEM',
+            width: 3,
+            height: 0.9,
+            mode: 0,
+            renderer: renderer
+        });
+
+        // Performance Chart
+        const perfChart = new Chart3D(scene, camera, [3, 2.5, 0], {
+            chartType: 'line',
+            data: {
+                labels: ['T0', 'T1', 'T2', 'T3', 'T4', 'T5'],
+                datasets: [{
+                    label: 'Quantum Fidelity %',
+                    data: [99.5, 99.7, 99.9, 99.8, 99.9, 99.9],
+                    borderColor: '#00aaff',
+                    backgroundColor: 'rgba(0, 170, 255, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            width: 5,
+            height: 3.5,
+            mode: 0,
+            renderer: renderer
+        });
+
+        // Algorithm Accordion
+        const algoAccordion = new Accordion3D(scene, camera, [3, -1.5, 0], {
+            width: 5,
+            itemHeight: 0.7,
+            itemSpacing: 0.15,
+            mode: 0,
+            renderer: renderer,
+            items: [
+                {
+                    title: '🔍 Grover\'s Search',
+                    contentHeight: 2.5,
+                    content: `# Grover's Algorithm\n\nQuantum search algorithm that provides quadratic speedup.\n\n**Complexity:** O(√N)\n**Use Case:** Database search`
+                },
+                {
+                    title: '🔐 Shor\'s Factoring',
+                    contentHeight: 2.5,
+                    content: `# Shor's Algorithm\n\nFactors large numbers exponentially faster.\n\n**Complexity:** O((log N)³)\n**Use Case:** Cryptography`
+                },
+                {
+                    title: '⚡ Quantum Annealing',
+                    contentHeight: 2.5,
+                    content: `# Quantum Annealing\n\nOptimization using quantum tunneling.\n\n**Use Case:** Optimization problems`
+                }
+            ],
+            openItems: [0]
+        });
+
+        // Results Modal
+        const resultsModal = new Modal3D(scene, camera, [0, 0, 2], {
+            title: '📊 COMPUTATION RESULTS',
+            width: 6,
+            height: 4,
+            mode: 0,
+            isOpen: false,
+            renderer: renderer
+        });
+
+        if (resultsModal.contentElement) {
+            resultsModal.contentElement.innerHTML = `
+                <div style="color: #00aaff; padding: 20px; font-family: 'Courier New', monospace;">
+                    <h3 style="color: #aa00ff; margin-bottom: 15px;">⚛️ QUANTUM RESULTS</h3>
+                    <p style="margin: 5px 0;">✓ Algorithm: Grover's Search</p>
+                    <p style="margin: 5px 0;">✓ Iterations: 47</p>
+                    <p style="margin: 5px 0;">✓ Solution found: |101010⟩</p>
+                    <p style="margin: 5px 0;">✓ Probability: 99.9%</p>
+                    <p style="margin: 5px 0;">✓ Time: 0.12 ms</p>
+                    <br>
+                    <p style="color: #00ff00;">🎉 Quantum advantage: 10^12x speedup!</p>
+                </div>
+            `;
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            initButton.update();
+            runButton.update();
+            measureButton.update();
+            resetButton.update();
+            perfChart.update();
+            algoAccordion.update();
+            resultsModal.update();
+
+            blueLight.intensity = 2 + Math.sin(Date.now() * 0.003) * 0.5;
+            purpleLight.intensity = 2 + Math.cos(Date.now() * 0.003) * 0.5;
+
+            scene3D.render();
+        }
+
+        animate();
+    </script>
+</body>
+
+</html>

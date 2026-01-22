@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KineticSculpture3D - Spatial UI 3D</title>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            cursor: grab;
+        }
+
+        body.dragging {
+            cursor: grabbing;
+        }
+
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 20, 40, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            color: white;
+            max-width: 350px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .info-panel h2 {
+            margin: 0 0 10px 0;
+            color: #00ffff;
+            font-size: 1.5rem;
+        }
+
+        .info-panel p {
+            margin: 5px 0;
+            line-height: 1.5;
+            font-size: 0.9rem;
+        }
+
+        .gesture-list {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+
+        .gesture-list li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+            border-left: 3px solid transparent;
+        }
+
+        .gesture-list li.active {
+            border-left-color: #00ffff;
+            background: rgba(0, 255, 255, 0.1);
+        }
+
+        .gesture-list li:before {
+            content: "→";
+            position: absolute;
+            left: 5px;
+            color: #00ffff;
+        }
+
+        .stats-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 20, 40, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            color: white;
+            font-family: 'Courier New', monospace;
+            min-width: 220px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 0.9rem;
+        }
+
+        .stat-label {
+            color: #00ffff;
+        }
+
+        .stat-value {
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        .stat-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+
+        .stat-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ffff, #0080ff);
+            transition: width 0.3s;
+        }
+
+        .controls-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 20, 40, 0.9);
+            padding: 15px 30px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            color: white;
+            text-align: center;
+        }
+
+        .control-button {
+            background: linear-gradient(135deg, #00ffff, #0080ff);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px;
+            transition: transform 0.2s;
+        }
+
+        .control-button:hover {
+            transform: scale(1.05);
+        }
+
+        .control-button:active {
+            transform: scale(0.95);
+        }
+
+        .instruction {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px dashed rgba(0, 255, 255, 0.5);
+            padding: 30px;
+            border-radius: 15px;
+            color: #00ffff;
+            font-size: 1.2rem;
+            text-align: center;
+            pointer-events: none;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 0.6;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="info-panel">
+        <h2>🎭 KineticSculpture3D</h2>
+        <p>Gesture-Controlled Morphing Sphere</p>
+        <p style="margin-top: 15px; font-style: italic;">Drag the sphere to control it:</p>
+        <ul class="gesture-list">
+            <li id="gesture-squeeze">⬇️ Drag Down = Squeeze (Volume ↑)</li>
+            <li id="gesture-rotate">↔️ Drag Horizontal = Rotate (Time)</li>
+            <li id="gesture-stretch">⬆️ Drag Up = Stretch (Settings)</li>
+        </ul>
+    </div>
+
+    <div class="stats-panel">
+        <div class="stat-row">
+            <span class="stat-label">Gesture:</span>
+            <span class="stat-value" id="currentGesture">idle</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Volume:</span>
+            <span class="stat-value" id="volumeValue">0</span>
+        </div>
+        <div class="stat-bar">
+            <div class="stat-bar-fill" id="volumeBar" style="width: 0%"></div>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Time:</span>
+            <span class="stat-value" id="timeValue">0</span>
+        </div>
+        <div class="stat-bar">
+            <div class="stat-bar-fill" id="timeBar" style="width: 0%"></div>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Scale:</span>
+            <span class="stat-value" id="scaleValue">1.00</span>
+        </div>
+    </div>
+
+    <div class="controls-panel">
+        <button class="control-button" id="resetSculpture">🔄 Reset</button>
+        <button class="control-button" id="toggleAnimation">⏸️ Pause Animation</button>
+    </div>
+
+    <div class="instruction" id="instruction">
+        Drag the morphing sphere to interact
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+        import { KineticSculpture3D } from '../../src/controls/KineticSculpture3D.js';
+
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000510);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 0, 8);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+
+        // Orbit controls (disabled during drag)
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.enabled = false; // Disable to allow sculpture dragging
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+
+        const pointLight1 = new THREE.PointLight(0x00ffff, 1, 100);
+        pointLight1.position.set(5, 5, 5);
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0xff00ff, 0.5, 100);
+        pointLight2.position.set(-5, -5, 5);
+        scene.add(pointLight2);
+
+        // State tracking
+        let volumeValue = 0;
+        let timeValue = 0;
+        let animationPaused = false;
+
+        // Create KineticSculpture3D
+        const sculpture = new KineticSculpture3D(scene, camera, [0, 0, 0], {
+            radius: 2,
+            detail: 3,
+            noiseStrength: 0.4,
+            onVolumeChange: (vol) => {
+                volumeValue = vol;
+                updateStats();
+            },
+            onTimeChange: (time) => {
+                timeValue = time;
+                updateStats();
+            },
+            onSettingsOpen: () => {
+                console.log('Settings opened!');
+                alert('Settings panel would open here!');
+            }
+        });
+
+        // Raycaster for interaction
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let isDragging = false;
+        let hasInteracted = false;
+
+        // Mouse event handlers
+        renderer.domElement.addEventListener('mousedown', onMouseDown);
+        renderer.domElement.addEventListener('mousemove', onMouseMove);
+        renderer.domElement.addEventListener('mouseup', onMouseUp);
+
+        function onMouseDown(event) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(sculpture.sculptureMesh);
+
+            if (intersects.length > 0) {
+                isDragging = true;
+                document.body.classList.add('dragging');
+                sculpture.startDrag(intersects[0].point);
+
+                if (!hasInteracted) {
+                    hasInteracted = true;
+                    document.getElementById('instruction').style.display = 'none';
+                }
+            }
+        }
+
+        function onMouseMove(event) {
+            if (!isDragging) return;
+
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+
+            // Project mouse to a plane at sculpture's Z position
+            const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -sculpture.group.position.z);
+            const worldPos = new THREE.Vector3();
+            raycaster.ray.intersectPlane(plane, worldPos);
+
+            if (worldPos) {
+                sculpture.updateDrag(worldPos);
+            }
+        }
+
+        function onMouseUp() {
+            if (isDragging) {
+                isDragging = false;
+                document.body.classList.remove('dragging');
+                sculpture.endDrag();
+            }
+        }
+
+        // UI Controls
+        document.getElementById('resetSculpture').addEventListener('click', () => {
+            sculpture.currentScale = 1.0;
+            sculpture.currentRotation.set(0, 0, 0);
+            sculpture.stretchAmount = 0;
+            sculpture.sculptureMesh.scale.setScalar(1.0);
+            sculpture.sculptureMesh.rotation.set(0, 0, 0);
+            volumeValue = 0;
+            timeValue = 0;
+            updateStats();
+        });
+
+        document.getElementById('toggleAnimation').addEventListener('click', () => {
+            animationPaused = !animationPaused;
+            document.getElementById('toggleAnimation').textContent = animationPaused ? '▶️ Resume Animation' : '⏸️ Pause Animation';
+        });
+
+        // Update stats display
+        function updateStats() {
+            const gesture = sculpture.getCurrentGesture();
+            document.getElementById('currentGesture').textContent = gesture;
+            document.getElementById('volumeValue').textContent = volumeValue;
+            document.getElementById('timeValue').textContent = timeValue;
+            document.getElementById('scaleValue').textContent = sculpture.currentScale.toFixed(2);
+
+            // Update progress bars
+            document.getElementById('volumeBar').style.width = volumeValue + '%';
+            document.getElementById('timeBar').style.width = timeValue + '%';
+
+            // Highlight active gesture
+            document.querySelectorAll('.gesture-list li').forEach(li => li.classList.remove('active'));
+            if (gesture === 'squeeze') {
+                document.getElementById('gesture-squeeze').classList.add('active');
+            } else if (gesture === 'rotate') {
+                document.getElementById('gesture-rotate').classList.add('active');
+            } else if (gesture === 'stretch') {
+                document.getElementById('gesture-stretch').classList.add('active');
+            }
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Update controls
+            controls.update();
+
+            // Update sculpture animation
+            if (!animationPaused) {
+                sculpture.update();
+            }
+
+            // Update stats
+            updateStats();
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            sculpture.dispose();
+        });
+    </script>
+</body>
+
+</html>

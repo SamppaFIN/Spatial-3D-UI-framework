@@ -247,6 +247,15 @@ export class Accordion3D extends BaseControl3D {
             contentElement.style.overflow = 'auto';
             contentElement.style.padding = '15px';
             contentElement.style.fontSize = '14px';
+            // Fix Contrast: Apply configured text color
+            contentElement.style.color = `#${this.textColor.toString(16).padStart(6, '0')}`;
+            // Ensure links are visible
+            const style = document.createElement('style');
+            style.textContent = `
+                #${contentOverlayId} a { color: #4ecdc4; text-decoration: none; }
+                #${contentOverlayId} a:hover { text-decoration: underline; }
+            `;
+            contentElement.appendChild(style);
 
             // Position content BELOW the header (expanding downward)
             // Content should fill the allocated htmlContentHeight space below the header
@@ -381,16 +390,24 @@ export class Accordion3D extends BaseControl3D {
     onMouseClick(event) {
         if (!this.isEnabled || !this.camera) return;
 
+        // Check what was clicked to prepare for potential onClick
         const intersect = this.checkIntersection(this.camera, event);
         if (intersect && intersect.object.userData.isAccordionHeader) {
-            const itemIndex = intersect.object.userData.itemIndex;
-            if (itemIndex !== undefined) {
-                this.toggleItem(itemIndex);
-            }
+            this._pendingClickItemIndex = intersect.object.userData.itemIndex;
+        } else {
+            this._pendingClickItemIndex = null;
         }
 
-        // Call parent to enable double-click camera focus
+        // Call parent to handle single/double click timing
         super.onMouseClick(event);
+    }
+
+    onClick() {
+        // Triggered by BaseControl3D only if it was a single click
+        if (this._pendingClickItemIndex !== null && this._pendingClickItemIndex !== undefined) {
+            this.toggleItem(this._pendingClickItemIndex);
+            this._pendingClickItemIndex = null;
+        }
     }
 
     addContentToItem(itemIndex, control) {

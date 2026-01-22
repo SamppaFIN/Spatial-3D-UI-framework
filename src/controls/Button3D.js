@@ -48,6 +48,7 @@ export class Button3D extends BaseControl3D {
         this.loadingRotation = 0;
 
         // NEW: Effects
+        this.particleEffect = config.particleEffect !== false; // Enabled by default
         this.rippleEffect = config.rippleEffect !== false; // Enabled by default
         this.pulseAnimation = config.pulseAnimation || false;
         this.pulseSpeed = config.pulseSpeed || 0.003;
@@ -884,7 +885,9 @@ export class Button3D extends BaseControl3D {
         }
 
         // Create particle effect
-        this.createParticleEffect();
+        if (this.particleEffect) {
+            this.createParticleEffect();
+        }
 
         // Animate button press
         this.targetScale = 0.85;

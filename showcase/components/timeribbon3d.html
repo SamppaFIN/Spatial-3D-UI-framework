@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimeRibbon3D - Spatial UI 3D</title>
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #0a0a0f;
+        }
+
+        #canvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            max-width: 350px;
+            background: rgba(10, 10, 15, 0.9);
+            border: 1px solid var(--cosmic-cyan);
+            padding: 20px;
+            border-radius: 8px;
+            color: #fff;
+            z-index: 10;
+        }
+
+        .info-panel h1 {
+            margin: 0 0 10px 0;
+            color: var(--cosmic-cyan);
+            font-size: 1.5rem;
+        }
+
+        .info-panel p {
+            margin: 8px 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .controls-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            max-width: 350px;
+            background: rgba(10, 10, 15, 0.9);
+            border: 1px solid var(--cosmic-cyan);
+            padding: 15px;
+            border-radius: 8px;
+            color: #fff;
+            z-index: 10;
+        }
+
+        .controls-panel button {
+            background: var(--cosmic-cyan);
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .controls-panel button:hover {
+            background: #00ffff;
+            transform: scale(1.05);
+        }
+
+        .time-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(10, 10, 15, 0.9);
+            border: 1px solid #ffd700;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: #ffd700;
+            font-size: 2rem;
+            font-weight: bold;
+            z-index: 10;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="info-panel">
+        <h1>⏰ TimeRibbon3D</h1>
+        <p><strong>Physical Timeline Control</strong></p>
+        <p>Grab the cyan handle and drag along the ribbon to scrub through time. Click golden nodes to jump to
+            highlights.</p>
+        <p><strong>Features:</strong></p>
+        <ul style="font-size: 0.85rem; margin: 10px 0;">
+            <li>Spiral 3D path generation</li>
+            <li>Draggable time scrubbing</li>
+            <li>Pulsating highlight nodes</li>
+            <li>Ghost mesh previews</li>
+            <li>Smooth animations</li>
+        </ul>
+    </div>
+
+    <div class="time-display" id="timeDisplay">2000</div>
+
+    <div class="controls-panel">
+        <h3 style="margin: 0 0 10px 0; color: var(--cosmic-cyan);">Quick Jump</h3>
+        <button id="btn2000">2000 - Start</button>
+        <button id="btn2010">2010 - Mid</button>
+        <button id="btn2020">2020 - Recent</button>
+        <button id="btn2025">2025 - Now</button>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { RoomManager } from '../../src/core/RoomManager.js';
+        import { ControlRegistry } from '../../src/core/ControlRegistry.js';
+        import { TimeRibbon3D } from '../../src/controls/TimeRibbon3D.js';
+        import { HaloCard3D } from '../../src/controls/HaloCard3D.js';
+        import { TextDisplay3D } from '../../src/controls/TextDisplay3D.js';
+
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+        const controls = scene3D.getControls();
+
+        ControlRegistry.setOrbitControls(controls);
+        camera.position.set(0, 5, 20);
+
+        const roomManager = new RoomManager(scene, camera);
+        roomManager.initialize();
+        roomManager.switchRoom('space');
+
+        // Remove ground for pure space
+        scene.traverse((object) => {
+            if (object.name === 'ground' || object.name === 'grid' || object.type === 'GridHelper') {
+                scene.remove(object);
+            }
+        });
+
+        // Create the TimeRibbon
+        const timeRibbon = new TimeRibbon3D(scene, camera, [0, 0, 0], {
+            timeline: [
+                { time: 2000, label: 'Year 2000', description: 'The Beginning - Millennium starts' },
+                { time: 2003, label: 'Year 2003', description: 'Early growth phase' },
+                { time: 2006, label: 'Year 2006', description: 'Mid-decade milestone' },
+                { time: 2009, label: 'Year 2009', description: 'Economic recovery' },
+                { time: 2012, label: 'Year 2012', description: 'Mobile revolution' },
+                { time: 2015, label: 'Year 2015', description: 'Cloud transformation' },
+                { time: 2018, label: 'Year 2018', description: 'AI emergence' },
+                { time: 2021, label: 'Year 2021', description: 'Pandemic pivot' },
+                { time: 2023, label: 'Year 2023', description: 'GenAI explosion' },
+                { time: 2025, label: 'Year 2025', description: 'Present day' }
+            ],
+            radius: 8,
+            turns: 3,
+            ribbonWidth: 0.3,
+            onTimeChange: (year) => {
+                document.getElementById('timeDisplay').textContent = Math.round(year);
+            }
+        });
+
+        // Add title
+        new HaloCard3D(scene, camera, [0, 10, 0], {
+            label: "TIMERIBBON3D DEMO",
+            lookAtCamera: true,
+            scale: [8, 1.5, 1],
+            color: 0xffd700
+        });
+
+        // Add info cards at key points
+        new TextDisplay3D(scene, camera, [-10, 3, 0], {
+            content: "**Drag the Handle**\n\nGrab the cyan sphere\nand move it along\nthe ribbon to scrub\nthrough time.",
+            width: 3.5,
+            height: 2.5,
+            renderer: renderer
+        });
+
+        new TextDisplay3D(scene, camera, [10, 3, 0], {
+            content: "**Click Highlights**\n\nGolden spheres mark\nimportant moments.\nClick to jump there\ninstantly!",
+            width: 3.5,
+            height: 2.5,
+            renderer: renderer
+        });
+
+        // Button event listeners
+        document.getElementById('btn2000').addEventListener('click', () => timeRibbon.scrubToTime(2000, 1500));
+        document.getElementById('btn2010').addEventListener('click', () => timeRibbon.scrubToTime(2010, 1500));
+        document.getElementById('btn2020').addEventListener('click', () => timeRibbon.scrubToTime(2020, 1500));
+        document.getElementById('btn2025').addEventListener('click', () => timeRibbon.scrubToTime(2025, 1500));
+
+        // Mouse interaction
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let isDragging = false;
+
+        canvas.addEventListener('mousedown', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const result = timeRibbon.handleRaycast(raycaster);
+
+            if (result) {
+                isDragging = true;
+                timeRibbon.startDrag(result.point);
+                controls.enabled = false;
+            }
+        });
+
+        canvas.addEventListener('mousemove', (event) => {
+            if (!isDragging) return;
+
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(scene.children, true);
+
+            if (intersects.length > 0) {
+                timeRibbon.updateDrag(intersects[0].point);
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                timeRibbon.endDrag();
+                controls.enabled = true;
+            }
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            ControlRegistry.getAll().forEach(control => {
+                if (control && control.update) control.update();
+            });
+
+            scene3D.render();
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+
+</html>

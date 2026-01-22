@@ -446,6 +446,71 @@ modal.close();</code></pre>
                         </div>
                         <p><a href="../components/chart3d.html" style="color: var(--cosmic-cyan);">→ Full Chart3D
                                 Documentation</a></p>
+
+                        <h3
+                            style="color: var(--cosmic-cyan); margin-top: 3rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 2rem;">
+                            🚀 Advanced Components</h3>
+
+                        <h3 style="color: var(--cosmic-cyan); margin-top: 2rem;">RadialMenu3D</h3>
+                        <p>Spatial pie menu with Z-pop effect on hover.</p>
+                        <div class="code-block">
+                            <pre><code>new RadialMenu3D(scene, camera, [0, 0, 0], {
+    items: ['Option 1', 'Option 2', 'Option 3'],
+    radius: 3.0,
+    onSelect: (item) => console.log(item)
+})</code></pre>
+                        </div>
+
+                        <h3 style="color: var(--cosmic-cyan); margin-top: 2rem;">MagneticCard3D</h3>
+                        <p>Physics-based panel with tilt-follow and parallax depth.</p>
+                        <div class="code-block">
+                            <pre><code>new MagneticCard3D(scene, camera, [0, 0, 0], {
+    width: 4.0, height: 2.5,
+    parallaxLayers: [{ mesh: background, depth: 0.1 }],
+    damping: 0.1
+})</code></pre>
+                        </div>
+
+                        <h3 style="color: var(--cosmic-cyan); margin-top: 2rem;">PortalCard3D</h3>
+                        <p>Dimensional window using a separate scene and render targets.</p>
+                        <div class="code-block">
+                            <pre><code>new PortalCard3D(scene, camera, [0, 0, 0], {
+    width: 3.0, height: 3.0,
+    portalScene: otherScene
+})</code></pre>
+                        </div>
+
+                        <h3 style="color: var(--cosmic-cyan); margin-top: 2rem;">VolumetricCard3D</h3>
+                        <p>Interactive card with pop-out 3D model support.</p>
+                        <div class="code-block">
+                            <pre><code>new VolumetricCard3D(scene, camera, [0, 0, 0], {
+    width: 3.0, height: 4.0,
+    contentModel: gltfModel
+})</code></pre>
+                        </div>
+
+                        <h3 style="color: var(--cosmic-cyan); margin-top: 2rem;">HaloCard3D</h3>
+                        <p>Smart billboard that anchors to objects and faces camera.</p>
+                        <div class="code-block">
+                            <pre><code>new HaloCard3D(scene, camera, [0, 0, 0], {
+    anchorObject: shipMesh,
+    offset: [0, 2, 0],
+    lookAtCamera: true
+})</code></pre>
+                        </div>
+
+                        <h3
+                            style="color: var(--cosmic-cyan); margin-top: 3rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 2rem;">
+                            🌌 Generative Spatial UI</h3>
+
+                        <h3 style="color: var(--cosmic-cyan); margin-top: 2rem;">AIPortal3D</h3>
+                        <p>Dimensional gateway with environment-swapping traversal logic.</p>
+                        <div class="code-block">
+                            <pre><code>new AIPortal3D(scene, camera, [0, 0, 0], {
+    color: 0x00ccff,
+    onTraverse: () => swapEnvironment()
+})</code></pre>
+                        </div>
                     </div>
 
                     <div id="utilities" class="api-section">
@@ -604,7 +669,8 @@ const editToggle = new Toggle3D(scene, camera, [0, 0, 0], {
                     <ul class="footer-links">
                         <li><a href="../index.html#demos">Demos</a></li>
                         <li><a href="../examples/index.html">Examples</a></li>
-                        <li><a href="https://github.com/spatial-ui-3d" target="_blank">GitHub</a></li>
+                        <li><a href="https://github.com/SamppaFIN/Spatial-3D-UI-framework" target="_blank">GitHub</a>
+                        </li>
                     </ul>
                 </div>
             </div>

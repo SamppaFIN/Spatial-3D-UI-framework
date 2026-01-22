@@ -22,6 +22,7 @@ export class TextInput3D extends BaseControl3D {
 
         // Colors
         this.backgroundColor = config.backgroundColor || 0x2a2a3e;
+        this.backgroundOpacity = (config.backgroundOpacity !== undefined) ? config.backgroundOpacity : 1.0;
         this.borderColor = config.borderColor || 0x5a5a8e;
         this.focusColor = config.focusColor || 0x6a6aae;
 
@@ -106,7 +107,9 @@ export class TextInput3D extends BaseControl3D {
             metalness: 0.3,
             roughness: 0.7,
             emissive: this.borderColor,
-            emissiveIntensity: 0.1
+            emissiveIntensity: 0.1,
+            transparent: this.backgroundOpacity < 1.0,
+            opacity: this.backgroundOpacity
         });
 
         this.panelMesh = new THREE.Mesh(geometry, material);

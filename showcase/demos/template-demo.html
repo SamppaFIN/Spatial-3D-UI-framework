@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spatial UI - Template Demo</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+        }
+
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* 3D Text Display Styling */
+        .spatial-text-display {
+            color: #ffffff !important;
+            background: rgba(17, 17, 34, 0.95);
+            padding: 40px !important;
+            border-radius: 16px;
+            font-family: 'Inter', sans-serif;
+            box-shadow: 0 0 20px rgba(78, 205, 196, 0.2);
+            border: 1px solid rgba(78, 205, 196, 0.3);
+        }
+
+        .spatial-text-display h1 {
+            color: #4ecdc4;
+            font-size: 2.5em;
+            margin-bottom: 0.5em;
+            text-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+        }
+
+        .spatial-text-display h2 {
+            color: #ff6b6b;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .spatial-text-display p,
+        .spatial-text-display li {
+            font-size: 1.25em;
+            line-height: 1.6;
+            color: #eeeeee;
+        }
+    </style>
+    <!-- Import Map -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <div id="info">
+        <h1>Spatial Template</h1>
+        <p>Powered by SpatialEnvironment</p>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { SpatialEnvironment } from '../../src/environments/SpatialEnvironment.js';
+        import { Button3D } from '../../src/controls/Button3D.js';
+        import { TextDisplay3D } from '../../src/controls/TextDisplay3D.js';
+
+        // 1. Initialize Standard Environment
+        const env = new SpatialEnvironment();
+        env.init();
+
+        // 2. Add Content
+
+        // Create Information Display (Noticeboard)
+        const infoBoard = new TextDisplay3D(env.scene, env.camera, [0, 2.0, -2], {
+            width: 6,
+            height: 3.5,
+            content: "", // Start empty as requested
+            style: 'dialog',
+            backgroundColor: 0x111122,
+            borderColor: 0x4ecdc4
+        });
+
+        // Add to scene and register for updates
+        env.add(infoBoard.group);
+        env.updatables.push(infoBoard);
+
+        // Create Trigger Button
+        const btn = new Button3D(env.scene, env.camera, [0, 0.5, 0], {
+            text: "Klikkaa minua",
+            color: 0x4ecdc4,
+            rippleEffect: false,
+            particleEffect: false,
+            onClick: () => {
+                infoBoard.setContent(`
+# 👋 Tervetuloa!
+
+Olet saapunut **Spatiaaliseen Käyttöliittymään**.
+
+## 🚀 Ominaisuudet:
+*   ✨ **Tähtitaivas** - Zero-g tunnelma
+*   💡 **Standardi Valaistus** - Valmis käyttöön
+*   🎮 **Interaktiivisuus** - 3D komponentit
+
+*Ole hyvä ja tutustu!*
+                `);
+                console.log("Greeting Shown");
+            }
+        });
+
+        // Add to environment and register for updates
+        env.add(btn.group);
+        env.updatables.push(btn);
+
+        // 3. Start Loop
+        env.start();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dream Architect Studio - Spatial UI 3D Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: #0f0520;
+            color: #d4a5ff;
+            overflow: hidden;
+        }
+
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .studio-info {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(15, 5, 32, 0.95);
+            border: 3px solid #d4a5ff;
+            padding: 25px;
+            max-width: 420px;
+            z-index: 100;
+            box-shadow: 0 0 40px rgba(212, 165, 255, 0.6);
+            border-radius: 15px;
+        }
+
+        .studio-title {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #ffd700;
+            text-shadow: 0 0 20px #ffd700;
+        }
+
+        .studio-text {
+            color: #d4a5ff;
+            line-height: 1.8;
+            font-size: 14px;
+        }
+
+        .dream-palette {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(15, 5, 32, 0.95);
+            border: 3px solid #ff69b4;
+            padding: 20px;
+            z-index: 100;
+            min-width: 300px;
+            border-radius: 15px;
+        }
+
+        .palette-title {
+            color: #ff69b4;
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .palette-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255, 105, 180, 0.2);
+            border-left: 4px solid #d4a5ff;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .palette-item:hover {
+            background: rgba(255, 105, 180, 0.4);
+        }
+
+        .inspiration-feed {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(15, 5, 32, 0.95);
+            border: 3px solid #00ffff;
+            padding: 15px;
+            z-index: 100;
+            max-width: 350px;
+            border-radius: 15px;
+        }
+
+        .feed-title {
+            color: #00ffff;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .feed-item {
+            color: #66ffff;
+            margin: 8px 0;
+            font-size: 12px;
+            font-style: italic;
+        }
+
+        .dream-journal {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(15, 5, 32, 0.95);
+            border: 3px solid #ffd700;
+            padding: 15px;
+            z-index: 100;
+            max-width: 350px;
+            border-radius: 15px;
+        }
+
+        .journal-title {
+            color: #ffd700;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .journal-text {
+            color: #ffe066;
+            font-size: 13px;
+            line-height: 1.6;
+            font-style: italic;
+        }
+
+        .dream-particle {
+            position: fixed;
+            width: 6px;
+            height: 6px;
+            background: radial-gradient(circle, #ffd700, transparent);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float 6s infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0) translateX(0);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 1;
+            }
+
+            90% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(-100vh) translateX(50px);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <!-- Dream Particles -->
+    <div class="dream-particle" style="left: 20%; animation-delay: 0s;"></div>
+    <div class="dream-particle" style="left: 40%; animation-delay: 2s;"></div>
+    <div class="dream-particle" style="left: 60%; animation-delay: 4s;"></div>
+    <div class="dream-particle" style="left: 80%; animation-delay: 1s;"></div>
+
+    <div class="studio-info">
+        <div class="studio-title">💭 DREAM ARCHITECT STUDIO</div>
+        <div class="studio-text">
+            <strong>Welcome to the Dreamscape</strong><br><br>
+
+            You are a Dream Architect, a rare individual who can consciously design
+            and construct dream worlds. Using advanced neural interfaces, you craft
+            immersive experiences that blur the line between reality and imagination.<br><br>
+
+            <strong>CURRENT PROJECT:</strong> "Infinite Garden"<br>
+            <strong>DREAM DEPTH:</strong> Level 3 (Deep REM)<br>
+            <strong>STABILITY:</strong> 92%<br>
+            <strong>LUCIDITY:</strong> High
+        </div>
+    </div>
+
+    <div class="dream-palette">
+        <div class="palette-title">🎨 DREAM ELEMENTS</div>
+        <div class="palette-item">
+            <strong style="color: #ffd700;">🌸 Ethereal Gardens</strong><br>
+            <span style="font-size: 11px; color: #d4a5ff;">Floating flowers, impossible colors</span>
+        </div>
+        <div class="palette-item">
+            <strong style="color: #ffd700;">🏛️ Impossible Architecture</strong><br>
+            <span style="font-size: 11px; color: #d4a5ff;">Escher-like structures, gravity-defying</span>
+        </div>
+        <div class="palette-item">
+            <strong style="color: #ffd700;">🌊 Liquid Skies</strong><br>
+            <span style="font-size: 11px; color: #d4a5ff;">Flowing clouds, aurora waves</span>
+        </div>
+        <div class="palette-item">
+            <strong style="color: #ffd700;">✨ Memory Fragments</strong><br>
+            <span style="font-size: 11px; color: #d4a5ff;">Nostalgic echoes, emotional resonance</span>
+        </div>
+    </div>
+
+    <div class="inspiration-feed">
+        <div class="feed-title">💡 INSPIRATION STREAM</div>
+        <div class="feed-item">"A staircase that leads to yesterday..."</div>
+        <div class="feed-item">"Doors that open to memories..."</div>
+        <div class="feed-item">"A library where books dream of readers..."</div>
+        <div class="feed-item">"Gardens that bloom in reverse time..."</div>
+        <div class="feed-item">"Mirrors that reflect possibilities..."</div>
+    </div>
+
+    <div class="dream-journal">
+        <div class="journal-title">📖 DREAM JOURNAL</div>
+        <div class="journal-text">
+            "In the Infinite Garden, time flows like honey. Each flower holds a memory,
+            each petal a possibility. The dreamer walks paths that shift with their thoughts,
+            discovering rooms that exist only in the space between heartbeats."
+            <br><br>- Entry #247, Dream Architect Aurora
+        </div>
+    </div>
+
+    <script type="importmap">
+    { "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }}
+    </script>
+
+    <script type="module">
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { PortalCard3D } from '../../src/controls/PortalCard3D.js';
+        import { MagneticCard3D } from '../../src/controls/MagneticCard3D.js';
+        import { TextDisplay3D } from '../../src/controls/TextDisplay3D.js';
+        import { Slider3D } from '../../src/controls/Slider3D.js';
+        import * as THREE from 'three';
+
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+
+        scene.background = new THREE.Color(0x0f0520);
+        scene.fog = new THREE.Fog(0x0f0520, 10, 40);
+
+        // Dreamlike lighting
+        const purpleLight = new THREE.PointLight(0xd4a5ff, 2, 25);
+        purpleLight.position.set(-5, 5, 5);
+        scene.add(purpleLight);
+
+        const goldLight = new THREE.PointLight(0xffd700, 2, 25);
+        goldLight.position.set(5, 5, 5);
+        scene.add(goldLight);
+
+        const pinkLight = new THREE.PointLight(0xff69b4, 1.5, 20);
+        pinkLight.position.set(0, 7, 0);
+        scene.add(pinkLight);
+
+        camera.position.set(0, 3, 14);
+
+        // Dream Portals
+        const gardenPortal = new PortalCard3D(scene, camera, [-6, 2, 0], {
+            width: 2.5,
+            height: 3,
+            title: '🌸 Ethereal Garden',
+            mode: 0,
+            renderer: renderer
+        });
+
+        const architecturePortal = new PortalCard3D(scene, camera, [-2, 2, 0], {
+            width: 2.5,
+            height: 3,
+            title: '🏛️ Impossible Halls',
+            mode: 0,
+            renderer: renderer
+        });
+
+        const skyPortal = new PortalCard3D(scene, camera, [2, 2, 0], {
+            width: 2.5,
+            height: 3,
+            title: '🌊 Liquid Skies',
+            mode: 0,
+            renderer: renderer
+        });
+
+        const memoryPortal = new PortalCard3D(scene, camera, [6, 2, 0], {
+            width: 2.5,
+            height: 3,
+            title: '✨ Memory Lane',
+            mode: 0,
+            renderer: renderer
+        });
+
+        // Dream Element Cards
+        const elementCard1 = new MagneticCard3D(scene, camera, [-4, -1.5, 0], {
+            width: 2.5,
+            height: 3,
+            title: '🦋 Butterfly Dreams',
+            content: 'Transformation & Change',
+            mode: 0,
+            renderer: renderer
+        });
+
+        const elementCard2 = new MagneticCard3D(scene, camera, [0, -1.5, 0], {
+            width: 2.5,
+            height: 3,
+            title: '🌙 Lunar Echoes',
+            content: 'Mystery & Intuition',
+            mode: 0,
+            renderer: renderer
+        });
+
+        const elementCard3 = new MagneticCard3D(scene, camera, [4, -1.5, 0], {
+            width: 2.5,
+            height: 3,
+            title: '⭐ Starlight Wishes',
+            content: 'Hope & Aspiration',
+            mode: 0,
+            renderer: renderer
+        });
+
+        // Dream Intensity Slider
+        const intensitySlider = new Slider3D(scene, camera, [0, 5, 0], {
+            label: '💫 DREAM INTENSITY',
+            width: 5,
+            height: 0.4,
+            min: 0,
+            max: 100,
+            value: 75,
+            mode: 0,
+            renderer: renderer,
+            onChange: (slider, value) => {
+                // Adjust lighting based on intensity
+                const intensity = value / 50;
+                purpleLight.intensity = intensity;
+                goldLight.intensity = intensity;
+                pinkLight.intensity = intensity * 0.75;
+            }
+        });
+
+        // Dream Notes
+        const notesDisplay = new TextDisplay3D(scene, camera, [-6, -1.5, 0], {
+            content: `# 💭 Dream Architecture Notes
+
+## Design Principles
+
+### Emotional Resonance
+Every element must evoke feeling before thought.
+
+### Impossible Physics
+Embrace the surreal. Gravity is optional.
+
+### Symbolic Depth
+Layers of meaning create richness.
+
+### Flow State
+The dreamer should feel weightless, timeless.
+
+*"The best dreams are the ones we remember forever."*`,
+            width: 4,
+            height: 3.5,
+            mode: 0,
+            renderer: renderer
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            gardenPortal.update();
+            architecturePortal.update();
+            skyPortal.update();
+            memoryPortal.update();
+            elementCard1.update();
+            elementCard2.update();
+            elementCard3.update();
+            intensitySlider.update();
+            notesDisplay.update();
+
+            // Dreamlike light animation
+            const time = Date.now() * 0.0005;
+            purpleLight.position.x = -5 + Math.sin(time) * 2;
+            purpleLight.position.y = 5 + Math.cos(time * 1.3) * 1;
+            goldLight.position.x = 5 + Math.cos(time) * 2;
+            goldLight.position.y = 5 + Math.sin(time * 1.3) * 1;
+            pinkLight.position.z = Math.sin(time * 0.7) * 3;
+
+            scene3D.render();
+        }
+
+        animate();
+    </script>
+</body>
+
+</html>

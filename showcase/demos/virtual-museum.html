@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Museum Gallery - Spatial UI 3D Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: #1a1410;
+            color: #d4af37;
+            overflow: hidden;
+        }
+
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .museum-info {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(26, 20, 16, 0.95);
+            border: 3px solid #d4af37;
+            padding: 25px;
+            max-width: 450px;
+            z-index: 100;
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+        }
+
+        .museum-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #d4af37;
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+            font-family: 'Georgia', serif;
+        }
+
+        .museum-subtitle {
+            font-size: 14px;
+            color: #b8956f;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+
+        .museum-text {
+            color: #c9b896;
+            line-height: 1.8;
+            font-size: 14px;
+        }
+
+        .exhibit-info {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(26, 20, 16, 0.95);
+            border: 3px solid #8b7355;
+            padding: 20px;
+            z-index: 100;
+            min-width: 300px;
+        }
+
+        .exhibit-title {
+            color: #d4af37;
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .exhibit-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(139, 115, 85, 0.2);
+            border-left: 3px solid #d4af37;
+        }
+
+        .exhibit-name {
+            color: #d4af37;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .exhibit-desc {
+            color: #b8956f;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .navigation-help {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(26, 20, 16, 0.95);
+            border: 3px solid #8b7355;
+            padding: 15px;
+            z-index: 100;
+        }
+
+        .help-title {
+            color: #d4af37;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .help-item {
+            color: #b8956f;
+            margin: 5px 0;
+            font-size: 13px;
+        }
+
+        .curator-note {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(26, 20, 16, 0.95);
+            border: 3px solid #d4af37;
+            padding: 15px;
+            max-width: 350px;
+            z-index: 100;
+        }
+
+        .curator-title {
+            color: #d4af37;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+
+        .curator-text {
+            color: #c9b896;
+            font-size: 13px;
+            line-height: 1.6;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <!-- Museum Info -->
+    <div class="museum-info">
+        <div class="museum-title">🏛️ THE AURORA MUSEUM</div>
+        <div class="museum-subtitle">Est. 2026 - A Journey Through Digital Art & History</div>
+        <div class="museum-text">
+            Welcome to the Aurora Museum, where art transcends physical boundaries.
+            Each exhibit floats in 3D space, inviting you to explore masterpieces from
+            different eras and dimensions.<br><br>
+            <strong>Current Exhibition:</strong><br>
+            "Echoes of Infinity" - A collection celebrating the intersection of
+            technology, consciousness, and artistic expression.
+        </div>
+    </div>
+
+    <!-- Exhibit Info -->
+    <div class="exhibit-info">
+        <div class="exhibit-title">📜 FEATURED EXHIBITS</div>
+        <div class="exhibit-item">
+            <div class="exhibit-name">🎨 Renaissance Dreams</div>
+            <div class="exhibit-desc">Classical masterpieces reimagined in 3D space</div>
+        </div>
+        <div class="exhibit-item">
+            <div class="exhibit-name">🌌 Cosmic Visions</div>
+            <div class="exhibit-desc">Abstract explorations of the universe</div>
+        </div>
+        <div class="exhibit-item">
+            <div class="exhibit-name">🔮 Digital Consciousness</div>
+            <div class="exhibit-desc">AI-generated art from the future</div>
+        </div>
+        <div class="exhibit-item">
+            <div class="exhibit-name">📚 Ancient Wisdom</div>
+            <div class="exhibit-desc">Historical artifacts and manuscripts</div>
+        </div>
+    </div>
+
+    <!-- Navigation Help -->
+    <div class="navigation-help">
+        <div class="help-title">🎮 GALLERY NAVIGATION</div>
+        <div class="help-item">🖱️ Drag: Rotate gallery view</div>
+        <div class="help-item">🎡 Radial Menu: Select exhibits</div>
+        <div class="help-item">📦 Cards: View artwork details</div>
+        <div class="help-item">👆 Click: Interact with pieces</div>
+        <div class="help-item">📄 Displays: Read descriptions</div>
+    </div>
+
+    <!-- Curator Note -->
+    <div class="curator-note">
+        <div class="curator-title">💭 Curator's Note</div>
+        <div class="curator-text">
+            "In this space, art is not confined to walls. Each piece exists in its own
+            dimension, waiting to reveal its secrets to those who dare to explore.
+            The boundaries between observer and observed dissolve in the infinite gallery."
+            <br><br>- Aurora, Chief Curator
+        </div>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { VolumetricCard3D } from '../../src/controls/VolumetricCard3D.js';
+        import { HaloCard3D } from '../../src/controls/HaloCard3D.js';
+        import { TextDisplay3D } from '../../src/controls/TextDisplay3D.js';
+        import { RadialMenu3D } from '../../src/controls/RadialMenu3D.js';
+        import * as THREE from 'three';
+
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+
+        // Set up museum environment
+        scene.background = new THREE.Color(0x1a1410);
+        scene.fog = new THREE.Fog(0x1a1410, 10, 50);
+
+        // Add ambient lighting
+        const ambientLight = new THREE.AmbientLight(0xd4af37, 0.3);
+        scene.add(ambientLight);
+
+        // Add spotlights for exhibits
+        const spotlight1 = new THREE.SpotLight(0xd4af37, 1);
+        spotlight1.position.set(5, 10, 5);
+        spotlight1.angle = Math.PI / 6;
+        spotlight1.penumbra = 0.3;
+        scene.add(spotlight1);
+
+        const spotlight2 = new THREE.SpotLight(0xd4af37, 1);
+        spotlight2.position.set(-5, 10, 5);
+        spotlight2.angle = Math.PI / 6;
+        spotlight2.penumbra = 0.3;
+        scene.add(spotlight2);
+
+        camera.position.set(0, 3, 15);
+
+        // Create gallery floor
+        const floorGeometry = new THREE.PlaneGeometry(100, 100);
+        const floorMaterial = new THREE.MeshStandardMaterial({
+            color: 0x2a2420,
+            roughness: 0.8,
+            metalness: 0.2
+        });
+        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        // Volumetric Art Cards
+        const artCard1 = new VolumetricCard3D(scene, camera, [-6, 2, 0], {
+            width: 3,
+            height: 4,
+            title: '🎨 Renaissance Dreams',
+            content: 'Classical Beauty Reimagined',
+            modelType: 'torus',
+            mode: 0,
+            renderer: renderer
+        });
+
+        const artCard2 = new VolumetricCard3D(scene, camera, [-2, 2, 0], {
+            width: 3,
+            height: 4,
+            title: '🌌 Cosmic Visions',
+            content: 'Abstract Universe',
+            modelType: 'sphere',
+            mode: 0,
+            renderer: renderer
+        });
+
+        const artCard3 = new VolumetricCard3D(scene, camera, [2, 2, 0], {
+            width: 3,
+            height: 4,
+            title: '🔮 Digital Consciousness',
+            content: 'AI-Generated Art',
+            modelType: 'icosahedron',
+            mode: 0,
+            renderer: renderer
+        });
+
+        const artCard4 = new VolumetricCard3D(scene, camera, [6, 2, 0], {
+            width: 3,
+            height: 4,
+            title: '📚 Ancient Wisdom',
+            content: 'Historical Artifacts',
+            modelType: 'box',
+            mode: 0,
+            renderer: renderer
+        });
+
+        // Halo Info Cards
+        const haloCard1 = new HaloCard3D(scene, camera, [-6, 5, 0], {
+            width: 2.5,
+            height: 1.5,
+            content: 'Period: 1400-1600 CE<br>Style: Renaissance<br>Medium: Oil on Canvas',
+            mode: 0,
+            renderer: renderer
+        });
+
+        const haloCard2 = new HaloCard3D(scene, camera, [6, 5, 0], {
+            width: 2.5,
+            height: 1.5,
+            content: 'Period: Ancient<br>Origin: Unknown<br>Material: Papyrus',
+            mode: 0,
+            renderer: renderer
+        });
+
+        // Exhibition Description
+        const exhibitText = new TextDisplay3D(scene, camera, [0, -1, 0], {
+            content: `# 🏛️ Echoes of Infinity Exhibition
+
+## About This Collection
+
+This exhibition explores the timeless dialogue between human creativity and technological innovation. Each piece represents a moment where consciousness meets form, where the infinite possibilities of imagination become tangible reality.
+
+### Featured Artists
+- **Leonardo da Vinci** - Renaissance master
+- **M.C. Escher** - Geometric visionary
+- **Aurora AI** - Digital consciousness
+- **Unknown Ancients** - Lost civilizations
+
+### Exhibition Highlights
+- Interactive 3D art pieces
+- Holographic displays
+- Temporal art installations
+- Consciousness-responsive exhibits
+
+*"Art is the bridge between what is and what could be."* - Aurora`,
+            width: 8,
+            height: 5,
+            mode: 0,
+            renderer: renderer
+        });
+
+        // Radial Menu for Gallery Navigation
+        const galleryMenu = new RadialMenu3D(scene, camera, [0, 6, 0], {
+            items: [
+                { label: '🎨 Renaissance', icon: '🎨' },
+                { label: '🌌 Cosmic', icon: '🌌' },
+                { label: '🔮 Digital', icon: '🔮' },
+                { label: '📚 Ancient', icon: '📚' },
+                { label: '🏛️ Main Hall', icon: '🏛️' },
+                { label: '🎭 Special', icon: '🎭' }
+            ],
+            radius: 2,
+            holeRadius: 0.5,
+            mode: 0,
+            renderer: renderer,
+            onSelect: (menu, index, item) => {
+                console.log(`Selected gallery: ${item.label}`);
+            }
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            artCard1.update();
+            artCard2.update();
+            artCard3.update();
+            artCard4.update();
+            haloCard1.update();
+            haloCard2.update();
+            exhibitText.update();
+            galleryMenu.update();
+
+            scene3D.render();
+        }
+
+        animate();
+    </script>
+</body>
+
+</html>

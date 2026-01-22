@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PortalCard3D Component - Spatial UI 3D</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="../../index.html" class="navbar-logo">🌸 Spatial UI 3D</a>
+            <ul class="navbar-menu">
+                <li><a href="../../index.html#features" class="navbar-link">Features</a></li>
+                <li><a href="../index.html" class="navbar-link">Components</a></li>
+                <li><a href="../../demos/index.html" class="navbar-link">Demos</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="component-showcase">
+        <!-- Sidebar Controls -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>PortalCard3D</h2>
+                <p>Window to Another World</p>
+            </div>
+
+            <div class="control-group">
+                <p style="font-size:0.9rem; color:#aaa; margin-bottom:1rem;">
+                    Each card renders a separate internal scene with parallax depth based on your viewing angle.
+                </p>
+                <div class="instruction-overlay" style="position:static; margin-top:0;">
+                    Drag to rotate view and see the parallax effect inside the portals.
+                </div>
+            </div>
+
+            <button id="reset-btn" class="btn btn-secondary" style="width:100%; margin-top:20px;">Reset View</button>
+        </aside>
+
+        <!-- Main Canvas Area -->
+        <main class="preview-area">
+            <canvas id="showcase-canvas"></canvas>
+        </main>
+    </div>
+
+    <!-- Three.js Import Map -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { PortalCard3D } from '../../src/controls/PortalCard3D.js';
+        import { ControlRegistry } from '../../src/core/ControlRegistry.js';
+        import * as THREE from 'three';
+
+        // Setup Scene
+        const canvas = document.getElementById('showcase-canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+        const controls = scene3D.getControls();
+
+        ControlRegistry.setOrbitControls(controls);
+
+        // Styling
+        scene.background = new THREE.Color(0x050505);
+        const grid = new THREE.GridHelper(20, 20, 0x444444, 0x111111);
+        grid.position.y = -2;
+        scene.add(grid);
+
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(5, 5, 5);
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0x404040));
+
+        camera.position.set(0, 0, 8);
+
+        // --- Create World 1: Abstract ---
+        const s1 = new THREE.Scene();
+        s1.background = new THREE.Color(0x220033);
+        const l1 = new THREE.DirectionalLight(0xff00ff, 2);
+        l1.position.set(1, 1, 1);
+        s1.add(l1);
+        const geo1 = new THREE.IcosahedronGeometry(1.5, 0);
+        const mat1 = new THREE.MeshPhongMaterial({ color: 0x00ffff, wireframe: true });
+        const mesh1 = new THREE.Mesh(geo1, mat1);
+        s1.add(mesh1);
+
+        // --- Create World 2: Nature (Simple) ---
+        const s2 = new THREE.Scene();
+        s2.background = new THREE.Color(0x87CEEB);
+        const l2 = new THREE.DirectionalLight(0xffffff, 1.5);
+        l2.position.set(1, 10, 1);
+        s2.add(l2);
+        s2.add(new THREE.AmbientLight(0x404040));
+        // Ground
+        const g2 = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshLambertMaterial({ color: 0x228822 }));
+        g2.rotation.x = -Math.PI / 2;
+        g2.position.y = -1;
+        s2.add(g2);
+        // Tree-ish
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 1), new THREE.MeshLambertMaterial({ color: 0x8B4513 }));
+        trunk.position.y = -0.5;
+        const leaves = new THREE.Mesh(new THREE.DodecahedronGeometry(0.8), new THREE.MeshLambertMaterial({ color: 0x00ff00 }));
+        leaves.position.y = 0.5;
+        s2.add(trunk, leaves);
+
+
+        // Create Portals
+        const card1 = new PortalCard3D(scene, camera, [-2.5, 0, 0], {
+            width: 2, height: 3,
+            portalScene: s1,
+            clearColor: 0x220033
+        });
+
+        // Card 2: Default (Torus)
+        const card2 = new PortalCard3D(scene, camera, [0, 0, 0], {
+            width: 2, height: 3,
+            // No portalScene passed -> uses default
+        });
+
+        // Card 3: Nature
+        const card3 = new PortalCard3D(scene, camera, [2.5, 0, 0], {
+            width: 2, height: 3,
+            portalScene: s2
+        });
+
+        const portals = [card1, card2, card3];
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            camera.position.set(0, 0, 8);
+            controls.reset();
+        });
+
+        // Loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Animate Inner Worlds
+            mesh1.rotation.y += 0.02;
+            mesh1.rotation.x += 0.01;
+
+            leaves.rotation.y -= 0.01;
+
+            // Update Portals (Calculate Parallax)
+            portals.forEach(p => p.update());
+
+            // Render Portals (This is Critical)
+            portals.forEach(p => p.render(renderer));
+
+            // Render Main Scene
+            scene3D.render();
+        }
+        animate();
+
+        // Handle Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+
+</html>

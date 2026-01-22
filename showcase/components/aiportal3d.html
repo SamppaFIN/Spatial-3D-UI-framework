@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIPortal3D Showcase - Spatial UI 3D</title>
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌌</text></svg>">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="../../index.html" class="navbar-logo">🌸 Spatial UI 3D</a>
+            <ul class="navbar-menu">
+                <li><a href="../index.html" class="navbar-link">Components</a></li>
+                <li><a href="../../demos/index.html" class="navbar-link">Demos</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="component-showcase">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>AIPortal3D</h2>
+                <p>Generative Dimensional Gateway</p>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">Distortion Intensity</label>
+                <div class="slider-container">
+                    <input type="range" id="distortion-slider" min="0" max="5" step="0.1" value="1">
+                    <span class="value-display" id="distortion-value">1.0</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">Portal Color</label>
+                <input type="color" id="color-picker" value="#00ccff"
+                    style="width:100%; height:40px; border:none; border-radius:8px; cursor:pointer;">
+            </div>
+
+            <div id="status-log"
+                style="padding:1rem; background:rgba(0,255,136,0.1); border-radius:8px; font-size:0.9rem; color:#00ff88; margin-top:20px; border:1px solid rgba(0,255,136,0.2);">
+                Status: Ready. Walk through to trigger dimensional shift.
+            </div>
+
+            <div style="margin-top: 2rem; color: rgba(255,255,255,0.6); font-size: 0.85rem;">
+                <p><strong>Controls:</strong> WASD to move, Drag to look. Walking through the portal triggers the
+                    <code>onTraverse</code> callback.</p>
+            </div>
+        </aside>
+
+        <main class="preview-area">
+            <canvas id="showcase-canvas"></canvas>
+            <div id="portal-overlay"
+                style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:white; font-size:4rem; pointer-events:none; opacity:0; transition:opacity 0.5s;">
+                SHIFTING...</div>
+        </main>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { AIPortal3D } from '../../src/controls/AIPortal3D.js';
+        import { ControlRegistry } from '../../src/core/ControlRegistry.js';
+        import * as THREE from 'three';
+
+        const canvas = document.getElementById('showcase-canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+        const controls = scene3D.getControls();
+
+        ControlRegistry.setOrbitControls(controls);
+        scene.background = new THREE.Color(0x050510);
+
+        // Grid
+        scene.add(new THREE.GridHelper(20, 20, 0x444444, 0x111111));
+        camera.position.set(0, 1.5, 5);
+
+        // Internal Scene (The "Other side")
+        const otherScene = new THREE.Scene();
+        otherScene.background = new THREE.Color(0x220022);
+        const sphere = new THREE.Mesh(
+            new THREE.SphereGeometry(1, 32, 32),
+            new THREE.MeshStandardMaterial({ color: 0xff00ff, wireframe: true })
+        );
+        otherScene.add(sphere);
+        otherScene.add(new THREE.AmbientLight(0xffffff, 0.5));
+
+        // Create Portal
+        const portal = new AIPortal3D(scene, camera, [0, 1.5, 0], {
+            width: 3,
+            height: 4,
+            portalScene: otherScene,
+            color: 0x00ccff,
+            onTraverse: () => {
+                const overlay = document.getElementById('portal-overlay');
+                overlay.style.opacity = 1;
+                document.getElementById('status-log').textContent = "Status: Traversed!";
+                setTimeout(() => { overlay.style.opacity = 0; }, 1000);
+            }
+        });
+
+        // UI Listeners
+        document.getElementById('distortion-slider').addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            document.getElementById('distortion-value').textContent = val.toFixed(1);
+            // In a real app we'd map this to a shader uniform, for now we just log
+        });
+
+        document.getElementById('color-picker').addEventListener('input', (e) => {
+            portal.horizonMaterial.uniforms.uColor.value.set(e.target.value);
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            portal.update();
+            portal.render(renderer);
+            scene3D.render();
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+
+</html>

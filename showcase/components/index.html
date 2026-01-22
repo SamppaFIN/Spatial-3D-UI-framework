@@ -14,29 +14,27 @@
     <link rel="stylesheet" href="../styles/showcase.css">
     <link rel="stylesheet" href="../styles/responsive.css">
     <style>
+        /* Hero 3D Background Canvas */
+        #hero-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
         .hero-section {
-            text-align: center;
-            padding: 4rem 0;
-            background: linear-gradient(135deg, rgba(78, 205, 196, 0.1), rgba(107, 182, 255, 0.1));
-            border-radius: 20px;
-            margin: 2rem 0;
-        }
-
-        .component-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 2rem;
-            margin: 3rem 0;
-        }
-
-        .component-card {
-            background: linear-gradient(135deg, rgba(20, 20, 40, 0.8), rgba(30, 30, 50, 0.8));
-            border-radius: 16px;
-            padding: 2rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
             position: relative;
+            text-align: center;
+            padding: 6rem 0;
+            margin-bottom: 3rem;
             overflow: hidden;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
         }
 
         .component-card::before {
@@ -54,7 +52,8 @@
         .component-card:hover {
             transform: translateY(-8px);
             border-color: var(--cosmic-cyan);
-            box-shadow: 0 20px 60px rgba(78, 205, 196, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            background: rgba(30, 30, 50, 0.95);
         }
 
         .component-card:hover::before {
@@ -171,55 +170,49 @@
             <ul class="navbar-menu">
                 <li><a href="../index.html#features" class="navbar-link">Features</a></li>
                 <li><a href="./index.html" class="navbar-link active">Components</a></li>
+                <li><a href="./index.html?filter=ai-fx" class="navbar-link" style="color: var(--cosmic-pink);">✨ AI &
+                        FX</a></li>
                 <li><a href="../index.html#demos" class="navbar-link">Demos</a></li>
                 <li><a href="../docs/getting-started.html" class="navbar-link">Docs</a></li>
             </ul>
             <button class="navbar-toggle" aria-label="Toggle menu" aria-expanded="false">☰</button>
         </div>
     </nav>
-    <main style="padding-top: 80px;">
-        <div class="container">
-            <div class="hero-section">
-                <h1 style="font-size: clamp(2.5rem, 5vw, 4rem); margin-bottom: 1rem;">🎨 Component Library</h1>
-                <p style="font-size: 1.2rem; color: rgba(255, 255, 255, 0.7); max-width: 700px; margin: 0 auto;">
+    <main>
+        <div class="hero-section">
+            <div class="hero-background">
+                <canvas id="hero-canvas"></canvas>
+            </div>
+            <div class="hero-content container">
+                <h1 style="font-size: clamp(3rem, 6vw, 4.5rem); margin-bottom: 1.5rem;">🎨 Component Library</h1>
+                <p style="font-size: 1.3rem; color: rgba(255, 255, 255, 0.7); max-width: 800px; margin: 0 auto;">
                     A complete collection of 3D UI components for building immersive spatial interfaces.
                 </p>
             </div>
+        </div>
 
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-number">8</div>
-                    <div class="stat-label">Components</div>
-                </div>
-                <div class="stat-card" style="border-left-color: #6bb6ff;">
-                    <div class="stat-number" style="color: #6bb6ff;">3</div>
-                    <div class="stat-label">Geometry Modes</div>
-                </div>
-                <div class="stat-card" style="border-left-color: #ff6b9d;">
-                    <div class="stat-number" style="color: #ff6b9d;">100%</div>
-                    <div class="stat-label">Customizable</div>
-                </div>
-                <div class="stat-card" style="border-left-color: #48bb78;">
-                    <div class="stat-number" style="color: #48bb78;">WCAG</div>
-                    <div class="stat-label">AA Compliant</div>
+        <div class="container-wide">
+
+            <div class="filter-container" style="text-align: center; margin: 0 0 3rem 0;">
+                <div class="filter-section"
+                    style="display: inline-flex; gap: 0.5rem; background: rgba(20, 20, 40, 0.8); padding: 0.5rem; border-radius: 50px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
+                    <button class="filter-btn active" data-filter="all">All</button>
+                    <button class="filter-btn" data-filter="input">Input</button>
+                    <button class="filter-btn" data-filter="display">Display</button>
+                    <button class="filter-btn" data-filter="layout">Layout</button>
+                    <button class="filter-btn" data-filter="data">Data</button>
+                    <button class="filter-btn" data-filter="ai-fx">AI & Effects</button>
+                    <button class="filter-btn" data-filter="templates" style="color: #00ffaa;">Templates</button>
                 </div>
             </div>
 
-            <div class="filter-section">
-                <h3 style="color: var(--cosmic-cyan); margin-bottom: 1rem;">Filter by Category</h3>
-                <button class="filter-btn active" data-filter="all">All Components</button>
-                <button class="filter-btn" data-filter="input">Input Controls</button>
-                <button class="filter-btn" data-filter="display">Display</button>
-                <button class="filter-btn" data-filter="layout">Layout</button>
-                <button class="filter-btn" data-filter="data">Data Visualization</button>
-            </div>
-
-            <div class="component-grid">
+            <div class="grid grid-4 component-grid">
                 <!-- Button3D -->
                 <div class="component-card" data-category="input">
                     <span class="component-icon">🔘</span>
                     <h2 class="component-title">Button3D</h2>
-                    <p class="component-desc">Interactive 3D button with click feedback, hover states, and customizable
+                    <p class="component-desc">Interactive 3D button with click feedback, hover states, and
+                        customizable
                         geometry modes.</p>
                     <ul class="component-features">
                         <li>Click & hover animations</li>
@@ -234,7 +227,8 @@
                 <div class="component-card" data-category="input">
                     <span class="component-icon">🔄</span>
                     <h2 class="component-title">Toggle3D</h2>
-                    <p class="component-desc">On/off switch control with smooth animations and visual state feedback.
+                    <p class="component-desc">On/off switch control with smooth animations and visual state
+                        feedback.
                     </p>
                     <ul class="component-features">
                         <li>Smooth state transitions</li>
@@ -264,7 +258,8 @@
                 <div class="component-card" data-category="input">
                     <span class="component-icon">✏️</span>
                     <h2 class="component-title">TextInput3D</h2>
-                    <p class="component-desc">Text input field with keyboard support, focus management, and placeholder
+                    <p class="component-desc">Text input field with keyboard support, focus management, and
+                        placeholder
                         text.</p>
                     <ul class="component-features">
                         <li>Full keyboard support</li>
@@ -279,7 +274,8 @@
                 <div class="component-card" data-category="display">
                     <span class="component-icon">📄</span>
                     <h2 class="component-title">TextDisplay3D</h2>
-                    <p class="component-desc">Read-only text display with markdown rendering and scrollable content.</p>
+                    <p class="component-desc">Read-only text display with markdown rendering and scrollable content.
+                    </p>
                     <ul class="component-features">
                         <li>Markdown support</li>
                         <li>Scrollable content</li>
@@ -293,7 +289,8 @@
                 <div class="component-card" data-category="layout">
                     <span class="component-icon">🪟</span>
                     <h2 class="component-title">Modal3D</h2>
-                    <p class="component-desc">Modal dialog with backdrop, smooth animations, and customizable content.
+                    <p class="component-desc">Modal dialog with backdrop, smooth animations, and customizable
+                        content.
                     </p>
                     <ul class="component-features">
                         <li>Backdrop overlay</li>
@@ -323,7 +320,8 @@
                 <div class="component-card" data-category="data">
                     <span class="component-icon">📊</span>
                     <h2 class="component-title">Chart3D</h2>
-                    <p class="component-desc">Data visualization with Chart.js integration, supporting multiple chart
+                    <p class="component-desc">Data visualization with Chart.js integration, supporting multiple
+                        chart
                         types.</p>
                     <ul class="component-features">
                         <li>Chart.js integration</li>
@@ -333,21 +331,334 @@
                     </ul>
                     <a href="./chart3d.html" class="component-link">View Documentation →</a>
                 </div>
-            </div>
 
-            <div class="hero-section" style="margin-top: 4rem;">
-                <h2 style="font-size: 2.5rem; margin-bottom: 1rem;">🚀 Ready to Build?</h2>
-                <p style="font-size: 1.1rem; color: rgba(255, 255, 255, 0.7); margin-bottom: 2rem;">
-                    Start creating immersive spatial interfaces with Spatial UI 3D.
-                </p>
-                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                    <a href="../docs/getting-started.html" class="cta-button">Get Started</a>
-                    <a href="../docs/api-reference.html" class="cta-button"
-                        style="background: rgba(255, 255, 255, 0.1);">API Reference</a>
-                    <a href="../playground.html" class="cta-button"
-                        style="background: linear-gradient(135deg, #ff6b9d, #6b4ecf);">Try Playground</a>
+                <!-- RadialMenu3D -->
+                <div class="component-card" data-category="input">
+                    <span class="component-icon">🎡</span>
+                    <h2 class="component-title">RadialMenu3D</h2>
+                    <p class="component-desc">Circular selection menu utilizing muscle memory. Items pop out in 3D
+                        space
+                        on hover.</p>
+                    <ul class="component-features">
+                        <li>Circular layout (sin/cos)</li>
+                        <li>Z-axis hover pop</li>
+                        <li>Directional selection</li>
+                        <li>Customizable radius</li>
+                    </ul>
+                    <a href="./radialmenu3d.html" class="component-link">View Documentation →</a>
+                </div>
+
+                <!-- MagneticCard3D -->
+                <div class="component-card" data-category="layout">
+                    <span class="component-icon">🧲</span>
+                    <h2 class="component-title">MagneticCard3D</h2>
+                    <p class="component-desc">Physics-based panel that tilts to follow the cursor and features
+                        internal
+                        parallax layers.</p>
+                    <ul class="component-features">
+                        <li>Magnetic tilt physics</li>
+                        <li>Spring-based snapping</li>
+                        <li>Internal parallax depth</li>
+                        <li>Configurable damping</li>
+                    </ul>
+                    <a href="./magneticcard3d.html" class="component-link">View Documentation →</a>
+                </div>
+
+                <!-- PortalCard3D -->
+                <div class="component-card" data-category="layout">
+                    <span class="component-icon">🌀</span>
+                    <h2 class="component-title">PortalCard3D</h2>
+                    <p class="component-desc">A window into another 3D dimension. Displays a separate scene with
+                        immersive parallax.</p>
+                    <ul class="component-features">
+                        <li>Render-target viewport</li>
+                        <li>Real-time scene preview</li>
+                        <li>Camera-linked parallax</li>
+                        <li>Bordered window style</li>
+                    </ul>
+                    <a href="./portalcard3d.html" class="component-link">View Documentation →</a>
+                </div>
+
+                <!-- VolumetricCard3D -->
+                <div class="component-card" data-category="display">
+                    <span class="component-icon">📦</span>
+                    <h2 class="component-title">VolumetricCard3D</h2>
+                    <p class="component-desc">Product card where 3D models physically grow and pop out of the
+                        surface on
+                        interaction.</p>
+                    <ul class="component-features">
+                        <li>3D pop-out animation</li>
+                        <li>GLTF/Mesh support</li>
+                        <li>Hover scaling effect</li>
+                        <li>Idle item rotation</li>
+                    </ul>
+                    <a href="./volumetriccard3d.html" class="component-link">View Documentation →</a>
+                </div>
+
+                <!-- HaloCard3D -->
+                <div class="component-card" data-category="display">
+                    <span class="component-icon">😇</span>
+                    <h2 class="component-title">HaloCard3D</h2>
+                    <p class="component-desc">Smart floating billboard that anchors to objects and always faces the
+                        user's camera.</p>
+                    <ul class="component-features">
+                        <li>Anchor-follow lag</li>
+                        <li>Automatic billboarding</li>
+                        <li>Floating animation</li>
+                        <li>Customizable offsets</li>
+                    </ul>
+                    <a href="./halocard3d.html" class="component-link">View Documentation →</a>
+                </div>
+
+                <!-- AIPortal3D -->
+                <div class="component-card" data-category="layout">
+                    <span class="component-icon">🌌</span>
+                    <h2 class="component-title">AIPortal3D</h2>
+                    <p class="component-desc">Dimensional gateway with Event Horizon shader. Detects traversal to
+                        shift
+                        environments.</p>
+                    <ul class="component-features">
+                        <li>Event Horizon shader</li>
+                        <li>Traversal detection</li>
+                        <li>World-swapping logic</li>
+                        <li>Render-target preview</li>
+                    </ul>
+                    <a href="./aiportal3d.html" class="component-link">View Documentation →</a>
+                </div>
+
+                <!-- TimeRibbon3D -->
+                <div class="component-card" data-category="input">
+                    <span class="component-icon">⏰</span>
+                    <h2 class="component-title">TimeRibbon3D</h2>
+                    <p class="component-desc">Physical timeline manipulation control. Grab and drag along the ribbon
+                        to
+                        scrub through time.</p>
+                    <ul class="component-features">
+                        <li>Spiral 3D path generation</li>
+                        <li>Draggable time scrubbing</li>
+                        <li>Pulsating highlight nodes</li>
+                        <li>Ghost mesh previews</li>
+                    </ul>
+                    <a href="./timeribbon3d.html" class="component-link">View Documentation →</a>
+                </div>
+
+                <!-- EchoInteraction3D -->
+                <div class="component-card" data-category="input">
+                    <span class="component-icon">🌊</span>
+                    <h2 class="component-title">EchoInteraction3D</h2>
+                    <p class="component-desc">Ripple-based object discovery. Click to send a pulse that reveals
+                        nearby
+                        interactive objects.</p>
+                    <ul class="component-features">
+                        <li>Expanding ripple effect</li>
+                        <li>Shader-based highlighting</li>
+                        <li>Distance-based reveal</li>
+                        <li>Audio feedback</li>
+                    </ul>
+                    <a href="./echointeraction3d.html" class="component-link">View Documentation →</a>
+                </div>
+
+                <!-- HapticHorizon3D -->
+                <div class="component-card" data-category="input">
+                    <span class="component-icon">⚡</span>
+                    <h2 class="component-title">HapticHorizon3D</h2>
+                    <p class="component-desc">Proximity-activated laser line with audio feedback. Move cursor near
+                        to
+                        activate and hear frequency changes.</p>
+                    <ul class="component-features">
+                        <li>Proximity-based activation</li>
+                        <li>Dynamic thickness & glow</li>
+                        <li>Audio frequency feedback</li>
+                        <li>Smooth animations</li>
+                    </ul>
+                    <a href="./haptichorizon3d.html" class="component-link">View Documentation →</a>
+                </div>
+
+                <!-- KineticSculpture3D -->
+                <div class="component-card" data-category="input">
+                    <span class="component-icon">🎭</span>
+                    <h2 class="component-title">KineticSculpture3D</h2>
+                    <p class="component-desc">Gesture-controlled morphing sphere. Drag to squeeze, rotate, or
+                        stretch
+                        for different controls.</p>
+                    <ul class="component-features">
+                        <li>Simplex noise morphing</li>
+                        <li>Gesture recognition</li>
+                        <li>Living animation</li>
+                        <li>State mapping</li>
+                    </ul>
+                    <a href="./kineticsculpture3d.html" class="component-link">View Documentation →</a>
+                </div>
+
+                <!-- SpatialScrubber3D -->
+                <div class="component-card" data-category="input">
+                    <span class="component-icon">🎬</span>
+                    <h2 class="component-title">SpatialScrubber3D</h2>
+                    <p class="component-desc">3D animation timeline with draggable handle and ghost frame previews.
+                        Scrub through animations in 3D space.</p>
+                    <ul class="component-features">
+                        <li>Draggable timeline handle</li>
+                        <li>Ghost frame previews</li>
+                        <li>Magnetic keyframe snapping</li>
+                        <li>Velocity-based playback</li>
+                    </ul>
+                    <a href="./spatialscrubber3d.html" class="component-link">View Documentation →</a>
+                </div>
+
+                <!-- IKManipulator3D -->
+                <div class="component-card" data-category="input">
+                    <span class="component-icon">🦾</span>
+                    <h2 class="component-title">IKManipulator3D</h2>
+                    <p class="component-desc">Inverse kinematics control for direct manipulation of 3D skeletal
+                        models.
+                        Drag handles to pose characters and robots.</p>
+                    <ul class="component-features">
+                        <li>CCD and FABRIK solvers</li>
+                        <li>Draggable end effector handles</li>
+                        <li>Joint angle constraints</li>
+                        <li>Real-time bone visualization</li>
+                    </ul>
+                    <a href="./ikmanipulator3d.html" class="component-link">View Documentation →</a>
+                </div>
+
+                <!-- FlowFieldController3D -->
+                <div class="component-card" data-category="input" style="opacity: 0.7; border-color: #ffaa00;">
+                    <span class="component-icon">🚧</span>
+                    <h2 class="component-title">FlowFieldController3D <span
+                            style="font-size: 0.7em; color: #ffaa00;">(Dev)</span></h2>
+                    <p class="component-desc">GPGPU-accelerated particle system. Currently experimental and may have
+                        browser compatibility issues.</p>
+                    <ul class="component-features">
+                        <li>5000+ particles (Experimental)</li>
+                        <li>Vector flow fields</li>
+                        <li>Shader-based simulation</li>
+                        <li>Work in progress</li>
+                    </ul>
+                    <a href="./flowfieldcontroller3d.html" class="component-link">View Demo (Unstable) →</a>
+                </div>
+
+                <!-- HoloMap3D -->
+                <div class="component-card" data-category="visualization">
+                    <span class="component-icon">🌍</span>
+                    <h2 class="component-title">HoloMap3D</h2>
+                    <p class="component-desc">Holographic 3D globe visualization. Features scanline effects,
+                        interactive
+                        markers, and data connections.</p>
+                    <ul class="component-features">
+                        <li>Holographic sphere shader</li>
+                        <li>Lat/Lon marker system</li>
+                        <li>Data connection arcs</li>
+                        <li>Interactive rotation</li>
+                    </ul>
+                    <a href="./holomap3d.html" class="component-link">View Documentation →</a>
+                </div>
+
+                <!-- NetworkGraph3D -->
+                <div class="component-card" data-category="visualization">
+                    <span class="component-icon">🕸️</span>
+                    <h2 class="component-title">NetworkGraph3D</h2>
+                    <p class="component-desc">Force-directed 3D graph visualization. Features high-performance
+                        instanced
+                        rendering and physics simulation.</p>
+                    <ul class="component-features">
+                        <li>Force-directed physics layout</li>
+                        <li>High-performance InstancedMesh</li>
+                        <li>Interactive physics controls</li>
+                        <li>100+ Nodes support</li>
+                    </ul>
+                    <a href="./networkgraph3d.html" class="component-link">View Demo →</a>
+                </div>
+
+                <!-- DataVolume3D -->
+                <div class="component-card" data-category="visualization">
+                    <span class="component-icon">🧊</span>
+                    <h2 class="component-title">DataVolume3D</h2>
+                    <p class="component-desc">Volumetric data visualization using instanced particle clouds.
+                        Interactive
+                        slicing and density thresholding.</p>
+                    <ul class="component-features">
+                        <li>Volumetric point cloud</li>
+                        <li>3D Slicing (X/Y/Z)</li>
+                        <li>Density threshold control</li>
+                        <li>30k+ Voxel support</li>
+                    </ul>
+                    <a href="./datavolume3d.html" class="component-link">View Demo →</a>
+                    <!-- LiquidContainer -->
+                    <div class="component-card" data-category="layout">
+                        <span class="component-icon">💧</span>
+                        <h2 class="component-title">LiquidContainer</h2>
+                        <p class="component-desc">Organic UI container where child elements fuse together like
+                            liquid mercury using metaball logic.</p>
+                        <ul class="component-features">
+                            <li>Metaball fusion effect</li>
+                            <li>Gooey animated transitions</li>
+                            <li>Organic child layouts</li>
+                            <li>Shader-based processing</li>
+                        </ul>
+                        <a href="../demos/liquid-demo.html" class="component-link">View Demo →</a>
+                    </div>
+
+                    <!-- PortalWindow -->
+                    <div class="component-card" data-category="layout">
+                        <span class="component-icon">🌀</span>
+                        <h2 class="component-title">PortalWindow</h2>
+                        <p class="component-desc">Impossible geometry window that reveals a hidden dimension using
+                            stencil masks.</p>
+                        <ul class="component-features">
+                            <li>Stencil mask rendering</li>
+                            <li>Parallax depth effect</li>
+                            <li>Non-euclidean visual</li>
+                            <li>Seamless integration</li>
+                        </ul>
+                        <a href="../demos/portal-demo.html" class="component-link">View Demo →</a>
+                    </div>
+
+                    <!-- SemanticGhost -->
+                    <div class="component-card" data-category="ai-fx">
+                        <span class="component-icon">👻</span>
+                        <h2 class="component-title">SemanticGhost</h2>
+                        <p class="component-desc">Context-aware AI avatar that materializes when you hesitate to
+                            offer assistance.</p>
+                        <ul class="component-features">
+                            <li>Hesitation detection</li>
+                            <li>Context-aware help</li>
+                            <li>Particle system avatar</li>
+                            <li>Multi-persona (Aurora/Infinite)</li>
+                        </ul>
+                        <a href="../demos/ghost-demo.html" class="component-link">View Demo →</a>
+                    </div>
+
+                    <!-- Spatial Template -->
+                    <div class="component-card" data-category="templates">
+                        <span class="component-icon">🏗️</span>
+                        <h2 class="component-title">Spatial Template</h2>
+                        <p class="component-desc">Standardized starter template for new Spatial UI demos. Includes
+                            Environment, Controls, and Boilerplate.</p>
+                        <ul class="component-features">
+                            <li>Pre-configured Scene & Camera</li>
+                            <li>Starfield & Grid included</li>
+                            <li>Ready-to-use Control loop</li>
+                            <li>Clean architecture</li>
+                        </ul>
+                        <a href="../demos/template-demo.html" class="component-link">View Template →</a>
+                    </div>
                 </div>
             </div>
+        </div>
+
+        <div class="hero-section" style="margin-top: 4rem;">
+            <h2 style="font-size: 2.5rem; margin-bottom: 1rem;">🚀 Ready to Build?</h2>
+            <p style="font-size: 1.1rem; color: rgba(255, 255, 255, 0.7); margin-bottom: 2rem;">
+                Start creating immersive spatial interfaces with Spatial UI 3D.
+            </p>
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <a href="../docs/getting-started.html" class="cta-button">Get Started</a>
+                <a href="../docs/api-reference.html" class="cta-button"
+                    style="background: rgba(255, 255, 255, 0.1);">API Reference</a>
+                <a href="../playground.html" class="cta-button"
+                    style="background: linear-gradient(135deg, #ff6b9d, #6b4ecf);">Try Playground</a>
+            </div>
+        </div>
         </div>
     </main>
     <footer class="footer">
@@ -370,7 +681,8 @@
                     <ul class="footer-links">
                         <li><a href="../index.html#demos">Demos</a></li>
                         <li><a href="../examples/index.html">Examples</a></li>
-                        <li><a href="https://github.com/spatial-ui-3d" target="_blank">GitHub</a></li>
+                        <li><a href="https://github.com/SamppaFIN/Spatial-3D-UI-framework" target="_blank">GitHub</a>
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -384,6 +696,15 @@
         // Filter functionality
         const filterBtns = document.querySelectorAll('.filter-btn');
         const componentCards = document.querySelectorAll('.component-card');
+
+        // Check URL params for filter
+        const urlParams = new URLSearchParams(window.location.search);
+        const initialFilter = urlParams.get('filter');
+
+        if (initialFilter) {
+            const btn = document.querySelector(`.filter-btn[data-filter="${initialFilter}"]`);
+            if (btn) setTimeout(() => btn.click(), 100);
+        }
 
         filterBtns.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -411,6 +732,71 @@
             card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
             card.style.opacity = '1';
         });
+    </script>
+    <!-- Hero 3D Background -->
+    <script type="module">
+        import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+        const canvas = document.getElementById('hero-canvas');
+        if (canvas) {
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // Create stars
+            const starGeometry = new THREE.BufferGeometry();
+            const starCount = 3000;
+            const positions = new Float32Array(starCount * 3);
+            const colors = new Float32Array(starCount * 3);
+
+            for (let i = 0; i < starCount * 3; i += 3) {
+                positions[i] = (Math.random() - 0.5) * 100;
+                positions[i + 1] = (Math.random() - 0.5) * 100;
+                positions[i + 2] = (Math.random() - 0.5) * 50; // More depth
+
+                // Cosmic colors
+                const colorType = Math.random();
+                if (colorType > 0.9) { // Cyan
+                    colors[i] = 0.3; colors[i + 1] = 0.8; colors[i + 2] = 0.8;
+                } else if (colorType > 0.8) { // Pink
+                    colors[i] = 1.0; colors[i + 1] = 0.4; colors[i + 2] = 0.6;
+                } else { // White
+                    colors[i] = 1.0; colors[i + 1] = 1.0; colors[i + 2] = 1.0;
+                }
+            }
+
+            starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            starGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            const starMaterial = new THREE.PointsMaterial({
+                size: 0.15,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            const stars = new THREE.Points(starGeometry, starMaterial);
+            scene.add(stars);
+
+            camera.position.z = 5;
+
+            function animate() {
+                requestAnimationFrame(animate);
+                stars.rotation.y += 0.0002;
+                stars.rotation.z += 0.0001;
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
     </script>
     <script src="../scripts/showcase.js"></script>
 </body>

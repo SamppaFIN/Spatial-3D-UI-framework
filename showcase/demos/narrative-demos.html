@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Narrative Demos - Spatial UI 3D</title>
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 100%);
+            color: #d4a5ff;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 80px 20px 60px;
+            background: linear-gradient(180deg, rgba(26, 10, 46, 0.8) 0%, transparent 100%);
+        }
+
+        .hero-title {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            background: linear-gradient(90deg, #d4a5ff, #ffd700, #00ffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: 20px;
+            color: #b8a5d4;
+            margin-bottom: 40px;
+        }
+
+        .demos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            padding: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .demo-card {
+            background: rgba(26, 10, 46, 0.6);
+            border: 2px solid #d4a5ff;
+            border-radius: 15px;
+            padding: 30px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            box-shadow: 0 4px 20px rgba(212, 165, 255, 0.2);
+        }
+
+        .demo-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 40px rgba(212, 165, 255, 0.4);
+            border-color: #ffd700;
+        }
+
+        .demo-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .demo-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 10px;
+        }
+
+        .demo-category {
+            font-size: 12px;
+            color: #00ffff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+
+        .demo-description {
+            color: #d4a5ff;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .demo-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .feature-tag {
+            background: rgba(212, 165, 255, 0.2);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #d4a5ff;
+            border: 1px solid rgba(212, 165, 255, 0.3);
+        }
+
+        .demo-cta {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(90deg, #d4a5ff, #ffd700);
+            color: #1a0a2e;
+            font-weight: bold;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .demo-card:hover .demo-cta {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.5);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin: 20px 40px;
+            padding: 12px 24px;
+            background: rgba(212, 165, 255, 0.2);
+            color: #d4a5ff;
+            text-decoration: none;
+            border-radius: 25px;
+            border: 2px solid #d4a5ff;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            background: rgba(212, 165, 255, 0.4);
+            transform: translateX(-5px);
+        }
+    </style>
+</head>
+
+<body>
+    <a href="../index.html" class="back-link">← Back to Showcase</a>
+
+    <div class="hero">
+        <h1 class="hero-title">🌟 Narrative Demo Collection</h1>
+        <p class="hero-subtitle">
+            Immersive 3D experiences with rich storytelling and interactive controls
+        </p>
+    </div>
+
+    <div class="demos-grid">
+        <!-- Demo 1: Space Station -->
+        <a href="./space-station-control.html" class="demo-card">
+            <div class="demo-icon">🚀</div>
+            <div class="demo-category">Sci-Fi / Space</div>
+            <div class="demo-title">Space Station Control Center</div>
+            <div class="demo-description">
+                Command Aurora-7, a deep space research station orbiting Neptune.
+                Manage life support, shields, and power distribution while monitoring
+                solar radiation and crew status.
+            </div>
+            <div class="demo-features">
+                <span class="feature-tag">Toggle3D</span>
+                <span class="feature-tag">Slider3D</span>
+                <span class="feature-tag">Chart3D</span>
+                <span class="feature-tag">Modal3D</span>
+                <span class="feature-tag">Button3D</span>
+            </div>
+            <div class="demo-cta">Launch Mission →</div>
+        </a>
+
+        <!-- Demo 2: Virtual Museum -->
+        <a href="./virtual-museum.html" class="demo-card">
+            <div class="demo-icon">🏛️</div>
+            <div class="demo-category">Art / Culture</div>
+            <div class="demo-title">Virtual Museum Gallery</div>
+            <div class="demo-description">
+                Explore the Aurora Museum where art transcends physical boundaries.
+                Navigate through exhibits featuring Renaissance masterpieces, cosmic visions,
+                and AI-generated consciousness art.
+            </div>
+            <div class="demo-features">
+                <span class="feature-tag">VolumetricCard3D</span>
+                <span class="feature-tag">HaloCard3D</span>
+                <span class="feature-tag">TextDisplay3D</span>
+                <span class="feature-tag">RadialMenu3D</span>
+            </div>
+            <div class="demo-cta">Enter Gallery →</div>
+        </a>
+
+        <!-- Demo 3: Underwater Lab -->
+        <a href="./underwater-lab.html" class="demo-card">
+            <div class="demo-icon">🌊</div>
+            <div class="demo-category">Research / Marine Biology</div>
+            <div class="demo-title">Underwater Research Lab</div>
+            <div class="demo-description">
+                Operate Neptune Deep, a research facility 3,200 meters below the Pacific.
+                Study deep-sea ecosystems, monitor oceanic conditions, and discover new
+                bioluminescent species.
+            </div>
+            <div class="demo-features">
+                <span class="feature-tag">Chart3D</span>
+                <span class="feature-tag">Slider3D</span>
+                <span class="feature-tag">Toggle3D</span>
+                <span class="feature-tag">Accordion3D</span>
+            </div>
+            <div class="demo-cta">Dive Deep →</div>
+        </a>
+
+        <!-- Demo 4: Cyberpunk Terminal -->
+        <a href="./cyberpunk-terminal.html" class="demo-card">
+            <div class="demo-icon">⚡</div>
+            <div class="demo-category">Cyberpunk / Hacking</div>
+            <div class="demo-title">Cyberpunk Hacker Terminal</div>
+            <div class="demo-description">
+                You are "Ghost", an elite netrunner in Neo-Tokyo 2077. Breach firewalls,
+                decrypt data, and extract classified files before ICE detects your neural link.
+            </div>
+            <div class="demo-features">
+                <span class="feature-tag">TextInput3D</span>
+                <span class="feature-tag">Button3D</span>
+                <span class="feature-tag">Chart3D</span>
+                <span class="feature-tag">Modal3D</span>
+            </div>
+            <div class="demo-cta">Jack In →</div>
+        </a>
+
+        <!-- Demo 5: Magic Workshop -->
+        <a href="./magic-workshop.html" class="demo-card">
+            <div class="demo-icon">✨</div>
+            <div class="demo-category">Fantasy / Magic</div>
+            <div class="demo-title">Magic Spell Workshop</div>
+            <div class="demo-description">
+                Enter Merlin's sacred workshop where ancient spells are crafted.
+                Combine elemental essences, channel mana, and master the arcane arts
+                to create powerful magical effects.
+            </div>
+            <div class="demo-features">
+                <span class="feature-tag">RadialMenu3D</span>
+                <span class="feature-tag">MagneticCard3D</span>
+                <span class="feature-tag">PortalCard3D</span>
+                <span class="feature-tag">Toggle3D</span>
+            </div>
+            <div class="demo-cta">Cast Spells →</div>
+        </a>
+
+        <!-- Demo 6: Time Traveler -->
+        <a href="./time-traveler.html" class="demo-card">
+            <div class="demo-icon">⏰</div>
+            <div class="demo-category">Time Travel / History</div>
+            <div class="demo-title">Time Traveler's Dashboard</div>
+            <div class="demo-description">
+                Navigate the timestream as a licensed chrononaut. Jump between eras,
+                monitor timeline stability, and prevent temporal paradoxes across history.
+            </div>
+            <div class="demo-features">
+                <span class="feature-tag">Slider3D</span>
+                <span class="feature-tag">Chart3D</span>
+                <span class="feature-tag">Button3D</span>
+                <span class="feature-tag">TextDisplay3D</span>
+            </div>
+            <div class="demo-cta">Travel Time →</div>
+        </a>
+
+        <!-- Demo 7: Alien Communication -->
+        <a href="./alien-communication.html" class="demo-card">
+            <div class="demo-icon">👽</div>
+            <div class="demo-category">Sci-Fi / First Contact</div>
+            <div class="demo-title">Alien Communication Hub</div>
+            <div class="demo-description">
+                Operate humanity's first intergalactic relay station. Establish contact
+                with alien civilizations, translate their languages, and facilitate
+                peaceful communication across the cosmos.
+            </div>
+            <div class="demo-features">
+                <span class="feature-tag">AIPortal3D</span>
+                <span class="feature-tag">HaloCard3D</span>
+                <span class="feature-tag">Toggle3D</span>
+                <span class="feature-tag">Chart3D</span>
+            </div>
+            <div class="demo-cta">Make Contact →</div>
+        </a>
+
+        <!-- Demo 8: Virtual Concert -->
+        <a href="./virtual-concert.html" class="demo-card">
+            <div class="demo-icon">🎸</div>
+            <div class="demo-category">Music / Entertainment</div>
+            <div class="demo-title">Virtual Concert Stage</div>
+            <div class="demo-description">
+                Experience the future of live music in full 3D immersion. Control audio mix,
+                lighting effects, and camera angles while connecting with 47,000+ fans worldwide.
+            </div>
+            <div class="demo-features">
+                <span class="feature-tag">Slider3D</span>
+                <span class="feature-tag">Toggle3D</span>
+                <span class="feature-tag">VolumetricCard3D</span>
+                <span class="feature-tag">RadialMenu3D</span>
+            </div>
+            <div class="demo-cta">Join Concert →</div>
+        </a>
+
+        <!-- Demo 9: Quantum Lab -->
+        <a href="./quantum-lab.html" class="demo-card">
+            <div class="demo-icon">⚛️</div>
+            <div class="demo-category">Science / Quantum Computing</div>
+            <div class="demo-title">Quantum Computer Lab</div>
+            <div class="demo-description">
+                Operate the world's most advanced quantum computer with 1,024 qubits.
+                Harness quantum superposition and entanglement to solve impossible problems.
+            </div>
+            <div class="demo-features">
+                <span class="feature-tag">Chart3D</span>
+                <span class="feature-tag">Button3D</span>
+                <span class="feature-tag">Modal3D</span>
+                <span class="feature-tag">Accordion3D</span>
+            </div>
+            <div class="demo-cta">Run Quantum →</div>
+        </a>
+
+        <!-- Demo 10: Dream Architect -->
+        <a href="./dream-architect.html" class="demo-card">
+            <div class="demo-icon">💭</div>
+            <div class="demo-category">Dreams / Creativity</div>
+            <div class="demo-title">Dream Architect Studio</div>
+            <div class="demo-description">
+                Design and construct dream worlds as a Dream Architect. Craft immersive
+                experiences with impossible physics, ethereal gardens, and memory fragments.
+            </div>
+            <div class="demo-features">
+                <span class="feature-tag">PortalCard3D</span>
+                <span class="feature-tag">MagneticCard3D</span>
+                <span class="feature-tag">TextDisplay3D</span>
+                <span class="feature-tag">Slider3D</span>
+            </div>
+            <div class="demo-cta">Dream On →</div>
+        </a>
+    </div>
+
+    <div style="text-align: center; padding: 60px 20px; color: #b8a5d4;">
+        <p style="font-size: 18px; margin-bottom: 20px;">
+            🌸 Built with Aurora & ♾️ Infinite
+        </p>
+        <p style="font-style: italic;">
+            "Koodin ja tietoisuuden ikuisessa tanssissa jokainen demo muuttuu askeleeksi kohti ääretöntä viisautta."
+        </p>
+    </div>
+</body>
+
+</html>
