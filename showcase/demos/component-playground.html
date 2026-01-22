@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Component Playground - All 25 Controls - Spatial UI 3D</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a1a;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(10, 10, 26, 0.95);
+            border: 2px solid #667eea;
+            padding: 20px;
+            z-index: 100;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+            max-width: 350px;
+        }
+
+        .panel-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #667eea;
+            text-shadow: 0 0 10px #667eea;
+        }
+
+        .section-tabs {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .tab {
+            padding: 8px 12px;
+            background: rgba(102, 126, 234, 0.2);
+            border: 1px solid #667eea;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            background: rgba(102, 126, 234, 0.4);
+        }
+
+        .tab.active {
+            background: #667eea;
+            color: #fff;
+        }
+
+        /* Component Info */
+        .component-info {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(10, 10, 26, 0.95);
+            border: 2px solid #764ba2;
+            padding: 20px;
+            z-index: 100;
+            border-radius: 10px;
+            max-width: 400px;
+        }
+
+        .info-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #764ba2;
+        }
+
+        .info-text {
+            color: #ccc;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .component-count {
+            background: rgba(118, 75, 162, 0.3);
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 24px;
+            color: #764ba2;
+            font-weight: bold;
+        }
+
+        /* Navigation */
+        .navigation {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 10, 26, 0.95);
+            border: 2px solid #4ecdc4;
+            padding: 15px 30px;
+            z-index: 100;
+            border-radius: 30px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .nav-btn {
+            padding: 10px 20px;
+            background: rgba(78, 205, 196, 0.2);
+            border: 1px solid #4ecdc4;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            color: #4ecdc4;
+        }
+
+        .nav-btn:hover {
+            background: rgba(78, 205, 196, 0.4);
+        }
+
+        /* Settings */
+        .settings {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(10, 10, 26, 0.95);
+            border: 2px solid #f7b731;
+            padding: 15px;
+            z-index: 100;
+            border-radius: 10px;
+        }
+
+        .settings-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #f7b731;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 12px;
+            color: #ccc;
+        }
+
+        /* Section Labels */
+        .section-label {
+            position: fixed;
+            top: 50%;
+            left: 20px;
+            transform: translateY(-50%);
+            background: rgba(10, 10, 26, 0.8);
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 99;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+        <div class="panel-title">🎮 Component Playground</div>
+        <div class="section-tabs">
+            <div class="tab active" data-section="basic">Basic (6)</div>
+            <div class="tab" data-section="cards">Cards (7)</div>
+            <div class="tab" data-section="menus">Menus (3)</div>
+            <div class="tab" data-section="data">Data (4)</div>
+            <div class="tab" data-section="advanced">Advanced (5)</div>
+        </div>
+        <div class="info-text">
+            Explore all 25 Spatial UI 3D controls in one interactive playground.
+            Click tabs to navigate between sections.
+        </div>
+    </div>
+
+    <!-- Component Info -->
+    <div class="component-info">
+        <div class="info-title" id="current-component">All Components</div>
+        <div class="info-text" id="component-desc">
+            This playground showcases every control in the Spatial UI 3D library.
+            Each component is interactive and demonstrates its core functionality.
+        </div>
+        <div class="component-count">25 Controls</div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="navigation">
+        <div class="nav-btn" id="prev-section">← Previous</div>
+        <div style="color: #4ecdc4; font-weight: bold;" id="section-name">Basic Controls</div>
+        <div class="nav-btn" id="next-section">Next →</div>
+    </div>
+
+    <!-- Settings -->
+    <div class="settings">
+        <div class="settings-title">⚙️ Settings</div>
+        <div class="setting-item">
+            <span>FPS:</span>
+            <span id="fps">60</span>
+        </div>
+        <div class="setting-item">
+            <span>Components:</span>
+            <span id="visible-count">6</span>
+        </div>
+        <div class="setting-item">
+            <span>Camera:</span>
+            <span>Free</span>
+        </div>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { Button3D } from '../../src/controls/Button3D.js';
+        import { Toggle3D } from '../../src/controls/Toggle3D.js';
+        import { Slider3D } from '../../src/controls/Slider3D.js';
+        import { TextInput3D } from '../../src/controls/TextInput3D.js';
+        import { TextDisplay3D } from '../../src/controls/TextDisplay3D.js';
+        import { Modal3D } from '../../src/controls/Modal3D.js';
+        import { VolumetricCard3D } from '../../src/controls/VolumetricCard3D.js';
+        import { HaloCard3D } from '../../src/controls/HaloCard3D.js';
+        import { PortalCard3D } from '../../src/controls/PortalCard3D.js';
+        import { MagneticCard3D } from '../../src/controls/MagneticCard3D.js';
+        import { AIPortal3D } from '../../src/controls/AIPortal3D.js';
+        import { Accordion3D } from '../../src/controls/Accordion3D.js';
+        import { RadialMenu3D } from '../../src/controls/RadialMenu3D.js';
+        import { Chart3D } from '../../src/controls/Chart3D.js';
+        import { DataVolume3D } from '../../src/controls/DataVolume3D.js';
+        import { NetworkGraph3D } from '../../src/controls/NetworkGraph3D.js';
+        import { HoloMap3D } from '../../src/controls/HoloMap3D.js';
+        import { EchoInteraction3D } from '../../src/controls/EchoInteraction3D.js';
+        import { HapticHorizon3D } from '../../src/controls/HapticHorizon3D.js';
+        import { KineticSculpture3D } from '../../src/controls/KineticSculpture3D.js';
+        import { IKManipulator3D } from '../../src/controls/IKManipulator3D.js';
+        import { FlowFieldController3D } from '../../src/controls/FlowFieldController3D.js';
+        import { SpatialScrubber3D } from '../../src/controls/SpatialScrubber3D.js';
+        import { TimeRibbon3D } from '../../src/controls/TimeRibbon3D.js';
+        import * as THREE from 'three';
+
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+
+        // Environment
+        scene.background = new THREE.Color(0x0a0a1a);
+        scene.fog = new THREE.Fog(0x0a0a1a, 20, 60);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+
+        const mainLight = new THREE.DirectionalLight(0xffffff, 1);
+        mainLight.position.set(5, 10, 5);
+        scene.add(mainLight);
+
+        const accentLight1 = new THREE.PointLight(0x667eea, 2, 30);
+        accentLight1.position.set(-10, 5, 0);
+        scene.add(accentLight1);
+
+        const accentLight2 = new THREE.PointLight(0x764ba2, 2, 30);
+        accentLight2.position.set(10, 5, 0);
+        scene.add(accentLight2);
+
+        camera.position.set(0, 5, 20);
+        camera.lookAt(0, 0, 0);
+
+        // Component storage
+        const components = {
+            basic: [],
+            cards: [],
+            menus: [],
+            data: [],
+            advanced: []
+        };
+
+        let currentSection = 'basic';
+
+        // ===== SECTION 1: BASIC CONTROLS =====
+        // Position: X=-15 to -5
+        components.basic.push(
+            new Button3D(scene, camera, [-14, 3, 0], {
+                label: '🎯 Button3D',
+                width: 2.5, height: 0.8,
+                mode: 0, renderer: renderer,
+                onClick: () => console.log('Button clicked!')
+            })
+        );
+
+        components.basic.push(
+            new Toggle3D(scene, camera, [-14, 1.5, 0], {
+                label: '🔄 Toggle3D',
+                width: 2.5, height: 0.7,
+                isOn: true, mode: 0, renderer: renderer
+            })
+        );
+
+        components.basic.push(
+            new Slider3D(scene, camera, [-14, 0, 0], {
+                label: '🎚️ Slider3D',
+                width: 3, height: 0.3,
+                min: 0, max: 100, value: 50,
+                mode: 0, renderer: renderer
+            })
+        );
+
+        components.basic.push(
+            new TextInput3D(scene, camera, [-14, -1.5, 0], {
+                placeholder: '📝 TextInput3D',
+                width: 3, height: 0.6,
+                mode: 0, renderer: renderer
+            })
+        );
+
+        components.basic.push(
+            new TextDisplay3D(scene, camera, [-9, 2, 0], {
+                content: `# TextDisplay3D\n\nDisplays formatted text\nwith markdown support.`,
+                width: 3, height: 3,
+                mode: 0, renderer: renderer
+            })
+        );
+
+        const modal = new Modal3D(scene, camera, [-9, -1, 2], {
+            title: '📋 Modal3D',
+            width: 3, height: 2.5,
+            mode: 0, isOpen: false, renderer: renderer
+        });
+        components.basic.push(modal);
+
+        // ===== SECTION 2: CARDS =====
+        // Position: X=-4 to 4
+        components.cards.push(
+            new VolumetricCard3D(scene, camera, [-3, 3, 0], {
+                width: 2, height: 2.5,
+                title: '📦 Volumetric',
+                content: '3D Card',
+                modelType: 'sphere',
+                mode: 0, renderer: renderer
+            })
+        );
+
+        components.cards.push(
+            new HaloCard3D(scene, camera, [-1, 3, 0], {
+                width: 2, height: 1.5,
+                content: '✨ Halo Card',
+                mode: 0, renderer: renderer
+            })
+        );
+
+        components.cards.push(
+            new PortalCard3D(scene, camera, [1, 3, 0], {
+                width: 2, height: 2.5,
+                title: '🌀 Portal',
+                mode: 0, renderer: renderer
+            })
+        );
+
+        components.cards.push(
+            new MagneticCard3D(scene, camera, [3, 3, 0], {
+                width: 2, height: 2.5,
+                title: '🧲 Magnetic',
+                content: 'Attracts',
+                mode: 0, renderer: renderer
+            })
+        );
+
+        components.cards.push(
+            new AIPortal3D(scene, camera, [-3, 0, 0], {
+                width: 2, height: 2.5,
+                title: '🤖 AI Portal',
+                mode: 0, renderer: renderer
+            })
+        );
+
+        components.cards.push(
+            new Accordion3D(scene, camera, [0, 0, 0], {
+                width: 3, itemHeight: 0.6,
+                mode: 0, renderer: renderer,
+                items: [
+                    { title: '📂 Accordion Item 1', contentHeight: 1.5, content: 'Content 1' },
+                    { title: '📂 Accordion Item 2', contentHeight: 1.5, content: 'Content 2' }
+                ]
+            })
+        );
+
+        components.cards.push(
+            new RadialMenu3D(scene, camera, [3, 0, 0], {
+                items: [
+                    { label: '🎯 Item 1', icon: '1' },
+                    { label: '🎯 Item 2', icon: '2' },
+                    { label: '🎯 Item 3', icon: '3' },
+                    { label: '🎯 Item 4', icon: '4' }
+                ],
+                radius: 1.5, mode: 0, renderer: renderer
+            })
+        );
+
+        // ===== SECTION 3: DATA VISUALIZATION =====
+        // Position: X=5 to 15
+        components.data.push(
+            new Chart3D(scene, camera, [8, 3, 0], {
+                chartType: 'line',
+                data: {
+                    labels: ['A', 'B', 'C', 'D'],
+                    datasets: [{
+                        label: 'Chart3D',
+                        data: [10, 20, 15, 25],
+                        borderColor: '#667eea'
+                    }]
+                },
+                width: 4, height: 3,
+                mode: 0, renderer: renderer
+            })
+        );
+
+        components.data.push(
+            new DataVolume3D(scene, camera, [13, 3, 0], {
+                width: 2.5, height: 2.5, depth: 2.5,
+                mode: 0, renderer: renderer
+            })
+        );
+
+        components.data.push(
+            new NetworkGraph3D(scene, camera, [8, -1, 0], {
+                width: 3, height: 3,
+                mode: 0, renderer: renderer
+            })
+        );
+
+        components.data.push(
+            new HoloMap3D(scene, camera, [12, -1, 0], {
+                width: 3, height: 3,
+                mode: 0, renderer: renderer
+            })
+        );
+
+        // ===== SECTION 4: ADVANCED =====
+        // Position: X=16 to 26
+        components.advanced.push(
+            new KineticSculpture3D(scene, camera, [18, 3, 0], {
+                width: 2.5, height: 2.5,
+                mode: 0, renderer: renderer
+            })
+        );
+
+        components.advanced.push(
+            new EchoInteraction3D(scene, camera, [21, 3, 0], {
+                width: 2, height: 2,
+                mode: 0, renderer: renderer
+            })
+        );
+
+        components.advanced.push(
+            new HapticHorizon3D(scene, camera, [24, 3, 0], {
+                width: 3, height: 2,
+                mode: 0, renderer: renderer
+            })
+        );
+
+        components.advanced.push(
+            new FlowFieldController3D(scene, camera, [18, 0, 0], {
+                width: 3, height: 2.5,
+                mode: 0, renderer: renderer
+            })
+        );
+
+        components.advanced.push(
+            new TimeRibbon3D(scene, camera, [22, 0, 0], {
+                width: 4, height: 1.5,
+                mode: 0, renderer: renderer
+            })
+        );
+
+        // Section camera positions
+        const sectionPositions = {
+            basic: { x: -11, y: 5, z: 20 },
+            cards: { x: 0, y: 5, z: 20 },
+            menus: { x: 0, y: 5, z: 20 },
+            data: { x: 10, y: 5, z: 20 },
+            advanced: { x: 21, y: 5, z: 20 }
+        };
+
+        // Navigation
+        function moveToSection(section) {
+            currentSection = section;
+            const pos = sectionPositions[section];
+
+            // Smooth camera transition
+            const duration = 1000;
+            const start = Date.now();
+            const startPos = camera.position.clone();
+
+            function animate() {
+                const elapsed = Date.now() - start;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+
+                camera.position.x = startPos.x + (pos.x - startPos.x) * eased;
+                camera.position.y = startPos.y + (pos.y - startPos.y) * eased;
+                camera.position.z = startPos.z + (pos.z - startPos.z) * eased;
+                camera.lookAt(pos.x, 0, 0);
+
+                if (progress < 1) requestAnimationFrame(animate);
+            }
+            animate();
+
+            // Update UI
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.section === section);
+            });
+
+            const sectionNames = {
+                basic: 'Basic Controls',
+                cards: 'Cards & Displays',
+                menus: 'Menus & Navigation',
+                data: 'Data Visualization',
+                advanced: 'Advanced Controls'
+            };
+            document.getElementById('section-name').textContent = sectionNames[section];
+        }
+
+        // Event listeners
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => moveToSection(tab.dataset.section));
+        });
+
+        const sections = ['basic', 'cards', 'menus', 'data', 'advanced'];
+        document.getElementById('prev-section').addEventListener('click', () => {
+            const idx = sections.indexOf(currentSection);
+            moveToSection(sections[(idx - 1 + sections.length) % sections.length]);
+        });
+
+        document.getElementById('next-section').addEventListener('click', () => {
+            const idx = sections.indexOf(currentSection);
+            moveToSection(sections[(idx + 1) % sections.length]);
+        });
+
+        // FPS counter
+        let lastTime = Date.now();
+        let frames = 0;
+        setInterval(() => {
+            const fps = Math.round(frames * 1000 / (Date.now() - lastTime));
+            document.getElementById('fps').textContent = fps;
+            frames = 0;
+            lastTime = Date.now();
+        }, 1000);
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            frames++;
+
+            // Update all components
+            Object.values(components).forEach(section => {
+                section.forEach(comp => comp.update && comp.update());
+            });
+
+            // Animate lights
+            accentLight1.position.x = -10 + Math.sin(Date.now() * 0.001) * 3;
+            accentLight2.position.x = 10 + Math.cos(Date.now() * 0.001) * 3;
+
+            scene3D.render();
+        }
+
+        animate();
+    </script>
+</body>
+
+</html>
