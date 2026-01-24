@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Component Playground - All Controls - Spatial UI 3D</title>
+    <meta name="version" content="2.0-fixed">
     <style>
         * {
             margin: 0;
@@ -258,6 +259,7 @@
         import { LiquidStateContainer3D } from '../../src/controls/LiquidStateContainer3D.js';
         import { SpatialScrubber3D } from '../../src/controls/SpatialScrubber3D.js';
         import { TimeRibbon3D } from '../../src/controls/TimeRibbon3D.js';
+        import { SemanticGhost } from '../../src/ai/SemanticGhost.js';
 
 
         const canvas = document.getElementById('canvas');
@@ -531,6 +533,24 @@
                 mode: 0, renderer: renderer
             })
         );
+
+        // Semantic Ghost (AI Companion)
+        // Positioned in Advanced section, wandering
+        const ghost = new SemanticGhost(camera, scene, renderer);
+        // We don't push to 'components' array if it auto-updates or needs special handling
+        // But SemanticGhost.update() needs to be called.
+        // Let's wrap it to fit the update pattern if needed, or just add it to scene and update separately.
+        scene.add(ghost);
+
+        // Add a wrapper object to the components list so its update method gets called by the playground loop
+        components.advanced.push({
+            update: () => {
+                // Ghost expects delta and elapsed time
+                const time = Date.now() * 0.001;
+                // Simple delta approximation
+                ghost.update(0.016, time);
+            }
+        });
 
         // Section camera positions
         const sectionPositions = {

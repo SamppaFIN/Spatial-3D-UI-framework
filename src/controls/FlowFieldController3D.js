@@ -50,8 +50,8 @@ export class FlowFieldController3D extends BaseControl3D {
      * Create the flow field controller components
      */
     create() {
-        if (!this.renderer) {
-            console.warn('FlowFieldController3D: Renderer required for GPGPU');
+        // Prevent execution if called from parent constructor before properties are set
+        if (!this.velocityColorRange || !this.renderer) {
             return;
         }
 
