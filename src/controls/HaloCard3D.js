@@ -29,13 +29,20 @@ export class HaloCard3D extends BaseControl3D {
     }
 
     create() {
+        // Initialize properties from config if not yet set (called via super)
+        const width = this.width || this.config.width || 2.0;
+        const height = this.height || this.config.height || 1.0;
+        const color = this.color !== undefined ? this.color : (this.config.color || 0x00aaff);
+        const opacity = this.opacity !== undefined ? this.opacity : (this.config.opacity || 0.8);
+        const padding = this.padding || this.config.padding || 0.1;
+
         // 1. Semi-transparent background panel
         // Use a PlaneGeometry with a glowing border or glass look
-        const shape = new THREE.PlaneGeometry(this.width, this.height);
+        const shape = new THREE.PlaneGeometry(width, height);
         const material = new THREE.MeshPhysicalMaterial({
-            color: this.color,
+            color: color,
             transparent: true,
-            opacity: this.opacity,
+            opacity: opacity,
             roughness: 0.1,
             metalness: 0.2,
             transmission: 0.5,
@@ -48,17 +55,17 @@ export class HaloCard3D extends BaseControl3D {
 
         // 2. Glowing border (outline)
         const edges = new THREE.EdgesGeometry(shape);
-        const lineMat = new THREE.LineBasicMaterial({ color: this.color, linewidth: 2 });
+        const lineMat = new THREE.LineBasicMaterial({ color: color, linewidth: 2 });
         this.border = new THREE.LineSegments(edges, lineMat);
         this.group.add(this.border);
 
         // 3. Content Label
         if (this.config.title) {
-            this.addTextLabel(this.config.title);
+            this.addTextLabel(this.config.title, width, height, padding);
         }
     }
 
-    addTextLabel(text) {
+    addTextLabel(text, width, height, padding) {
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
         canvas.width = 512;
@@ -75,7 +82,7 @@ export class HaloCard3D extends BaseControl3D {
 
         const texture = new THREE.CanvasTexture(canvas);
         const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
-        const geometry = new THREE.PlaneGeometry(this.width - this.padding, this.height - this.padding);
+        const geometry = new THREE.PlaneGeometry(width - padding, height - padding);
         const labelMesh = new THREE.Mesh(geometry, material);
         labelMesh.position.z = 0.01; // Slightly in front
         this.group.add(labelMesh);

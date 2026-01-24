@@ -137,6 +137,7 @@ export class HoloMap3D extends BaseControl3D {
         `;
 
         const fragmentShader = `
+            precision mediump float;
             uniform float time;
             uniform vec3 scanColor;
             uniform float scanSpeed;
@@ -203,11 +204,12 @@ export class HoloMap3D extends BaseControl3D {
         `;
 
         const fragmentShader = `
+            precision mediump float;
             uniform vec3 glowColor;
             varying vec3 vNormal;
 
             void main() {
-                float intensity = pow(0.6 - dot(vNormal, vec3(0, 0, 1.0)), 2.0);
+                float intensity = pow(max(0.0, 0.6 - dot(vNormal, vec3(0.0, 0.0, 1.0))), 2.0);
                 gl_FragColor = vec4(glowColor, intensity * 0.5);
             }
         `;
