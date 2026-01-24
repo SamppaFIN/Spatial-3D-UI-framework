@@ -185,14 +185,22 @@ export class Modal3D extends BaseControl3D {
             this.titleMesh.material.dispose();
         }
 
-        // Create title text texture
+        // Match canvas aspect ratio to plane aspect ratio (Width*0.8 / 0.5)
+        // If width=6, plane=4.8 wide, 0.5 high. Ratio 9.6.
+        // Canvas height 128 -> Width should be 128 * 9.6 = ~1228.
+        const planeWidth = this.width * 0.8;
+        const planeHeight = 0.5;
+        const aspectRatio = planeWidth / planeHeight;
+
         const canvas = document.createElement('canvas');
-        canvas.width = 512;
         canvas.height = 128;
+        // Increase width multiplier to 1.5x aspect ratio to guarantee no clipping
+        canvas.width = Math.ceil(128 * aspectRatio * 1.5);
         const ctx = canvas.getContext('2d');
 
         ctx.fillStyle = `#${this.titleColor.toString(16).padStart(6, '0')}`;
-        ctx.font = 'bold 48px Arial';
+        // Reduced font size to 36px to prevent clipping
+        ctx.font = 'bold 36px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(this.title, canvas.width / 2, canvas.height / 2);
@@ -202,7 +210,7 @@ export class Modal3D extends BaseControl3D {
         texture.minFilter = THREE.LinearFilter;
         texture.magFilter = THREE.LinearFilter;
 
-        const geometry = new THREE.PlaneGeometry(this.width * 0.8, 0.5);
+        const geometry = new THREE.PlaneGeometry(planeWidth, planeHeight);
         const material = new THREE.MeshBasicMaterial({
             map: texture,
             transparent: true,
@@ -210,7 +218,7 @@ export class Modal3D extends BaseControl3D {
         });
 
         this.titleMesh = new THREE.Mesh(geometry, material);
-        this.titleMesh.renderOrder = 10000; // Above modal
+        this.titleMesh.renderOrder = 10000;
         this.titleMesh.position.set(0, this.height / 2 - 0.5, this.depth / 2 + 0.01);
 
         this.group.add(this.titleMesh);
@@ -235,11 +243,12 @@ export class Modal3D extends BaseControl3D {
         });
 
         this.closeButtonMesh = new THREE.Mesh(geometry, material);
-        this.closeButtonMesh.renderOrder = 10000; // Above modal
+        this.closeButtonMesh.renderOrder = 10001; // Higher than title
+        // Moved Z forward significantly (0.05 -> 0.15) to prevent HTML overlay occlusion/z-fighting
         this.closeButtonMesh.position.set(
-            this.width / 2 - 0.3,
-            this.height / 2 - 0.3,
-            this.depth / 2 + 0.05
+            this.width / 2 - 0.4, // Moved slightly more inward
+            this.height / 2 - 0.4, // Moved slightly more downward
+            this.depth / 2 + 0.15
         );
         this.closeButtonMesh.castShadow = true;
         this.closeButtonMesh.userData.isCloseButton = true;
@@ -279,26 +288,35 @@ export class Modal3D extends BaseControl3D {
         contentElement.className = 'spatial-modal-content';
         contentElement.innerHTML = this.htmlContent;
 
-        // Calculate content dimensions to fit without scrollbar
+        // Calculate content dimensions to fit without scrollbar and avoid header
         // Use modal dimensions minus padding
         const padding = 0.3; // 3D units
-        const titleHeight = 0.8; // Title takes this much space
+        const titleHeight = 1.2; // Increased to 1.2 to absolutely clear the close button row
         const contentWidth = (this.width - padding * 2) * 100; // Convert to pixels
-        const contentHeight = (this.height - padding * 2 - titleHeight) * 100; // Subtract title height
+        const contentHeight = (this.height - padding - titleHeight) * 100;
 
         contentElement.style.width = `${contentWidth}px`;
-        contentElement.style.height = 'auto'; // Auto height to fit content
-        contentElement.style.maxHeight = `${contentHeight}px`; // But limit to modal size
-        contentElement.style.overflow = 'hidden'; // Hide overflow instead of scrollbar
+        contentElement.style.height = `${contentHeight}px`; // Fixed height to fill body
+        contentElement.style.overflow = 'auto'; // Allow scroll if needed
         contentElement.style.padding = '20px';
         contentElement.style.fontSize = '14px';
         contentElement.style.color = '#ffffff';
         contentElement.style.lineHeight = '1.6';
-        contentElement.style.wordWrap = 'break-word';
-        contentElement.style.overflowWrap = 'break-word';
+        contentElement.style.boxSizing = 'border-box'; // Ensure padding doesn't expand width
 
-        // Position content in modal (below title, centered)
-        const contentPosition = this.getContentPosition();
+        // Position content in modal (Shifted down to clear header)
+        // Center of content needs to be: TopEdge - TitleHeight - HalfContentHeight
+        // TopEdge = height/2. 
+        // CenterY = (height/2 - titleHeight) - (contentHeight3D / 2)
+        const contentHeight3D = this.height - padding - titleHeight;
+        const centerY = (this.height / 2 - titleHeight) - (contentHeight3D / 2);
+
+        const zOffset = this.depth / 2 + 0.02;
+        const localPos = new THREE.Vector3(0, centerY, zOffset);
+
+        // Convert to world space
+        this.group.updateMatrixWorld(true);
+        const contentPosition = localPos.applyMatrix4(this.group.matrixWorld);
         const rotation = this.group.rotation;
 
         htmlOverlay.createOverlay(this.contentOverlayId, contentElement, contentPosition, {
@@ -307,7 +325,7 @@ export class Modal3D extends BaseControl3D {
             rotation: [rotation.x, rotation.y, rotation.z],
             styles: {
                 opacity: '1',
-                transition: 'opacity 0.3s ease-in-out'
+                pointerEvents: 'auto' // Ensure content is interactive
             }
         });
 

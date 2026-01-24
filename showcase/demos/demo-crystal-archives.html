@@ -107,7 +107,8 @@
         const echo = new EchoInteraction3D(scene, camera, [0, 0, 0], {
             color: 0xcc99ff,
             sensitivity: 2.0,
-            decay: 0.95
+            decay: 0.95,
+            audioEnabled: false // Explicitly disable audio
         });
         ControlRegistry.register(echo);
 

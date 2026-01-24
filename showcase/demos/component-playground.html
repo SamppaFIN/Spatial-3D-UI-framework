@@ -247,6 +247,17 @@
         import { KineticSculpture3D } from '../../src/controls/KineticSculpture3D.js';
         import { EchoInteraction3D } from '../../src/controls/EchoInteraction3D.js';
         import { HapticHorizon3D } from '../../src/controls/HapticHorizon3D.js';
+        // NEW IMPORTS
+        import { DataVolume3D } from '../../src/controls/DataVolume3D.js';
+        import { NetworkGraph3D } from '../../src/controls/NetworkGraph3D.js';
+        import { HoloMap3D } from '../../src/controls/HoloMap3D.js';
+        import { ChronoLens3D } from '../../src/controls/ChronoLens3D.js';
+        import { FlowFieldController3D } from '../../src/controls/FlowFieldController3D.js';
+        import { GestureLoom3D } from '../../src/controls/GestureLoom3D.js';
+        import { IKManipulator3D } from '../../src/controls/IKManipulator3D.js';
+        import { LiquidStateContainer3D } from '../../src/controls/LiquidStateContainer3D.js';
+        import { SpatialScrubber3D } from '../../src/controls/SpatialScrubber3D.js';
+        import { TimeRibbon3D } from '../../src/controls/TimeRibbon3D.js';
 
         const canvas = document.getElementById('canvas');
         const scene3D = new Scene3D(canvas);
@@ -406,6 +417,12 @@
             })
         );
 
+        import { DataVolume3D } from '../../src/controls/DataVolume3D.js';
+        import { NetworkGraph3D } from '../../src/controls/NetworkGraph3D.js';
+        import { HoloMap3D } from '../../src/controls/HoloMap3D.js';
+
+        // ... existing imports ...
+
         // ===== SECTION 3: DATA VISUALIZATION =====
         // Position: X=8 to 15
         components.data.push(
@@ -420,6 +437,29 @@
                     }]
                 },
                 width: 4, height: 3,
+                mode: 0, renderer: renderer
+            })
+        );
+
+        components.data.push(
+            new DataVolume3D(scene, camera, [12, 3, 0], {
+                width: 2, height: 2, depth: 2,
+                mode: 0, renderer: renderer
+            })
+        );
+
+        components.data.push(
+            new NetworkGraph3D(scene, camera, [8, 0, 0], {
+                width: 3, height: 3,
+                nodeCount: 10,
+                mode: 0, renderer: renderer
+            })
+        );
+
+        components.data.push(
+            new HoloMap3D(scene, camera, [12, 0, 0], {
+                width: 3, height: 2,
+                mapType: 'world',
                 mode: 0, renderer: renderer
             })
         );
@@ -443,6 +483,52 @@
         components.advanced.push(
             new HapticHorizon3D(scene, camera, [24, 3, 0], {
                 width: 3, height: 2,
+                mode: 0, renderer: renderer
+            })
+        ); components.advanced.push(
+            new ChronoLens3D(scene, camera, [27, 3, 0], {
+                width: 2, height: 2,
+                mode: 0, renderer: renderer
+            })
+        );
+
+        components.advanced.push(
+            new FlowFieldController3D(scene, camera, [30, 3, 0], {
+                width: 2.5, height: 2.5,
+                mode: 0, renderer: renderer
+            })
+        );
+
+        components.advanced.push(
+            new GestureLoom3D(scene, camera, [18, 0, 0], {
+                width: 2.5, height: 2.5,
+                mode: 0, renderer: renderer
+            })
+        );
+
+        components.advanced.push(
+            new IKManipulator3D(scene, camera, [21, 0, 0], {
+                width: 2, height: 2,
+                mode: 0, renderer: renderer
+            })
+        );
+
+        components.advanced.push(
+            new LiquidStateContainer3D(scene, camera, [24, 0, 0], {
+                width: 2, height: 2,
+                mode: 0, renderer: renderer
+            })
+        );
+
+        components.advanced.push(
+            new SpatialScrubber3D(scene, camera, [27, 0, 0], {
+                mode: 0, renderer: renderer
+            })
+        );
+
+        components.advanced.push(
+            new TimeRibbon3D(scene, camera, [30, 0, 0], {
+                width: 3, height: 1,
                 mode: 0, renderer: renderer
             })
         );

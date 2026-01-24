@@ -31,6 +31,7 @@ export class SpatialControls {
         this.hoverPopDistance = 0.2; // How much it pops towards camera
 
         // Audio
+        this.enableAudio = false; // Default to false as requested
         this.audio = new AudioHaptics(camera);
 
         // State
@@ -225,7 +226,9 @@ export class SpatialControls {
                 }
 
                 // Play hover sound
-                this.audio.playHover(this.hoveredObject);
+                if (this.enableAudio) {
+                    this.audio.playHover(this.hoveredObject);
+                }
 
                 // Cursor feedback
                 this.domElement.style.cursor = 'pointer';
@@ -271,7 +274,9 @@ export class SpatialControls {
                 console.log('Clicked:', target.object);
 
                 // Audio Feedback
-                this.audio.playClick(target.object);
+                if (this.enableAudio) {
+                    this.audio.playClick(target.object);
+                }
 
                 if (this.selectedObject !== target.object) {
                     this.selectedObject = target.object;

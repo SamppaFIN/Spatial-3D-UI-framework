@@ -74,6 +74,7 @@ export class SpatialEnvironment {
 
         // 6. Controls
         this.controls = new SpatialControls(this.camera, this.renderer.domElement, this.scene);
+        this.controls.enableAudio = false; // Ensure audio is disabled globally
 
         // 7. Event Listeners
         window.addEventListener('resize', () => this.onResize());
