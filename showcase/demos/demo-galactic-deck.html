@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galactic Holo-Deck - Spatial UI 3D</title>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Exo 2', sans-serif;
+        }
+
+        #canvas {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .system-info {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            color: #00aaff;
+            background: rgba(0, 20, 40, 0.8);
+            padding: 15px;
+            border: 1px solid #005588;
+            border-radius: 8px;
+            font-size: 0.9em;
+            pointer-events: none;
+            backdrop-filter: blur(5px);
+        }
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+
+<body>
+    <div class="system-info" id="system-display">
+        System: SOL<br>
+        Sector: 001-Alpha<br>
+        Status: SCANNING...
+    </div>
+    <canvas id="canvas"></canvas>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { NetworkGraph3D } from '../../src/controls/NetworkGraph3D.js';
+        import { RadialMenu3D } from '../../src/controls/RadialMenu3D.js';
+        import { SpatialScrubber3D } from '../../src/controls/SpatialScrubber3D.js';
+        import { ControlRegistry } from '../../src/core/ControlRegistry.js';
+
+        // 1. Setup Scene
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+
+        // Deep Space
+        scene.background = new THREE.Color(0x000005);
+        scene.fog = new THREE.FogExp2(0x000005, 0.01);
+
+        // 2. Star Field (Point Cloud)
+        const starGeo = new THREE.BufferGeometry();
+        const starCount = 5000;
+        const starPos = new Float32Array(starCount * 3);
+        const starCols = new Float32Array(starCount * 3);
+        const colorPalette = [
+            new THREE.Color(0xffffff), // White
+            new THREE.Color(0xaabbff), // Blue-white
+            new THREE.Color(0xffddaa), // Yellow-white
+            new THREE.Color(0xffaa88)  // Reddish
+        ];
+
+        for (let i = 0; i < starCount; i++) {
+            const r = 20 + Math.random() * 80;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+
+            const x = r * Math.sin(phi) * Math.cos(theta);
+            const y = r * Math.sin(phi) * Math.sin(theta);
+            const z = r * Math.cos(phi);
+
+            starPos[i * 3] = x;
+            starPos[i * 3 + 1] = y * 0.2; // Disk shape
+            starPos[i * 3 + 2] = z;
+
+            const col = colorPalette[Math.floor(Math.random() * colorPalette.length)];
+            starCols[i * 3] = col.r;
+            starCols[i * 3 + 1] = col.g;
+            starCols[i * 3 + 2] = col.b;
+        }
+
+        starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        starGeo.setAttribute('color', new THREE.BufferAttribute(starCols, 3));
+
+        const starMat = new THREE.PointsMaterial({
+            vertexColors: true,
+            size: 0.2,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending
+        });
+        const starField = new THREE.Points(starGeo, starMat);
+        scene.add(starField);
+
+
+        // 3. Constellation Graph (NetworkGraph3D)
+        // We'll use this to show "Trade Routes" or links
+        const routeGraph = new NetworkGraph3D(scene, camera, [0, 0, 0], {
+            width: 50, height: 10, depth: 50,
+            nodeCount: 20, // Major systems
+            connectionThreshold: 15,
+            nodeColor: 0x00aaff,
+            lineColor: 0x005588
+        });
+        ControlRegistry.register(routeGraph);
+
+        // 4. Navigation Menu
+        const navMenu = new RadialMenu3D(scene, camera, [0, -2, -3], {
+            radius: 1.5,
+            options: [
+                { label: "Sol", color: 0xffff00, action: () => jumpTo("Sol") },
+                { label: "Alpha Centauri", color: 0xffaa00, action: () => jumpTo("Alpha Centauri") },
+                { label: "Sirius", color: 0xaaffff, action: () => jumpTo("Sirius") },
+                { label: "Vega", color: 0xffffff, action: () => jumpTo("Vega") },
+                { label: "Betelgeuse", color: 0xff0000, action: () => jumpTo("Betelgeuse") }
+            ]
+        });
+        ControlRegistry.register(navMenu);
+
+        // 5. Timeline Scrubber (Evolution)
+        const timeline = new SpatialScrubber3D(scene, camera, [0, 3, -4], {
+            width: 8,
+            label: "Time Prediction (Years)",
+            min: 2025, max: 3000, value: 2500,
+            color: 0x00aaff
+        });
+        ControlRegistry.register(timeline);
+
+        // 6. Logic
+        function jumpTo(systemName) {
+            console.log("Warping to " + systemName);
+            document.getElementById('system-display').innerHTML = `
+                System: ${systemName.toUpperCase()}<br>
+                Sector: Calculating...<br>
+                Status: ARRIVED
+            `;
+
+            // Warp effect (stretch stars)
+            warpSpeed();
+        }
+
+        let warping = false;
+        function warpSpeed() {
+            if (warping) return;
+            warping = true;
+
+            // Temporary stretch logic in update
+            setTimeout(() => { warping = false; }, 2000);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Rotate galaxy slowly
+            starField.rotation.y += 0.0002;
+            routeGraph.getGroup().rotation.y += 0.0002;
+
+            // Warp effect
+            if (warping) {
+                camera.fov += 1; // Widen FOV
+                if (camera.fov > 120) camera.fov = 120;
+            } else {
+                camera.fov += (75 - camera.fov) * 0.05; // Return to normal
+            }
+            camera.updateProjectionMatrix();
+
+            // Update controls
+            routeGraph.update();
+            navMenu.update();
+            timeline.update();
+
+            // Timeline effect: Scale universe based on year?
+            const year = timeline.getValue();
+            const scale = 1.0 + (year - 2025) * 0.0005;
+            starField.scale.setScalar(scale);
+
+            scene3D.render();
+        }
+        animate();
+
+    </script>
+</body>
+
+</html>

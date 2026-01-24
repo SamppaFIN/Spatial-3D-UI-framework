@@ -538,38 +538,10 @@
         const settingsButton = ButtonFactory.enhanceButton(settingsBtnMesh, settingsBtnConfig, scene);
         window.settingsButton = settingsButton;
 
-        // Add Label
-        const settingsLabel = new TextDisplay3D(scene, camera, [SETTINGS_X, -3, SETTINGS_Z + 0.2], {
-            content: "Device Settings",
-            width: 2.5,
-            height: 0.8,
-            mode: 0,
-            renderer: renderer,
-            // Make text display transparent/no background so it looks like label on button? 
-            // Or just place it in front.
-        });
-        // TextDisplay3D usually has a background.
-        // Let's just use it as a label above or below?
-        // In the original code it was inside Button3D.
-        // ButtonFactory doesn't support text.
-        // I'll place the TextDisplay3D slightly offset.
+        // Manual label removed as Button3D handles it now.
 
-        // Add manual raycasting for Factory buttons
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-
-        window.addEventListener('click', (event) => {
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-            raycaster.setFromCamera(mouse, camera);
-
-            if (window.settingsButton) {
-                const intersects = raycaster.intersectObject(window.settingsButton.mesh);
-                if (intersects.length > 0) {
-                    window.settingsButton.onClick();
-                }
-            }
-        });
+        // Add manual raycasting for Factory buttons - REMOVED, using ControlRegistry
+        // (Note: standard controls are updated via ControlRegistry loop below)
 
         // Edit Mode Toggle
         const editModeToggle = new Toggle3D(scene, camera, [0, -3.5, ENERGY_Z], {
@@ -654,10 +626,7 @@
                 }
             });
 
-            // Update Factory Buttons
-            if (window.settingsButton && window.settingsButton.update) {
-                window.settingsButton.update();
-            }
+            // Update Factory Buttons - REMOVED (Handled by ControlRegistry)
 
             if (ControlRegistry.getEditMode()) {
                 ControlRegistry.getAll().forEach(control => {

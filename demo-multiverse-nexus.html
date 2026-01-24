@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Spatial UI 3D - Multiverse Nexus</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            color: #fff;
+            font-family: monospace;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #ui-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        h1 {
+            color: #0f0;
+            text-shadow: 0 0 10px #0f0;
+            margin: 0;
+            font-size: 2em;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="ui-overlay">
+        <h1>MULTIVERSE NEXUS 👁️</h1>
+        <p>Dimensional Lens Active.<br>Reality Stream: STABLE<br>Alt-Timeline: WIREFRAME DETECTED</p>
+    </div>
+    <canvas id="canvas"></canvas>
+
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+        import Scene3D from './src/core/Scene3D.js';
+        import { ChronoLens3D } from './src/controls/ChronoLens3D.js';
+
+        const canvas = document.querySelector('#canvas');
+
+        // Correct initialization
+        const scene3D = new Scene3D(canvas);
+        const renderer = scene3D.getRenderer();
+
+        // Environment
+        scene3D.scene.background = new THREE.Color(0x000000); // Deep Space
+
+        // Stars
+        const starGeo = new THREE.BufferGeometry();
+        const starCount = 5000;
+        const starPos = new Float32Array(starCount * 3);
+        for (let i = 0; i < starCount * 3; i++) starPos[i] = (Math.random() - 0.5) * 100;
+        starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.1 });
+        const stars = new THREE.Points(starGeo, starMat);
+        scene3D.scene.add(stars);
+
+        // Lighting
+        const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+        scene3D.scene.add(ambient);
+        const sun = new THREE.DirectionalLight(0xffffff, 1);
+        sun.position.set(5, 5, 5);
+        scene3D.scene.add(sun);
+
+        // Central Lens
+        const lens = new ChronoLens3D(scene3D.scene, scene3D.camera, [0, 0, 0], {
+            width: 4,
+            height: 2.5,
+            renderer: renderer // Pass renderer explicitly
+        });
+        scene3D.add(lens.group);
+
+        // Surrounding Objects
+        const objectGroup = new THREE.Group();
+        scene3D.add(objectGroup);
+
+        const geoms = [
+            new THREE.BoxGeometry(1, 1, 1),
+            new THREE.SphereGeometry(0.6, 16, 16),
+            new THREE.TorusKnotGeometry(0.4, 0.15, 64, 8)
+        ];
+
+        for (let i = 0; i < 8; i++) {
+            const mat = new THREE.MeshStandardMaterial({
+                color: Math.random() * 0xffffff,
+                metalness: 0.8,
+                roughness: 0.2
+            });
+            const mesh = new THREE.Mesh(geoms[i % 3], mat);
+
+            const angle = (i / 8) * Math.PI * 2;
+            const radius = 3.5;
+            mesh.position.set(Math.cos(angle) * radius, (Math.random() - 0.5) * 2, Math.sin(angle) * radius);
+
+            objectGroup.add(mesh);
+        }
+
+        // Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Rotate objects
+            objectGroup.rotation.y += 0.005;
+            objectGroup.children.forEach((child, i) => {
+                child.rotation.x += 0.01;
+                child.rotation.z += 0.01;
+            });
+
+            // Update Lens (Renders internal target)
+            lens.update();
+
+            // Standard Render
+            scene3D.render();
+        }
+        animate();
+
+    </script>
+</body>
+
+</html>

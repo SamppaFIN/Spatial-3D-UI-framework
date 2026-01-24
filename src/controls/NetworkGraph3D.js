@@ -27,8 +27,13 @@ export class NetworkGraph3D extends BaseControl3D {
         const finalConfig = { ...defaults, ...config };
         super(scene, camera, position, finalConfig);
 
-        this.nodes = finalConfig.nodes;
-        this.links = finalConfig.links;
+        this.nodes = finalConfig.nodes || [];
+        this.links = finalConfig.links || [];
+
+        // Handle automatic generation if nodes are missing but nodeCount is provided
+        if (this.nodes.length === 0 && finalConfig.nodeCount) {
+            this.generateRandomGraph(finalConfig.nodeCount, finalConfig.connectionThreshold || 20);
+        }
 
         // Physics parameters
         this.repulsion = finalConfig.repulsion;
@@ -96,11 +101,12 @@ export class NetworkGraph3D extends BaseControl3D {
 
     createNodes() {
         const geometry = new THREE.SphereGeometry(1, 16, 16);
-        // Use MeshBasicMaterial or Emissive for "Glow" effect that doesn't depend on light
+        // Use MeshPhongMaterial or Emissive for "Glow" effect
+        const nodeColor = this.config.nodeColor || this.config.color || 0x00ffff;
         const material = new THREE.MeshPhongMaterial({
-            color: this.config.nodeColor,
-            emissive: this.config.nodeColor,
-            emissiveIntensity: 2.0, // SUPER BRIGHT
+            color: nodeColor,
+            emissive: nodeColor,
+            emissiveIntensity: 2.0,
             shininess: 100
         });
 
@@ -119,11 +125,12 @@ export class NetworkGraph3D extends BaseControl3D {
 
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
+        const linkColor = this.config.linkColor || this.config.lineColor || 0xff00aa;
         const material = new THREE.LineBasicMaterial({
-            color: this.config.linkColor,
+            color: linkColor,
             transparent: true,
-            opacity: 0.6, // Higher opacity
-            blending: THREE.AdditiveBlending // Glow blend
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending
         });
 
         this.linkMesh = new THREE.LineSegments(geometry, material);
@@ -218,10 +225,13 @@ export class NetworkGraph3D extends BaseControl3D {
     }
 
     updateNodeVisuals() {
+        if (!this.nodeMesh) return;
         const dummy = new THREE.Object3D();
 
         this.nodes.forEach((node, i) => {
             const pos = this.nodePositions[i];
+            if (!pos) return;
+
             dummy.position.copy(pos);
 
             // Size based on value or default
@@ -232,16 +242,21 @@ export class NetworkGraph3D extends BaseControl3D {
             this.nodeMesh.setMatrixAt(i, dummy.matrix);
         });
 
-        this.nodeMesh.instanceMatrix.needsUpdate = true;
+        if (this.nodeMesh && this.nodeMesh.instanceMatrix) {
+            this.nodeMesh.instanceMatrix.needsUpdate = true;
+        }
     }
 
     updateLinkVisuals() {
+        if (!this.linkMesh) return;
         const positions = this.linkMesh.geometry.attributes.position.array;
 
         let idx = 0;
         this.processedLinks.forEach(link => {
             const s = this.nodePositions[link.source];
             const t = this.nodePositions[link.target];
+
+            if (!s || !t) return;
 
             positions[idx++] = s.x;
             positions[idx++] = s.y;
@@ -256,6 +271,40 @@ export class NetworkGraph3D extends BaseControl3D {
 
         // Update bounding sphere for culling
         this.linkMesh.geometry.computeBoundingSphere();
+    }
+
+    /**
+     * Generates a random set of nodes and connects them based on distance.
+     */
+    generateRandomGraph(count, threshold) {
+        this.nodes = [];
+        this.links = [];
+
+        for (let i = 0; i < count; i++) {
+            this.nodes.push({
+                id: `node_${i}`,
+                val: 0.5 + Math.random() * 1.0
+            });
+        }
+
+        // Potential links (simple proximity-based generation if no links provided)
+        // This is just to have something visible in demos that only provide nodeCount
+        const tempPositions = this.nodes.map(() => new THREE.Vector3(
+            (Math.random() - 0.5) * 40,
+            (Math.random() - 0.5) * 40,
+            (Math.random() - 0.5) * 40
+        ));
+
+        for (let i = 0; i < count; i++) {
+            for (let j = i + 1; j < count; j++) {
+                if (tempPositions[i].distanceTo(tempPositions[j]) < threshold) {
+                    this.links.push({
+                        source: this.nodes[i].id,
+                        target: this.nodes[j].id
+                    });
+                }
+            }
+        }
     }
 
     // Add interaction methods later (raycasting InstancedMesh is tricky)

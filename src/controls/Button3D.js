@@ -1029,4 +1029,104 @@ export class Button3D extends BaseControl3D {
             this.createGlow();
         }
     }
+    get2DContent() {
+        const container = document.createElement('div');
+
+        // Header
+        const header = document.createElement('div');
+        header.style.textAlign = 'center';
+        header.style.marginBottom = '20px';
+
+        // Preview Button
+        const previewBtn = document.createElement('button');
+        previewBtn.innerText = (this.icon ? this.icon + ' ' : '') + this.label;
+        const colorHex = '#' + (this.color || 0x4ecdc4).toString(16).padStart(6, '0');
+        previewBtn.style.background = `linear-gradient(135deg, ${colorHex}, #2c3e50)`;
+        previewBtn.style.border = 'none';
+        previewBtn.style.padding = '12px 24px';
+        previewBtn.style.borderRadius = '8px';
+        previewBtn.style.color = 'white';
+        previewBtn.style.fontWeight = 'bold';
+        previewBtn.style.fontSize = '1.2em';
+        previewBtn.style.cursor = 'pointer';
+        previewBtn.style.boxShadow = '0 4px 15px rgba(0,0,0,0.4)';
+        previewBtn.onclick = () => {
+            // Visual feedback
+            previewBtn.style.transform = 'scale(0.95)';
+            setTimeout(() => previewBtn.style.transform = 'scale(1)', 100);
+            // Trigger actual button interaction
+            this.handleClick();
+        };
+        header.appendChild(previewBtn);
+        container.appendChild(header);
+
+        // Settings Form
+        const settings = document.createElement('div');
+        settings.style.background = 'rgba(255,255,255,0.05)';
+        settings.style.padding = '15px';
+        settings.style.borderRadius = '8px';
+
+        const createInput = (label, type, value, onChange) => {
+            const wrapper = document.createElement('div');
+            wrapper.style.marginBottom = '10px';
+            wrapper.style.display = 'flex';
+            wrapper.style.justifyContent = 'space-between';
+            wrapper.style.alignItems = 'center';
+
+            const lbl = document.createElement('label');
+            lbl.innerText = label;
+            lbl.style.color = '#ccc';
+            lbl.style.fontSize = '0.9em';
+
+            const input = document.createElement('input');
+            input.type = type;
+            if (type === 'checkbox') input.checked = value;
+            else input.value = value;
+
+            input.style.background = 'rgba(0,0,0,0.3)';
+            input.style.border = '1px solid #444';
+            input.style.color = 'white';
+            input.style.padding = '5px';
+            input.style.borderRadius = '4px';
+
+            input.onchange = (e) => onChange(type === 'checkbox' ? e.target.checked : e.target.value);
+            if (type !== 'color') {
+                input.oninput = (e) => onChange(type === 'checkbox' ? e.target.checked : e.target.value);
+            }
+
+            wrapper.appendChild(lbl);
+            wrapper.appendChild(input);
+            return wrapper;
+        };
+
+        // Label Input
+        settings.appendChild(createInput('Label', 'text', this.label, (val) => {
+            this.setLabel(val);
+            previewBtn.innerText = (this.icon ? this.icon + ' ' : '') + val;
+        }));
+
+        // Color Input
+        settings.appendChild(createInput('Color', 'color', colorHex, (val) => {
+            const colorInt = parseInt(val.replace('#', ''), 16);
+            this.color = colorInt;
+            this.currentColor = colorInt;
+            this.isRed = (colorInt >> 16 & 255) > 100; // Rough heuristic for gradient
+
+            this.createGradientTexture();
+            if (this.mesh && this.mesh.material) {
+                this.mesh.material.map = this.gradientTexture;
+                this.mesh.material.emissive.setHex(colorInt);
+            }
+            previewBtn.style.background = `linear-gradient(135deg, ${val}, #2c3e50)`;
+        }));
+
+        // Icon Input
+        settings.appendChild(createInput('Icon', 'text', this.icon || '', (val) => {
+            this.setIcon(val);
+            previewBtn.innerText = (val ? val + ' ' : '') + this.label;
+        }));
+
+        container.appendChild(settings);
+        return container;
+    }
 }

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polish Playground - Geometry & Material Test</title>
+    <style>
+        body {
+            margin: 0;
+            background: #000;
+            color: #fff;
+            font-family: sans-serif;
+            overflow: hidden;
+        }
+
+        #canvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+
+        .hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+        }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <div class="hud">
+        <h1>Polish Playground</h1>
+        <p>Testing GeometryFactory & MaterialFactory</p>
+    </div>
+    <canvas id="canvas"></canvas>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { Scene3D } from './src/core/Scene3D.js';
+        import { GeometryFactory } from './src/utils/GeometryFactory.js';
+        import { MaterialFactory } from './src/utils/MaterialFactory.js';
+
+        // Setup
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas, { antialias: true, alpha: true });
+        const { scene, camera, renderer } = scene3D;
+
+        // Move camera back
+        camera.position.set(0, 0, 15);
+
+        // Lighting
+        const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambient);
+        const dir = new THREE.DirectionalLight(0xffffff, 2);
+        dir.position.set(5, 5, 5);
+        scene.add(dir);
+        const blueLight = new THREE.PointLight(0x0088ff, 2, 20);
+        blueLight.position.set(-5, 0, 5);
+        scene.add(blueLight);
+
+        // Grid of Shapes
+        const shapes = ['box', 'rounded', 'pill', 'circle', 'hexagon', 'cylinder', 'ring'];
+        const materials = ['standard', 'glass', 'neon', 'matte', 'metal', 'wireframe'];
+
+        shapes.forEach((shapeType, x) => {
+            materials.forEach((matType, y) => {
+
+                // Create Geo
+                const geo = GeometryFactory.create(shapeType, {
+                    width: 1.5, height: 1.5, depth: 0.5, radius: 0.2
+                });
+
+                // Create Mat
+                const color = new THREE.Color().setHSL(x / shapes.length, 0.8, 0.5);
+                const mat = MaterialFactory.create(matType, {
+                    color: color,
+                    opacity: 0.8,
+                    roughness: 0.2
+                });
+
+                const mesh = new THREE.Mesh(geo, mat);
+
+                // Position
+                const spacing = 2.5;
+                const xOffset = (shapes.length * spacing) / 2;
+                const yOffset = (materials.length * spacing) / 2;
+
+                mesh.position.set(
+                    (x * spacing) - xOffset + 1,
+                    (y * spacing) - yOffset + 1,
+                    0
+                );
+
+                scene.add(mesh);
+
+                // Add label
+                // (Skip for cleanliness of code, visual check is enough)
+            });
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            scene.traverse(obj => {
+                if (obj.isMesh) {
+                    obj.rotation.x += 0.005;
+                    obj.rotation.y += 0.005;
+                }
+            });
+            scene3D.render();
+        }
+        animate();
+
+    </script>
+</body>
+
+</html>

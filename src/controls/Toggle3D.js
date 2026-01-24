@@ -1,4 +1,6 @@
 import { BaseControl3D } from '../core/BaseControl3D.js';
+import { GeometryFactory } from '../utils/GeometryFactory.js';
+import { MaterialFactory } from '../utils/MaterialFactory.js';
 import * as THREE from 'three';
 
 export class Toggle3D extends BaseControl3D {
@@ -12,108 +14,212 @@ export class Toggle3D extends BaseControl3D {
         // Toggle-specific properties
         this.label = config.label || 'Toggle';
         this.width = config.width || 2.0;
-        this.height = config.height || 0.6;
-        this.depth = config.depth || 0.15;
+        this.height = config.height || 0.8; // Slightly thicker default
+        this.depth = config.depth || 0.2;
 
-        // Mode system: 3 different shapes
-        this.mode = config.mode || 0;
-        this.modes = ['box', 'sphere', 'sacred'];
+        // Visual Configuration
+        this.trackShape = config.trackShape || 'pill'; // pill, box, rounded, hexagon
+        this.trackMaterialType = config.trackMaterialType || 'standard'; // standard, glass, metal, neon
 
-        // NEW: Multi-state support
-        this.states = config.states || ['off', 'on']; // Can have 2+ states
-        this.currentStateIndex = config.currentStateIndex || (config.isOn ? 1 : 0);
-        this.stateColors = config.stateColors || [0x666666, 0x3366ff]; // Colors for each state
-        this.stateIcons = config.stateIcons || null; // Optional icons for each state
+        this.handleShape = config.handleShape || 'sphere'; // sphere, box, sacred, hexagon
+        this.handleMaterialType = config.handleMaterialType || 'standard'; // standard, neon, matte
 
-        // Backward compatibility
-        this.isOn = this.currentStateIndex > 0;
-        this.onColor = config.onColor || this.stateColors[1] || 0x3366ff;
-        this.offColor = config.offColor || this.stateColors[0] || 0x666666;
-        this.currentColor = this.stateColors[this.currentStateIndex] || this.offColor;
+        // State System
+        this.isOn = config.isOn || false;
+        this.onColor = config.onColor || 0x3366ff;
+        this.offColor = config.offColor || 0x444444;
 
-        // NEW: Track shape options
-        this.trackShape = config.trackShape || 'pill'; // 'pill', 'circle', 'square', 'box'
+        // Animation
+        this.animationPreset = config.animationPreset || 'spring'; // slide, bounce, fade, spring
 
-        // NEW: Animation presets
-        this.animationPreset = config.animationPreset || 'slide'; // 'slide', 'bounce', 'fade'
-        this.bounceIntensity = config.bounceIntensity || 0.2;
+        // Spring Physics properties
+        this.velocity = 0;
+        this.tension = config.tension || 0.15; // Rigidity
+        this.friction = config.friction || 0.85; // Damping
 
-        // Animation properties
-        this.animationSpeed = 0.15;
-        this.targetScale = 1.0;
+        this.handlePosition = this.isOn ? 1.0 : -1.0;
+        this.currentHandlePosition = this.handlePosition;
+
+        // Interactions
         this.currentScale = 1.0;
+        this.targetScale = 1.0;
+        this.scaleVelocity = 0; // Scale spring
         this.hoverScale = 1.05;
 
-        // Toggle handle animation
-        this.handlePosition = this.isOn ? 1.0 : -1.0;
-        this.targetHandlePosition = this.handlePosition;
-        this.handleVelocity = 0; // For bounce animation
-
         if (this.group) {
+            // Clean up existing children if rebuilding
             while (this.group.children.length > 0) {
-                this.group.remove(this.group.children[0]);
+                const child = this.group.children[0];
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) child.material.dispose();
+                this.group.remove(child);
             }
             this.create();
         }
     }
 
     create() {
-        if (!this.modes || this.mode === undefined) {
-            return;
-        }
-
-        this.createGradientTexture();
+        if (!this.trackShape) return; // Guard: Wait for full initialization
         this.createTrack();
         this.createHandle();
-        if (this.stateIcons) {
-            this.createStateIcon();
-        }
+        this.createIcon(); // Ensure this is called
         this.createLabel();
         this.createGlow();
-        this.updateVisualState();
+        this.updateVisualState(true); // Force initial update
+    }
+
+    createIcon() {
+        if (this.iconMesh) {
+            // If it exists, remove it from parent (handleMesh)
+            if (this.iconMesh.parent) this.iconMesh.parent.remove(this.iconMesh);
+            if (this.iconMesh.geometry) this.iconMesh.geometry.dispose();
+            if (this.iconMesh.material) this.iconMesh.material.dispose();
+            this.iconMesh = null;
+        }
+
+        if (!this.config.icon || this.config.icon === 'none') return;
+
+        // Simple Geometric Icons or Textures
+        // For portability, let's use CanvasTexture for icons
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 128;
+        canvas.height = 128;
+
+        // Clear configuration
+        ctx.clearRect(0, 0, 128, 128);
+
+        ctx.strokeStyle = this.isOn ? '#333' : '#fff'; // Dark icon on bright handle (if on) or vice versa?
+        // Actually handle is white when ON usually, and gray when OFF. 
+        // Let's adapt based on handle color logic:
+        // Handle ON = White/Color, Handle OFF = Gray
+        // Better contrast:
+        ctx.fillStyle = this.isOn ? this.config.onColor : '#fff'; // Use color for icon? Or interaction?
+
+        ctx.strokeStyle = this.isOn ? '#ff0000' : '#ffffff'; // Debug colors
+        ctx.lineWidth = 14;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        const cx = 64;
+        const cy = 64;
+
+        if (this.config.icon === 'power') {
+            // Power Symbol
+            ctx.strokeStyle = this.isOn ? '#333' : '#fff';
+            ctx.beginPath();
+            ctx.arc(cx, cy, 35, -Math.PI * 0.25, Math.PI * 1.25);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - 35);
+            ctx.lineTo(cx, cy);
+            ctx.stroke();
+        } else if (this.config.icon === 'sun') {
+            if (this.isOn) {
+                // Moon
+                ctx.fillStyle = '#333';
+                ctx.beginPath();
+                ctx.arc(cx, cy, 30, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.beginPath();
+                ctx.arc(cx + 15, cy - 10, 25, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                // Sun
+                ctx.fillStyle = '#ffdb4d'; // Sun color
+                ctx.beginPath();
+                ctx.arc(cx, cy, 18, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#ffdb4d';
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI * 2;
+                    const r1 = 28; const r2 = 40;
+                    ctx.beginPath();
+                    ctx.moveTo(cx + Math.cos(angle) * r1, cy + Math.sin(angle) * r1);
+                    ctx.lineTo(cx + Math.cos(angle) * r2, cy + Math.sin(angle) * r2);
+                    ctx.stroke();
+                }
+            }
+        } else if (this.config.icon === 'check') {
+            if (this.isOn) {
+                // Check
+                ctx.strokeStyle = '#22cc22';
+                ctx.beginPath();
+                ctx.moveTo(34, 64);
+                ctx.lineTo(54, 84);
+                ctx.lineTo(94, 44);
+                ctx.stroke();
+            } else {
+                // X
+                ctx.strokeStyle = '#cc2222';
+                ctx.beginPath();
+                ctx.moveTo(40, 40);
+                ctx.lineTo(88, 88);
+                ctx.moveTo(88, 40);
+                ctx.lineTo(40, 88);
+                ctx.stroke();
+            }
+        }
+
+        const tex = new THREE.CanvasTexture(canvas);
+        const mat = new THREE.MeshBasicMaterial({
+            map: tex,
+            transparent: true,
+            side: THREE.DoubleSide
+        });
+
+        // Icon size relative to handle
+        const iconSize = this.height * 0.6;
+        const geo = new THREE.PlaneGeometry(iconSize, iconSize);
+
+        this.iconMesh = new THREE.Mesh(geo, mat);
+
+        // Z-Positioning is critical!
+        // Handle size z is 'this.depth + size/2'? No, handle is 3D object.
+        // If handle is sphere, radius = height*0.4.
+        // If handle is box, depth = size.
+
+        const handleR = this.height * 0.4;
+        let zOffset = handleR + 0.02; // Just outside sphere radius
+
+        if (this.handleShape === 'box' || this.handleShape === 'cylinder') {
+            zOffset = (this.height * 0.8) / 2 + 0.02; // Box half-depth
+        }
+
+        this.iconMesh.position.z = zOffset;
+
+        // Add to handle so it moves/rotates with it
+        this.handleMesh.add(this.iconMesh);
     }
 
     createTrack() {
-        if (this.trackMesh) {
-            this.group.remove(this.trackMesh);
-            this.trackMesh.geometry.dispose();
-            this.trackMesh.material.dispose();
-        }
+        // 1. Geometry
+        // Adjust geometry dimensions based on shape to fit bounding box
+        let geoOptions = { width: this.width, height: this.height, depth: this.depth, radius: this.height / 2 };
 
-        let geometry;
+        // Special case: GeometryFactory pill/capsule logic might differ
+        // For 'pill', GeometryFactory expects width/height.
+        const geometry = GeometryFactory.create(this.trackShape, geoOptions);
 
-        // Create geometry based on trackShape
-        switch (this.trackShape) {
-            case 'pill':
-                // Rounded pill shape (capsule)
-                geometry = new THREE.CapsuleGeometry(this.height / 2, this.width - this.height, 16, 8);
-                // Rotate to horizontal
-                geometry.rotateZ(Math.PI / 2);
-                break;
-            case 'circle':
-                // Circular track
-                geometry = new THREE.TorusGeometry(this.height / 2, this.height / 4, 16, 32);
-                break;
-            case 'square':
-                // Square with sharp corners
-                geometry = new THREE.BoxGeometry(this.width, this.height, this.depth, 1, 1, 1);
-                break;
-            case 'box':
-            default:
-                // Default box shape
-                geometry = new THREE.BoxGeometry(this.width, this.height, this.depth, 1, 1, 1);
-                break;
-        }
-
-        const material = new THREE.MeshStandardMaterial({
-            map: this.gradientTexture,
-            color: 0xffffff,
-            metalness: 0.3,
+        // 2. Material
+        let matOptions = {
+            color: this.offColor,
             roughness: 0.4,
-            emissive: this.currentColor,
-            emissiveIntensity: 0.2,
-            emissiveMap: this.gradientTexture
-        });
+            metalness: 0.2
+        };
+
+        if (this.trackMaterialType === 'glass') {
+            matOptions = {
+                color: this.offColor,
+                transmission: 0.95,
+                opacity: 0.3,
+                roughness: 0.1,
+                thickness: 0.5
+            };
+        }
+
+        const material = MaterialFactory.create(this.trackMaterialType, matOptions);
 
         this.trackMesh = new THREE.Mesh(geometry, material);
         this.trackMesh.castShadow = true;
@@ -121,346 +227,154 @@ export class Toggle3D extends BaseControl3D {
         this.trackMesh.userData.isInteractive = true;
         this.trackMesh.userData.control = this;
 
+        // If pill/capsule from GeometryFactory creates flat shape, we might need rotation?
+        // GeometryFactory 'pill' is extruded, so it has depth. Should be fine.
+
         this.group.add(this.trackMesh);
     }
 
     createHandle() {
-        if (this.handleMesh) {
-            this.group.remove(this.handleMesh);
-            this.handleMesh.geometry.dispose();
-            this.handleMesh.material.dispose();
-        }
+        const size = this.height * 0.8; // Handle slightly smaller than track height
 
-        const handleWidth = this.height * 0.8;
-        const handleHeight = this.height * 0.8;
-        const handleDepth = this.depth * 1.2;
+        // 1. Geometry
+        let geoOptions = { width: size, height: size, depth: size, radius: size / 2 };
+        const geometry = GeometryFactory.create(this.handleShape, geoOptions);
 
-        let handleGeometry;
-        switch (this.modes[this.mode]) {
-            case 'box':
-                handleGeometry = new THREE.BoxGeometry(handleWidth, handleHeight, handleDepth, 1, 1, 1);
-                break;
-            case 'sphere':
-                handleGeometry = new THREE.SphereGeometry(handleHeight / 2, 16, 16);
-                break;
-            case 'sacred':
-                handleGeometry = new THREE.OctahedronGeometry(handleHeight / 2, 0);
-                break;
-        }
-
-        const handleColor = this.isOn ? 0xffffff : 0xcccccc;
-        const handleMaterial = new THREE.MeshStandardMaterial({
-            color: handleColor,
-            metalness: 0.6,
-            roughness: 0.2,
-            emissive: this.isOn ? 0x88aaff : 0x444444,
-            emissiveIntensity: this.isOn ? 0.5 : 0.1
+        // 2. Material
+        const material = MaterialFactory.create(this.handleMaterialType, {
+            color: this.isOn ? 0xffffff : 0xaaaaaa, // Handle is usually whiteish or colored
+            emissive: this.isOn ? this.onColor : 0x000000,
+            intensity: this.isOn ? 0.5 : 0.0,
+            roughness: 0.2
         });
 
-        this.handleMesh = new THREE.Mesh(handleGeometry, handleMaterial);
+        this.handleMesh = new THREE.Mesh(geometry, material);
+        this.handleMesh.position.z = this.depth / 2 + size / 2; // Sit on top/center
         this.handleMesh.castShadow = true;
         this.handleMesh.receiveShadow = true;
         this.handleMesh.userData.isInteractive = true;
         this.handleMesh.userData.control = this;
 
-        const trackWidth = this.width;
-        const handleX = (this.handlePosition * (trackWidth / 2 - handleWidth / 2));
-        this.handleMesh.position.set(handleX, 0, this.depth / 2 + handleDepth / 2);
-
         this.group.add(this.handleMesh);
     }
 
-    createGradientTexture() {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const resolution = 512;
-        canvas.width = resolution;
-        canvas.height = resolution;
-
-        const pixelRatio = Math.min(window.devicePixelRatio, 2);
-        const scaledResolution = resolution * pixelRatio;
-        canvas.width = scaledResolution;
-        canvas.height = scaledResolution;
-        ctx.scale(pixelRatio, pixelRatio);
-
-        const gradient = ctx.createLinearGradient(0, 0, resolution, resolution);
-        const color1 = this.isOn ? '#3366ff' : '#666666';
-        const color2 = this.isOn ? '#0044cc' : '#444444';
-        gradient.addColorStop(0, color1);
-        gradient.addColorStop(0.5, color2);
-        gradient.addColorStop(1, color1);
-
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, resolution, resolution);
-
-        ctx.globalCompositeOperation = 'overlay';
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-        for (let i = 0; i < 15; i++) {
-            ctx.fillRect(
-                Math.random() * resolution,
-                Math.random() * resolution,
-                2, 2
-            );
-        }
-
-        this.gradientTexture = new THREE.CanvasTexture(canvas);
-        this.gradientTexture.needsUpdate = true;
-        this.gradientTexture.minFilter = THREE.LinearMipmapLinearFilter;
-        this.gradientTexture.magFilter = THREE.LinearFilter;
-        this.gradientTexture.generateMipmaps = true;
-    }
-
     createLabel() {
-        if (this.labelMesh) {
-            this.group.remove(this.labelMesh);
-            this.labelMesh.geometry.dispose();
-            this.labelMesh.material.dispose();
-        }
-
+        // Simple text label below
+        // ... (Simplified version of previous implementation)
+        // Ideally use TextDisplay3D but for self-contained control, keep simple canvas
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        const resolution = 512;
-        canvas.width = resolution;
-        canvas.height = resolution;
+        canvas.width = 512;
+        canvas.height = 128;
 
-        const pixelRatio = Math.min(window.devicePixelRatio, 2);
-        const scaledResolution = resolution * pixelRatio;
-        canvas.width = scaledResolution;
-        canvas.height = scaledResolution;
-        ctx.scale(pixelRatio, pixelRatio);
-
-        ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
-        ctx.shadowBlur = 15;
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = `bold ${resolution * 0.1}px Arial, sans-serif`;
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 60px Inter, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(this.label, resolution / 2, resolution / 2);
+        ctx.fillText(this.label, 256, 64);
 
-        const texture = new THREE.CanvasTexture(canvas);
-        texture.needsUpdate = true;
-        texture.minFilter = THREE.LinearMipmapLinearFilter;
-        texture.magFilter = THREE.LinearFilter;
-        texture.generateMipmaps = true;
-
-        const labelGeometry = new THREE.PlaneGeometry(
-            this.width * 0.6,
-            this.height * 0.3
-        );
-        const labelMaterial = new THREE.MeshBasicMaterial({
-            map: texture,
-            transparent: true,
-            alphaTest: 0.1
-        });
-
-        this.labelMesh = new THREE.Mesh(labelGeometry, labelMaterial);
-        this.labelMesh.position.set(0, -this.height / 2 - 0.2, this.depth / 2 + 0.02);
-        this.labelMesh.renderOrder = 10;
-
+        const tex = new THREE.CanvasTexture(canvas);
+        const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true });
+        const geo = new THREE.PlaneGeometry(2, 0.5);
+        this.labelMesh = new THREE.Mesh(geo, mat);
+        this.labelMesh.position.y = -this.height - 0.2;
         this.group.add(this.labelMesh);
     }
 
-    createStateIcon() {
-        // Remove old icon if exists
-        if (this.stateIconMesh) {
-            this.group.remove(this.stateIconMesh);
-            this.stateIconMesh.geometry.dispose();
-            this.stateIconMesh.material.dispose();
-        }
-
-        if (!this.stateIcons || !this.stateIcons[this.currentStateIndex]) return;
-
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const resolution = 128;
-        canvas.width = resolution;
-        canvas.height = resolution;
-
-        const pixelRatio = Math.min(window.devicePixelRatio, 2);
-        const scaledResolution = resolution * pixelRatio;
-        canvas.width = scaledResolution;
-        canvas.height = scaledResolution;
-        ctx.scale(pixelRatio, pixelRatio);
-
-        // Draw current state icon
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = `bold ${resolution * 0.5}px Arial`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(this.stateIcons[this.currentStateIndex], resolution / 2, resolution / 2);
-
-        const texture = new THREE.CanvasTexture(canvas);
-        texture.needsUpdate = true;
-        texture.minFilter = THREE.LinearMipmapLinearFilter;
-        texture.magFilter = THREE.LinearFilter;
-        texture.generateMipmaps = true;
-
-        const iconSize = this.height * 0.5;
-        const iconGeometry = new THREE.PlaneGeometry(iconSize, iconSize);
-        const iconMaterial = new THREE.MeshBasicMaterial({
-            map: texture,
-            transparent: true,
-            alphaTest: 0.1
-        });
-
-        this.stateIconMesh = new THREE.Mesh(iconGeometry, iconMaterial);
-        this.stateIconMesh.position.set(0, 0, this.depth / 2 + 0.03);
-        this.stateIconMesh.renderOrder = 15;
-        this.group.add(this.stateIconMesh);
-    }
-
     createGlow() {
-        if (this.glowMesh) {
-            this.group.remove(this.glowMesh);
-            this.glowMesh.geometry.dispose();
-            this.glowMesh.material.dispose();
-        }
-
-        if (!this.trackMesh || !this.trackMesh.geometry) return;
-
-        const glowGeometry = this.trackMesh.geometry.clone();
-        glowGeometry.scale(1.1, 1.1, 1.1);
-
-        const glowMaterial = new THREE.MeshBasicMaterial({
-            color: this.currentColor,
-            transparent: true,
-            opacity: 0.2,
-            side: THREE.BackSide
+        // Optional glow backing
+        const geo = GeometryFactory.create(this.trackShape, {
+            width: this.width * 1.1, height: this.height * 1.1, depth: 0.01, radius: this.height / 2
         });
-
-        this.glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
-        this.glowMesh.renderOrder = -1;
+        const mat = MaterialFactory.create('neon', { color: this.onColor, intensity: 0 });
+        this.glowMesh = new THREE.Mesh(geo, mat);
+        this.glowMesh.position.z = -this.depth / 2 - 0.05;
+        this.glowMesh.visible = false;
         this.group.add(this.glowMesh);
     }
 
     toggle() {
-        // Cycle to next state
-        this.currentStateIndex = (this.currentStateIndex + 1) % this.states.length;
-        this.isOn = this.currentStateIndex > 0; // Backward compatibility
+        this.isOn = !this.isOn;
+        this.scaleVelocity = -0.05; // Kick
+        this.createIcon(); // Update icon for new state
+        this.updateVisualState();
+    }
 
-        // Update color for current state
-        this.currentColor = this.stateColors[this.currentStateIndex] || this.offColor;
-        this.targetHandlePosition = (this.currentStateIndex / (this.states.length - 1)) * 2 - 1;
+    updateVisualState(force = false) {
+        // Target calculations
+        const targetHandleX = this.isOn ? (this.width / 2 - this.height / 2) : -(this.width / 2 - this.height / 2);
+        const targetColor = this.isOn ? this.onColor : this.offColor;
 
-        // For bounce animation, add initial velocity
-        if (this.animationPreset === 'bounce') {
-            const direction = this.targetHandlePosition > this.handlePosition ? 1 : -1;
-            this.handleVelocity = direction * this.bounceIntensity;
+        // Animations handled in update() loop usually, 
+        // but simple state props set here.
+
+        if (this.glowMesh) {
+            this.glowMesh.visible = this.isOn;
+            if (this.isOn) {
+                this.glowMesh.material.color.setHex(this.onColor);
+                this.glowMesh.material.emissive.setHex(this.onColor);
+            }
         }
 
-        this.createGradientTexture();
-        if (this.trackMesh && this.trackMesh.material) {
-            this.trackMesh.material.map = this.gradientTexture;
-            this.trackMesh.material.emissive.setHex(this.currentColor);
-            this.trackMesh.material.emissiveIntensity = this.isOn ? 0.4 : 0.2;
+        // Only swap material color if standard/matte. Glass usually stays constant color or slight tint.
+        if (this.trackMaterialType !== 'glass' && this.trackMaterialType !== 'metal') {
+            if (this.trackMesh) this.trackMesh.material.color.setHex(targetColor);
+        } else if (this.trackMesh && this.trackMaterialType === 'glass') {
+            // Tint glass
+            this.trackMesh.material.color.setHex(this.isOn ? this.onColor : this.offColor);
         }
 
-        if (this.handleMesh && this.handleMesh.material) {
-            const handleColor = this.isOn ? 0xffffff : 0xcccccc;
-            this.handleMesh.material.color.setHex(handleColor);
-            this.handleMesh.material.emissive.setHex(this.isOn ? 0x88aaff : 0x444444);
-            this.handleMesh.material.emissiveIntensity = this.isOn ? 0.5 : 0.1;
-        }
-
-        if (this.glowMesh && this.glowMesh.material) {
-            this.glowMesh.material.color.setHex(this.currentColor);
-        }
-
-        // Update state icon if using icons
-        if (this.stateIcons) {
-            this.createStateIcon();
+        // Handle Material
+        if (this.handleMesh) {
+            this.handleMesh.material.emissiveIntensity = this.isOn ? 0.8 : 0.0;
+            this.handleMesh.material.emissive.setHex(this.isOn ? this.onColor : 0x000000);
         }
     }
 
+    update() {
+        // 1. Spring Physics for Handle
+        const handleR = this.height * 0.4;
+        const targetX = this.isOn ? (this.width / 2 - handleR * 1.2) : -(this.width / 2 - handleR * 1.2);
+
+        const displacement = targetX - this.currentHandlePosition;
+        const force = displacement * this.tension;
+
+        this.velocity += force;
+        this.velocity *= this.friction;
+        this.currentHandlePosition += this.velocity;
+
+        if (this.handleMesh) {
+            this.handleMesh.position.x = this.currentHandlePosition;
+
+            // Add subtle rotation based on velocity (rolling effect)
+            if (this.handleShape === 'sphere' || this.handleShape === 'cylinder') {
+                this.handleMesh.rotation.z = -this.currentHandlePosition * 2;
+            }
+        }
+
+        // 2. Spring Physics for Scale
+        this.targetScale = this.isHovered ? 1.05 : 1.0;
+        if (this.isPressed) this.targetScale = 0.95;
+
+        const scaleDiff = this.targetScale - this.currentScale;
+        this.scaleVelocity += scaleDiff * 0.2; // stiffer spring for scale
+        this.scaleVelocity *= 0.8; // higher damping
+        this.currentScale += this.scaleVelocity;
+
+        this.group.scale.setScalar(this.currentScale);
+    }
+
     onMouseClick(event) {
+        // console.log('Toggle3D Click:', this.label); 
         if (!this.isEnabled || !this.camera) return;
 
         const intersect = this.checkIntersection(this.camera, event);
         if (intersect) {
-            // Toggle immediately without double-click delay
+            console.log('Toggle3D: Click Intersected!', this.label);
             this.toggle();
-        }
-    }
-
-    onClick() {
-        this.toggle();
-    }
-
-    onPress() {
-        this.targetScale = 0.95;
-    }
-
-    onRelease() {
-        this.targetScale = 1.0;
-    }
-
-    updateVisualState() {
-        this.currentScale += (this.targetScale - this.currentScale) * this.animationSpeed;
-        this.group.scale.setScalar(this.currentScale);
-
-        this.handlePosition += (this.targetHandlePosition - this.handlePosition) * this.animationSpeed;
-        if (this.handleMesh) {
-            const trackWidth = this.width;
-            const handleWidth = this.height * 0.8;
-            const handleX = (this.handlePosition * (trackWidth / 2 - handleWidth / 2));
-            this.handleMesh.position.x = handleX;
-        }
-
-        if (this.trackMesh && this.trackMesh.material) {
-            if (this.isPressed) {
-                this.trackMesh.material.emissiveIntensity = 0.6;
-                if (this.glowMesh) {
-                    this.glowMesh.material.opacity = 0.4;
-                }
-            } else if (this.isHovered) {
-                this.trackMesh.material.emissiveIntensity = this.isOn ? 0.5 : 0.3;
-                this.targetScale = this.hoverScale;
-                if (this.glowMesh) {
-                    const pulse = Math.sin(Date.now() * 0.005) * 0.1 + 0.2;
-                    this.glowMesh.material.opacity = pulse;
-                }
-            } else {
-                this.trackMesh.material.emissiveIntensity = this.isOn ? 0.4 : 0.2;
-                this.targetScale = 1.0;
-                if (this.glowMesh) {
-                    this.glowMesh.material.opacity = 0.15;
-                }
-            }
-        }
-    }
-
-    onHover() {
-        super.onHover();
-        this.updateVisualState();
-    }
-
-    onHoverLeave() {
-        super.onHoverLeave();
-        this.updateVisualState();
-    }
-
-    update() {
-        this.updateVisualState();
-    }
-
-    setLabel(newLabel) {
-        this.label = newLabel;
-        this.createLabel();
-    }
-
-    setMode(modeIndex) {
-        if (modeIndex >= 0 && modeIndex < this.modes.length) {
-            this.mode = modeIndex;
-            this.createGradientTexture();
-            this.createTrack();
-            this.createHandle();
-            this.createGlow();
-        }
-    }
-
-    setIsOn(isOn) {
-        if (this.isOn !== isOn) {
-            this.toggle();
+            if (this.config.onClick) this.config.onClick(this.isOn);
+        } else {
+            // console.log('Toggle3D: Click Missed', this.getMousePosition(event, event.target));
         }
     }
 }

@@ -222,6 +222,17 @@
                     <h3>⚙️ Controls</h3>
 
                     <div class="control-row">
+                        <label>Presets</label>
+                        <div class="button-group" style="grid-template-columns: repeat(3, 1fr);">
+                            <button class="control-btn" data-preset="audio">Audio</button>
+                            <button class="control-btn" data-preset="temp">Temp</button>
+                            <button class="control-btn" data-preset="scrub">Scrub</button>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="control-row">
                         <label>Min Value</label>
                         <input type="number" id="min-input" value="0">
                     </div>
@@ -239,11 +250,47 @@
                     <div class="divider"></div>
 
                     <div class="control-row">
-                        <label>Handle Style</label>
-                        <div class="button-group" style="grid-template-columns: repeat(3, 1fr);">
-                            <button class="control-btn active" data-mode="1">Sphere</button>
-                            <button class="control-btn" data-mode="0">Box</button>
-                            <button class="control-btn" data-mode="2">Sacred</button>
+                        <label>Orientation</label>
+                        <div class="button-group" style="grid-template-columns: repeat(2, 1fr);">
+                            <button class="control-btn active" data-orient="horizontal">Horizontal</button>
+                            <button class="control-btn" data-orient="vertical">Vertical</button>
+                        </div>
+                    </div>
+
+                    <div class="control-row">
+                        <label>Track Shape</label>
+                        <div class="button-group" style="grid-template-columns: repeat(2, 1fr);">
+                            <button class="control-btn active" data-track-shape="box">Box</button>
+                            <button class="control-btn" data-track-shape="pill">Pill</button>
+                            <button class="control-btn" data-track-shape="cylinder">Cyl</button>
+                            <button class="control-btn" data-track-shape="rounded">Round</button>
+                        </div>
+                    </div>
+
+                    <div class="control-row">
+                        <label>Handle Shape</label>
+                        <div class="button-group" style="grid-template-columns: repeat(4, 1fr);">
+                            <button class="control-btn active" data-handle-shape="sphere">Sphere</button>
+                            <button class="control-btn" data-handle-shape="box">Box</button>
+                            <button class="control-btn" data-handle-shape="cylinder">Cyl</button>
+                            <button class="control-btn" data-handle-shape="triangle">Tri</button>
+                        </div>
+                    </div>
+
+                    <div class="control-row">
+                        <label>Icon</label>
+                        <div class="button-group" style="grid-template-columns: repeat(4, 1fr);">
+                            <button class="control-btn active" data-icon="none">None</button>
+                            <button class="control-btn" data-icon="volume">Vol</button>
+                            <button class="control-btn" data-icon="flame">Fire</button>
+                            <button class="control-btn" data-icon="brightness">Sun</button>
+                        </div>
+                    </div>
+
+                    <div class="control-row">
+                        <div class="checkbox-row">
+                            <input type="checkbox" id="ticks-check">
+                            <label for="ticks-check">Show Tick Marks</label>
                         </div>
                     </div>
 
@@ -368,7 +415,10 @@ function animate() {
             value: 50,
             step: 1,
             width: 4.0,
-            mode: 1, // Sphere handle
+            orientation: 'horizontal',
+            trackShape: 'box',
+            handleShape: 'sphere',
+            tickMarks: false,
             fillColor: 0x3366ff,
             trackColor: 0x444444,
             showValue: true
@@ -386,7 +436,11 @@ function animate() {
                 value: config.value,
                 step: config.step,
                 width: config.width,
-                mode: config.mode,
+                orientation: config.orientation,
+                trackShape: config.trackShape,
+                handleShape: config.handleShape,
+                tickMarks: config.tickMarks,
+                tickInterval: 10,
                 fillColor: config.fillColor,
                 trackColor: config.trackColor,
                 showValue: config.showValue,
@@ -435,18 +489,117 @@ function animate() {
             createSlider();
         }
 
-        minInput.addEventListener('change', updateRange);
-        maxInput.addEventListener('change', updateRange);
-        stepInput.addEventListener('change', updateRange);
-
-        // Handle Mode Buttons
-        document.querySelectorAll('[data-mode]').forEach(btn => {
+        // Presets
+        document.querySelectorAll('[data-preset]').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                document.querySelectorAll('[data-mode]').forEach(b => b.classList.remove('active'));
-                e.target.classList.add('active');
-                config.mode = parseInt(e.target.dataset.mode);
+                const preset = e.target.dataset.preset;
+                applyPreset(preset);
                 createSlider();
             });
+        });
+
+        function applyPreset(preset) {
+            switch (preset) {
+                case 'audio':
+                    config.orientation = 'vertical';
+                    config.trackShape = 'box';
+                    config.handleShape = 'box';
+                    config.fillColor = 0x48bb78; // Green
+                    config.trackColor = 0x222222;
+                    config.tickMarks = true;
+                    config.width = 4.0; // Height in vertical mode
+                    config.min = 0; config.max = 11; config.step = 1;
+                    break;
+                case 'temp':
+                    config.orientation = 'horizontal';
+                    config.trackShape = 'pill';
+                    config.handleShape = 'sphere';
+                    config.fillColor = 0xff6b9d; // Pink/Redish
+                    config.trackColor = 0x442222;
+                    config.tickMarks = false;
+                    config.width = 5.0;
+                    config.min = 16; config.max = 30; config.step = 0.5;
+                    break;
+                case 'scrub':
+                    config.orientation = 'horizontal';
+                    config.trackShape = 'cylinder';
+                    config.handleShape = 'cylinder';
+                    config.fillColor = 0x3366ff; // Blue
+                    config.trackColor = 0x333333;
+                    config.tickMarks = false;
+                    config.width = 6.0;
+                    config.min = 0; config.max = 100; config.step = 0.1;
+                    break;
+            }
+
+            // Sync UI inputs
+            document.getElementById('min-input').value = config.min;
+            document.getElementById('max-input').value = config.max;
+            document.getElementById('step-input').value = config.step;
+            document.getElementById('ticks-check').checked = config.tickMarks;
+
+            // Sync active states for other buttons would be nice but optional for now
+            updateActiveButtons();
+        }
+
+        function updateActiveButtons() {
+            // Helper to sync UI state
+            document.querySelectorAll('[data-orient]').forEach(b => {
+                b.classList.toggle('active', b.dataset.orient === config.orientation);
+            });
+            document.querySelectorAll('[data-track-shape]').forEach(b => {
+                b.classList.toggle('active', b.dataset.trackShape === config.trackShape);
+            });
+            document.querySelectorAll('[data-handle-shape]').forEach(b => {
+                b.classList.toggle('active', b.dataset.handleShape === config.handleShape);
+            });
+        }
+
+        // Min/Max/Step
+
+        // Orientation Buttons
+        document.querySelectorAll('[data-orient]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('[data-orient]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                config.orientation = e.target.dataset.orient;
+                createSlider();
+            });
+        });
+
+        // Track Shape Buttons
+        document.querySelectorAll('[data-track-shape]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('[data-track-shape]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                config.trackShape = e.target.dataset.trackShape;
+                createSlider();
+            });
+        });
+
+        // Handle Shape Buttons
+        document.querySelectorAll('[data-handle-shape]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('[data-handle-shape]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                config.handleShape = e.target.dataset.handleShape;
+                createSlider();
+            });
+        });
+
+        document.querySelectorAll('[data-icon]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('[data-icon]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                config.icon = e.target.dataset.icon;
+                createSlider();
+            });
+        });
+
+        // Ticks Checkbox
+        document.getElementById('ticks-check').addEventListener('change', (e) => {
+            config.tickMarks = e.target.checked;
+            createSlider();
         });
 
         // Color Buttons

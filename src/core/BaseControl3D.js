@@ -282,11 +282,114 @@ export class BaseControl3D {
     }
 
     onDoubleClick() {
-        // Override in subclasses or handle default behavior
-        // Default: focus camera on this object
+        // Default: Focus camera on double-click
         if (this.scene && this.camera) {
             this.focusCamera();
         }
+    }
+
+    /**
+     * Open a 2D overlay for this control
+     */
+    open2DOverlay() {
+        if (this.isOverlayOpen) return;
+
+        // Create container
+        const container = document.createElement('div');
+        container.className = 'spatial-2d-overlay';
+        container.style.position = 'fixed';
+        container.style.top = '50%';
+        container.style.left = '50%';
+        container.style.transform = 'translate(-50%, -50%)';
+        container.style.backgroundColor = 'rgba(10, 10, 26, 0.95)';
+        container.style.border = '2px solid #4ecdc4';
+        container.style.borderRadius = '12px';
+        container.style.padding = '20px';
+        container.style.zIndex = '1000';
+        container.style.boxShadow = '0 0 30px rgba(78, 205, 196, 0.3)';
+        container.style.minWidth = '300px';
+        container.style.maxWidth = '80vw';
+        container.style.maxHeight = '80vh';
+        container.style.overflow = 'auto';
+        container.style.fontFamily = "'Inter', sans-serif";
+        container.style.color = 'white';
+
+        // Add close button
+        const closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '×';
+        closeBtn.style.position = 'absolute';
+        closeBtn.style.top = '10px';
+        closeBtn.style.right = '15px';
+        closeBtn.style.background = 'none';
+        closeBtn.style.border = 'none';
+        closeBtn.style.color = 'rgba(255, 255, 255, 0.6)';
+        closeBtn.style.fontSize = '24px';
+        closeBtn.style.cursor = 'pointer';
+        closeBtn.onclick = () => this.close2DOverlay();
+
+        // Content container
+        const contentDiv = document.createElement('div');
+        const content = this.get2DContent();
+
+        if (content instanceof HTMLElement) {
+            contentDiv.appendChild(content);
+        } else {
+            contentDiv.innerHTML = content;
+        }
+
+        container.appendChild(closeBtn);
+        container.appendChild(contentDiv);
+
+        document.body.appendChild(container);
+        this.overlayElement = container;
+        this.isOverlayOpen = true;
+
+        // Add backdrop
+        this.backdrop = document.createElement('div');
+        this.backdrop.style.position = 'fixed';
+        this.backdrop.style.top = '0';
+        this.backdrop.style.left = '0';
+        this.backdrop.style.width = '100%';
+        this.backdrop.style.height = '100%';
+        this.backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        this.backdrop.style.zIndex = '999';
+        this.backdrop.style.backdropFilter = 'blur(4px)';
+        this.backdrop.onclick = () => this.close2DOverlay();
+        document.body.appendChild(this.backdrop);
+
+        this.emit('overlay-open');
+    }
+
+    close2DOverlay() {
+        if (!this.isOverlayOpen) return;
+
+        if (this.overlayElement) {
+            document.body.removeChild(this.overlayElement);
+            this.overlayElement = null;
+        }
+
+        if (this.backdrop) {
+            document.body.removeChild(this.backdrop);
+            this.backdrop = null;
+        }
+
+        this.isOverlayOpen = false;
+        this.emit('overlay-close');
+    }
+
+    get2DContent() {
+        // Default content: JSON Inspector
+        return `
+            <h2 style="color: #4ecdc4; margin-bottom: 15px; font-size: 1.2em; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+                ${this.constructor.name}
+            </h2>
+            <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; font-family: monospace; font-size: 0.9em; max-height: 300px; overflow: auto;">
+                <pre style="margin: 0;">${JSON.stringify(this.state, null, 2)}</pre>
+            </div>
+            <div style="margin-top: 15px; font-size: 0.8em; color: #888;">
+                Override <code>get2DContent()</code> in your class to customize this view.
+            </div>
+        `;
     }
 
     /**

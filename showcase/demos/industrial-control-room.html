@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Industrial Control Room - Spatial UI 3D Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Consolas', monospace;
+            background: #1a1a2e;
+            color: #eee;
+            overflow: hidden;
+        }
+
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .control-info {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(26, 26, 46, 0.95);
+            border: 2px solid #f39c12;
+            padding: 20px;
+            max-width: 400px;
+            z-index: 100;
+            box-shadow: 0 0 20px rgba(243, 156, 18, 0.4);
+            border-radius: 4px;
+        }
+
+        .control-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #f39c12;
+            text-shadow: 0 0 10px rgba(243, 156, 18, 0.5);
+        }
+
+        .control-text {
+            color: #bdc3c7;
+            line-height: 1.6;
+            font-size: 13px;
+        }
+
+        .production-monitor {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(26, 26, 46, 0.95);
+            border: 2px solid #27ae60;
+            padding: 15px;
+            z-index: 100;
+            min-width: 250px;
+            border-radius: 4px;
+        }
+
+        .production-title {
+            color: #27ae60;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .production-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 12px;
+        }
+
+        .production-label {
+            color: #95a5a6;
+        }
+
+        .production-value {
+            color: #ecf0f1;
+            font-weight: bold;
+        }
+
+        .production-value.good {
+            color: #27ae60;
+        }
+
+        .production-value.warning {
+            color: #f39c12;
+        }
+
+        .production-value.critical {
+            color: #e74c3c;
+        }
+
+        .system-log {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(26, 26, 46, 0.95);
+            border: 2px solid #3498db;
+            padding: 15px;
+            z-index: 100;
+            max-width: 350px;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .log-title {
+            color: #3498db;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .log-item {
+            color: #95a5a6;
+            margin: 3px 0;
+            font-size: 11px;
+            font-family: monospace;
+        }
+
+        .log-item.info {
+            color: #3498db;
+        }
+
+        .log-item.warning {
+            color: #f39c12;
+        }
+
+        .log-item.error {
+            color: #e74c3c;
+        }
+
+        .alert-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(26, 26, 46, 0.95);
+            border: 2px solid #e74c3c;
+            padding: 15px;
+            z-index: 100;
+            max-width: 300px;
+            border-radius: 4px;
+        }
+
+        .alert-title {
+            color: #e74c3c;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .alert-text {
+            color: #ecf0f1;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .spark {
+            position: fixed;
+            width: 3px;
+            height: 3px;
+            background: #f39c12;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: sparkle 2s infinite;
+        }
+
+        @keyframes sparkle {
+
+            0%,
+            100% {
+                opacity: 0;
+                transform: scale(0);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.5);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <!-- Sparks -->
+    <div class="spark" style="top: 30%; left: 20%; animation-delay: 0s;"></div>
+    <div class="spark" style="top: 50%; left: 40%; animation-delay: 0.5s;"></div>
+    <div class="spark" style="top: 70%; left: 60%; animation-delay: 1s;"></div>
+    <div class="spark" style="top: 40%; left: 80%; animation-delay: 1.5s;"></div>
+
+    <!-- Control Info -->
+    <div class="control-info">
+        <div class="control-title">⚙️ INDUSTRIAL CONTROL ROOM</div>
+        <div class="control-text">
+            <strong>FACILITY: MANUFACTURING PLANT #7</strong><br><br>
+            You are overseeing automated production systems for a
+            state-of-the-art manufacturing facility. Monitor production
+            metrics, adjust system parameters, and respond to alerts
+            to maintain optimal efficiency.<br><br>
+            <strong>SHIFT STATUS:</strong><br>
+            Production running at 94% capacity. All systems nominal.
+        </div>
+    </div>
+
+    <!-- Production Monitor -->
+    <div class="production-monitor">
+        <div class="production-title">📊 PRODUCTION METRICS</div>
+        <div class="production-item">
+            <span class="production-label">Output Rate:</span>
+            <span class="production-value good" id="output">1,847 units/hr</span>
+        </div>
+        <div class="production-item">
+            <span class="production-label">Efficiency:</span>
+            <span class="production-value good" id="efficiency">94%</span>
+        </div>
+        <div class="production-item">
+            <span class="production-label">Temperature:</span>
+            <span class="production-value" id="temperature">68°C</span>
+        </div>
+        <div class="production-item">
+            <span class="production-label">Pressure:</span>
+            <span class="production-value" id="pressure">2.4 bar</span>
+        </div>
+        <div class="production-item">
+            <span class="production-label">Power Draw:</span>
+            <span class="production-value" id="power">847 kW</span>
+        </div>
+    </div>
+
+    <!-- System Log -->
+    <div class="system-log">
+        <div class="log-title">📝 SYSTEM LOG</div>
+        <div id="log-content">
+            <div class="log-item info">[14:32:15] System initialized</div>
+            <div class="log-item info">[14:32:18] Production line A started</div>
+            <div class="log-item info">[14:35:42] Quality check passed</div>
+            <div class="log-item warning">[14:38:20] Temperature spike detected</div>
+            <div class="log-item info">[14:38:25] Cooling system engaged</div>
+            <div class="log-item info">[14:40:10] Temperature normalized</div>
+        </div>
+    </div>
+
+    <!-- Alert Panel -->
+    <div class="alert-panel">
+        <div class="alert-title">⚠️ SYSTEM ALERTS</div>
+        <div class="alert-text">
+            All systems operational. Maintenance scheduled for 22:00.
+            Monitor temperature levels during peak production hours.
+        </div>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { Chart3D } from '../../src/controls/Chart3D.js';
+        import { Slider3D } from '../../src/controls/Slider3D.js';
+        import { Toggle3D } from '../../src/controls/Toggle3D.js';
+        import { Accordion3D } from '../../src/controls/Accordion3D.js';
+        import { Button3D } from '../../src/controls/Button3D.js';
+        import { HaloCard3D } from '../../src/controls/HaloCard3D.js';
+        import * as THREE from 'three';
+
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+
+        // Industrial environment
+        scene.background = new THREE.Color(0x1a1a2e);
+        scene.fog = new THREE.Fog(0x1a1a2e, 15, 50);
+
+        // Industrial lighting
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+        scene.add(ambientLight);
+
+        const mainLight = new THREE.SpotLight(0xf39c12, 1.5);
+        mainLight.position.set(0, 10, 0);
+        scene.add(mainLight);
+
+        const warningLight = new THREE.PointLight(0xe74c3c, 0.5, 30);
+        warningLight.position.set(-8, 3, -5);
+        scene.add(warningLight);
+
+        camera.position.set(0, 2, 12);
+
+        // Section Labels
+        const productionLabel = new HaloCard3D(scene, camera, [-6, 4, 0], {
+            text: 'PRODUCTION LINES',
+            width: 4,
+            height: 0.5,
+            color: 0xf39c12,
+            mode: 0,
+            renderer: renderer
+        });
+
+        const systemsLabel = new HaloCard3D(scene, camera, [0, 4, 0], {
+            text: 'SYSTEM CONTROLS',
+            width: 4,
+            height: 0.5,
+            color: 0x3498db,
+            mode: 0,
+            renderer: renderer
+        });
+
+        const maintenanceLabel = new HaloCard3D(scene, camera, [6, 4, 0], {
+            text: 'MAINTENANCE',
+            width: 4,
+            height: 0.5,
+            color: 0xe74c3c,
+            mode: 0,
+            renderer: renderer
+        });
+
+        // Production Output Chart
+        const outputData = [];
+        for (let i = 0; i < 12; i++) {
+            outputData.push(1800 + Math.sin(i * 0.8) * 150 + Math.random() * 100);
+        }
+
+        const outputChart = new Chart3D(scene, camera, [-6, 2, 0], {
+            chartType: 'line',
+            data: {
+                labels: ['00:00', '02:00', '04:00', '06:00', '08:00', '10:00',
+                    '12:00', '14:00', '16:00', '18:00', '20:00', '22:00'],
+                datasets: [{
+                    label: 'Output (units/hr)',
+                    data: outputData,
+                    borderColor: '#f39c12',
+                    backgroundColor: 'rgba(243, 156, 18, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            width: 4.5,
+            height: 3,
+            mode: 0,
+            renderer: renderer
+        });
+
+        // System Performance Chart
+        const perfChart = new Chart3D(scene, camera, [6, 2, 0], {
+            chartType: 'bar',
+            data: {
+                labels: ['Line A', 'Line B', 'Line C', 'Line D'],
+                datasets: [{
+                    label: 'Efficiency (%)',
+                    data: [94, 87, 96, 91],
+                    backgroundColor: [
+                        'rgba(39, 174, 96, 0.8)',
+                        'rgba(243, 156, 18, 0.8)',
+                        'rgba(39, 174, 96, 0.8)',
+                        'rgba(39, 174, 96, 0.8)'
+                    ]
+                }]
+            },
+            width: 4.5,
+            height: 3,
+            mode: 0,
+            renderer: renderer
+        });
+
+        // Production Speed Slider
+        const speedSlider = new Slider3D(scene, camera, [0, 1.5, 0], {
+            label: '⚡ PRODUCTION SPEED',
+            width: 4,
+            height: 0.3,
+            min: 50,
+            max: 100,
+            value: 94,
+            mode: 0,
+            renderer: renderer,
+            onChange: (slider, value) => {
+                console.log(`Production speed: ${Math.round(value)}%`);
+                document.getElementById('efficiency').textContent = Math.round(value) + '%';
+            }
+        });
+
+        // Temperature Control Slider
+        const tempSlider = new Slider3D(scene, camera, [0, 0.8, 0], {
+            label: '🌡️ COOLING SYSTEM',
+            width: 4,
+            height: 0.3,
+            min: 0,
+            max: 100,
+            value: 75,
+            mode: 0,
+            renderer: renderer,
+            onChange: (slider, value) => {
+                const temp = 85 - (value * 0.25);
+                document.getElementById('temperature').textContent = Math.round(temp) + '°C';
+            }
+        });
+
+        // System Toggles
+        const lineAToggle = new Toggle3D(scene, camera, [0, -0.2, 0], {
+            label: '🏭 LINE A',
+            width: 2,
+            height: 0.7,
+            isOn: true,
+            onColor: 0x27ae60,
+            offColor: 0x7f8c8d,
+            mode: 0,
+            renderer: renderer
+        });
+
+        const lineBToggle = new Toggle3D(scene, camera, [0, -1.2, 0], {
+            label: '🏭 LINE B',
+            width: 2,
+            height: 0.7,
+            isOn: true,
+            onColor: 0x27ae60,
+            offColor: 0x7f8c8d,
+            mode: 0,
+            renderer: renderer
+        });
+
+        // Maintenance Accordion
+        const maintenanceAccordion = new Accordion3D(scene, camera, [-6, -1, 0], {
+            width: 5,
+            itemHeight: 0.7,
+            itemSpacing: 0.15,
+            mode: 0,
+            renderer: renderer,
+            items: [
+                {
+                    title: '🔧 Scheduled Maintenance',
+                    contentHeight: 3,
+                    content: `# Maintenance Schedule
+
+## Today (2050-01-23)
+- **22:00**: Line C routine inspection
+- **23:00**: Cooling system filter replacement
+
+## This Week
+- **Jan 24**: Conveyor belt lubrication
+- **Jan 25**: Sensor calibration (all lines)
+- **Jan 26**: Emergency shutdown drill
+
+## Status
+All equipment within service intervals.
+No critical maintenance pending.`
+                },
+                {
+                    title: '⚠️ Recent Issues',
+                    contentHeight: 3,
+                    content: `# Issue Log
+
+## Resolved
+- **Jan 22**: Temperature spike on Line A
+  - Cause: Cooling fan malfunction
+  - Resolution: Fan replaced
+  - Downtime: 45 minutes
+
+## Monitoring
+- **Jan 23**: Line B efficiency at 87%
+  - Investigating cause
+  - No immediate action required
+
+## Preventive
+Regular monitoring of all systems active.`
+                },
+                {
+                    title: '📋 Equipment Status',
+                    contentHeight: 3,
+                    content: `# Equipment Health
+
+## Production Lines
+- Line A: ✅ Excellent (98%)
+- Line B: ⚠️ Good (87%)
+- Line C: ✅ Excellent (96%)
+- Line D: ✅ Excellent (91%)
+
+## Support Systems
+- Cooling: ✅ Operational
+- Power: ✅ Stable
+- Sensors: ✅ Calibrated
+- Safety: ✅ All systems active`
+                }
+            ],
+            openItems: [0]
+        });
+
+        // Emergency Stop Button
+        const emergencyButton = new Button3D(scene, camera, [6, 0, 0], {
+            label: '🛑 EMERGENCY STOP',
+            width: 3,
+            height: 1,
+            color: 0xe74c3c,
+            mode: 0,
+            renderer: renderer,
+            onClick: () => {
+                if (confirm('⚠️ EMERGENCY STOP\n\nThis will halt all production lines.\nAre you sure?')) {
+                    alert('🛑 EMERGENCY STOP ACTIVATED\n\nAll production lines halted.\nSafety protocols engaged.\nNotifying supervisors...');
+                    addLog('EMERGENCY STOP activated by operator', 'error');
+                }
+            }
+        });
+
+        // Maintenance Request Button
+        const maintenanceButton = new Button3D(scene, camera, [6, -1.5, 0], {
+            label: '🔧 REQUEST MAINTENANCE',
+            width: 3,
+            height: 1,
+            color: 0xf39c12,
+            mode: 0,
+            renderer: renderer,
+            onClick: () => {
+                const issue = prompt('Describe the maintenance issue:');
+                if (issue) {
+                    alert(`Maintenance request logged:\n${issue}\n\nTicket #${Math.floor(Math.random() * 10000)}\nPriority: Normal\nETA: 30 minutes`);
+                    addLog(`Maintenance requested: ${issue}`, 'warning');
+                }
+            }
+        });
+
+        // Log system
+        function addLog(message, type = 'info') {
+            const logContent = document.getElementById('log-content');
+            const time = new Date().toLocaleTimeString();
+            const logItem = document.createElement('div');
+            logItem.className = `log-item ${type}`;
+            logItem.textContent = `[${time}] ${message}`;
+            logContent.insertBefore(logItem, logContent.firstChild);
+
+            // Keep only last 10 entries
+            while (logContent.children.length > 10) {
+                logContent.removeChild(logContent.lastChild);
+            }
+        }
+
+        // Simulate production metrics
+        let time = 0;
+        setInterval(() => {
+            time++;
+
+            // Output rate variation
+            const output = 1850 + Math.sin(time * 0.1) * 100 + (Math.random() - 0.5) * 50;
+            document.getElementById('output').textContent = Math.round(output).toLocaleString() + ' units/hr';
+
+            // Temperature variation
+            const temp = 68 + Math.sin(time * 0.15) * 5 + (Math.random() - 0.5) * 3;
+            const tempEl = document.getElementById('temperature');
+            tempEl.textContent = Math.round(temp) + '°C';
+            tempEl.className = 'production-value ' + (temp > 75 ? 'warning' : temp > 80 ? 'critical' : '');
+
+            // Pressure
+            const pressure = 2.4 + Math.sin(time * 0.2) * 0.3;
+            document.getElementById('pressure').textContent = pressure.toFixed(1) + ' bar';
+
+            // Power draw
+            const power = 850 + Math.sin(time * 0.12) * 50;
+            document.getElementById('power').textContent = Math.round(power) + ' kW';
+
+            // Random log entries
+            if (Math.random() < 0.1) {
+                const messages = [
+                    'Quality check passed',
+                    'Batch completed successfully',
+                    'Sensor reading normal',
+                    'Production target met'
+                ];
+                addLog(messages[Math.floor(Math.random() * messages.length)], 'info');
+            }
+        }, 3000);
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            productionLabel.update();
+            systemsLabel.update();
+            maintenanceLabel.update();
+            outputChart.update();
+            perfChart.update();
+            speedSlider.update();
+            tempSlider.update();
+            lineAToggle.update();
+            lineBToggle.update();
+            maintenanceAccordion.update();
+            emergencyButton.update();
+            maintenanceButton.update();
+
+            // Pulsing warning light
+            warningLight.intensity = 0.5 + Math.sin(Date.now() * 0.003) * 0.3;
+
+            scene3D.render();
+        }
+
+        animate();
+    </script>
+</body>
+
+</html>

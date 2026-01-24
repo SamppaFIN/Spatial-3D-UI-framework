@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Logistic Globe - Spatial UI 3D</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #0b1026;
+            font-family: 'Consolas', monospace;
+        }
+
+        #ui-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #ffaa00;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        h1 {
+            margin: 0;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px #ffaa0066;
+        }
+
+        .instruction {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #ffccaadd;
+            background: #201000bb;
+            padding: 15px;
+            border-left: 3px solid #ffaa00;
+            max-width: 320px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="ui-overlay">
+        <h1>LOGISTIC GLOBE 🌐</h1>
+        <div class="instruction">
+            <p>> <strong>PROBLEM:</strong> Supply chains are complex webs, hard to grasp on 2D maps.</p>
+            <p>> <strong>SOLUTION:</strong> Interactive 3D globe with resource monitoring.</p>
+            <p>> Left: Global Fuel/Oil Reserves (Liquid)</p>
+            <p>> Center: Real-time Shipment Tracking</p>
+            <p>> Right: Active Manifests (Accordion)</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+        import Scene3D from './src/core/Scene3D.js';
+        import { HoloMap3D } from './src/controls/HoloMap3D.js';
+        import { LiquidStateContainer3D } from './src/controls/LiquidStateContainer3D.js';
+        import { Accordion3D } from './src/controls/Accordion3D.js';
+        import { StarfieldBackground } from './src/environments/StarfieldBackground.js';
+
+        // 1. Scene Setup
+        const scene3D = new Scene3D({
+            container: document.body,
+            enableOrbitControls: true,
+            cameraPosition: [0, 2, 14]
+        });
+
+        // 2. Environment (Command Center)
+        new StarfieldBackground(scene3D.scene, {
+            count: 2000,
+            color: 0xffaa00,
+            speed: 0.05
+        });
+
+        scene3D.scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+        const sun = new THREE.DirectionalLight(0xffaa00, 2);
+        sun.position.set(10, 5, 10);
+        scene3D.scene.add(sun);
+
+        // 3. Central Globe (Shipments)
+        const globe = new HoloMap3D(scene3D.scene, scene3D.camera, [0, 0, 0], {
+            radius: 3.5,
+            gridColor: 0xffaa00, // Orange
+            glowColor: 0x552200,
+            rotationSpeed: 0.002,
+            markers: [
+                { lat: 40, lon: -74, data: 'NY' },
+                { lat: 51, lon: 0, data: 'LONDON' },
+                { lat: 35, lon: 139, data: 'TOKYO' },
+                { lat: -33, lon: 151, data: 'SYDNEY' },
+                { lat: 22, lon: 114, data: 'HK' }
+            ]
+        });
+
+        // 4. Fuel Reserves (Liquid Blob - Left)
+        const fuelTank = new LiquidStateContainer3D(scene3D.scene, scene3D.camera, [-7, 0, 0], {
+            width: 3, // Affects sphere size (radius = width/2)
+            color: 0x221100, // Oil/Dark Amber
+            highlightColor: 0xffaa00,
+            viscosity: 0.3,
+            tension: 0.6
+        });
+
+        // Add label to fuel
+        // floating text...
+
+        // 5. Manifests (Accordion - Right)
+        const manifest = new Accordion3D(scene3D.scene, scene3D.camera, [7, 2, 0], {
+            width: 4,
+            itemHeight: 0.8,
+            headerColor: 0x331100,
+            borderColor: 0xffaa00,
+            textColor: 0xffcc00,
+            items: [
+                {
+                    title: 'SHIPMENT #8842',
+                    content: 'Status: **IN TRANSIT**\n\nOrigin: Tokyo\n\nDest: New York\n\nCargo: Electronics'
+                },
+                {
+                    title: 'SHIPMENT #9921',
+                    content: 'Status: **PENDING**\n\nOrigin: London\n\nDest: Berlin\n\nCargo: Raw Materials'
+                },
+                {
+                    title: 'ALERT: FUEL LOW',
+                    content: 'Global reserves at **42%**.\n\nRefuel required at Sector 7.'
+                }
+            ],
+            openItems: [0] // First open
+        });
+        // Tilt accordion slightly towards viewer
+        manifest.group.rotation.y = -0.3;
+
+        // 6. Animation Loop
+        let time = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            globe.update(time * 1000);
+            fuelTank.update();
+            manifest.update();
+
+            // Random connection arcs on globe? (Simulated)
+
+            scene3D.render();
+        }
+        animate();
+
+        window.addEventListener('resize', () => scene3D.onWindowResize());
+    </script>
+</body>
+
+</html>

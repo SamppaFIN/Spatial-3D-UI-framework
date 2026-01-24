@@ -1,5 +1,7 @@
 import { BaseControl3D } from '../core/BaseControl3D.js';
 import { ControlRegistry } from '../core/ControlRegistry.js';
+import { GeometryFactory } from '../utils/GeometryFactory.js';
+import { MaterialFactory } from '../utils/MaterialFactory.js';
 import * as THREE from 'three';
 
 export class Slider3D extends BaseControl3D {
@@ -15,10 +17,13 @@ export class Slider3D extends BaseControl3D {
         this.width = config.width || 4.0;
         this.height = config.height || 0.3;
         this.depth = config.depth || 0.2;
+        this.orientation = config.orientation || 'horizontal'; // horizontal, vertical
 
-        // Mode system: 3 different shapes
-        this.mode = config.mode || 0;
-        this.modes = ['box', 'sphere', 'sacred'];
+        // Visual properties
+        this.trackShape = config.trackShape || 'box';
+        this.handleShape = config.handleShape || 'sphere';
+        this.trackMaterialType = config.trackMaterialType || 'standard';
+        this.handleMaterialType = config.handleMaterialType || 'standard';
 
         // Slider value properties
         // Support either values array OR min/max/step
@@ -124,18 +129,151 @@ export class Slider3D extends BaseControl3D {
     }
 
     create() {
-        if (!this.modes || this.mode === undefined) {
-            return;
-        }
+        if (!this.trackShape) return; // Guard: Wait for full initialization
 
         this.createGradientTexture();
         this.createTrack();
         this.createFill();
         this.createHandle();
+        this.createIcon();
         this.createLabel();
         this.createGlow();
+        this.createTickMarks();
         this.createValueDisplay();
         this.updateVisualState();
+    }
+
+    createIcon() {
+        if (this.iconMesh) {
+            if (this.iconMesh.parent) this.iconMesh.parent.remove(this.iconMesh);
+            this.iconMesh.geometry.dispose();
+            this.iconMesh.material.dispose();
+            this.iconMesh = null;
+        }
+
+        if (!this.config.icon || this.config.icon === 'none') return;
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 128;
+        canvas.height = 128;
+        ctx.clearRect(0, 0, 128, 128);
+
+        // Styling
+        ctx.strokeStyle = '#333';
+        ctx.fillStyle = '#333';
+        ctx.lineWidth = 12;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        // Center
+        const cx = 64;
+        const cy = 64;
+
+        if (this.config.icon === 'volume') {
+            // Speaker icon
+            ctx.beginPath();
+            ctx.moveTo(34, 48);
+            ctx.lineTo(48, 48);
+            ctx.lineTo(74, 28);
+            ctx.lineTo(74, 100);
+            ctx.lineTo(48, 80);
+            ctx.lineTo(34, 80);
+            ctx.closePath();
+            ctx.fill();
+            // Waves
+            ctx.beginPath();
+            ctx.arc(76, 64, 20, -0.6, 0.6);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(76, 64, 34, -0.7, 0.7);
+            ctx.stroke();
+
+        } else if (this.config.icon === 'flame') {
+            // Flame icon
+            ctx.fillStyle = '#d9441e';
+            ctx.beginPath();
+            ctx.moveTo(64, 20);
+            ctx.bezierCurveTo(30, 60, 40, 90, 64, 110);
+            ctx.bezierCurveTo(90, 90, 100, 60, 64, 20);
+            ctx.fill();
+
+        } else if (this.config.icon === 'brightness') {
+            // Sun
+            ctx.fillStyle = '#ffdb4d';
+            ctx.beginPath();
+            ctx.arc(cx, cy, 24, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#ffdb4d';
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2;
+                const r1 = 34; const r2 = 46;
+                ctx.beginPath();
+                ctx.moveTo(cx + Math.cos(angle) * r1, cy + Math.sin(angle) * r1);
+                ctx.lineTo(cx + Math.cos(angle) * r2, cy + Math.sin(angle) * r2);
+                ctx.stroke();
+            }
+        }
+
+        const tex = new THREE.CanvasTexture(canvas);
+        const mat = new THREE.MeshBasicMaterial({
+            map: tex,
+            transparent: true,
+            side: THREE.DoubleSide
+        });
+
+        const iconSize = this.handleSize * 0.8;
+        const geo = new THREE.PlaneGeometry(iconSize, iconSize);
+
+        this.iconMesh = new THREE.Mesh(geo, mat);
+
+        // Z-Positioning
+        let zOffset = this.handleSize / 2 + 0.02; // Default for sphere radius
+
+        if (this.handleShape === 'box' || this.handleShape === 'cylinder') {
+            zOffset = this.handleDepth / 2 + 0.02;
+        }
+
+        this.iconMesh.position.z = zOffset;
+
+        // If handle exists, add to it
+        if (this.handleMesh) {
+            this.handleMesh.add(this.iconMesh);
+        }
+    }
+
+    createTickMarks() {
+        if (!this.tickMarks) return;
+
+        // Remove existing
+        this.tickMeshes.forEach(m => {
+            if (m.parent) m.parent.remove(m);
+            m.geometry.dispose();
+            m.material.dispose();
+        });
+        this.tickMeshes = [];
+
+        const count = Math.floor((this.max - this.min) / this.tickInterval);
+        const geo = new THREE.BoxGeometry(0.05, 0.2, 0.05);
+        const mat = new THREE.MeshBasicMaterial({ color: 0x888888 });
+
+        for (let i = 0; i <= count; i++) {
+            const val = this.min + i * this.tickInterval;
+            const pos = this.valueToPosition(val);
+            const mesh = new THREE.Mesh(geo, mat);
+
+            if (this.orientation === 'vertical') {
+                mesh.position.y = pos;
+                mesh.position.x = this.width / 2 + 0.1;
+                mesh.rotation.z = Math.PI / 2;
+            } else {
+                mesh.position.x = pos;
+                mesh.position.y = -this.height / 2 - 0.15;
+            }
+
+            this.group.add(mesh);
+            this.tickMeshes.push(mesh);
+        }
     }
 
     createGradientTexture() {
@@ -144,10 +282,14 @@ export class Slider3D extends BaseControl3D {
         canvas.height = 64;
         const ctx = canvas.getContext('2d');
 
+        // Safe colors
+        const trackColor = this.trackColor !== undefined ? this.trackColor : 0x444444;
+        const fillColor = this.fillColor !== undefined ? this.fillColor : 0x3366ff;
+
         // Create gradient
         const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-        gradient.addColorStop(0, `#${this.trackColor.toString(16).padStart(6, '0')}`);
-        gradient.addColorStop(1, `#${this.fillColor.toString(16).padStart(6, '0')}`);
+        gradient.addColorStop(0, `#${trackColor.toString(16).padStart(6, '0')}`);
+        gradient.addColorStop(1, `#${fillColor.toString(16).padStart(6, '0')}`);
 
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -166,27 +308,24 @@ export class Slider3D extends BaseControl3D {
             this.trackMesh.material.dispose();
         }
 
-        let geometry;
-        switch (this.modes[this.mode]) {
-            case 'box':
-                geometry = new THREE.BoxGeometry(this.width, this.height, this.depth, 1, 1, 1);
-                break;
-            case 'sphere':
-                // Use rounded box for sphere mode
-                geometry = new THREE.BoxGeometry(this.width, this.height, this.depth, 1, 1, 1);
-                break;
-            case 'sacred':
-                geometry = new THREE.BoxGeometry(this.width, this.height, this.depth, 1, 1, 1);
-                break;
+        // Adjust dimensions based on orientation
+        let w = this.width;
+        let h = this.height;
+        if (this.orientation === 'vertical') {
+            w = this.height;
+            h = this.width; // Swap for vertical
         }
 
-        const material = new THREE.MeshStandardMaterial({
+        let geoOptions = { width: w, height: h, depth: this.depth, radius: Math.min(w, h) / 2 };
+        const geometry = GeometryFactory.create(this.trackShape, geoOptions);
+
+        const material = MaterialFactory.create(this.trackMaterialType, {
             map: this.gradientTexture,
-            color: 0xffffff,
-            metalness: 0.3,
-            roughness: 0.4,
+            color: this.trackColor, // Base color
             emissive: this.trackColor,
-            emissiveIntensity: 0.1
+            emissiveIntensity: 0.1,
+            roughness: 0.4,
+            metalness: 0.3
         });
 
         this.trackMesh = new THREE.Mesh(geometry, material);
@@ -206,8 +345,12 @@ export class Slider3D extends BaseControl3D {
             this.fillMesh.material.dispose();
         }
 
-        // Create fill with full width, will be scaled
-        const geometry = new THREE.BoxGeometry(this.width, this.height * 0.9, this.depth * 0.9);
+        const isVert = this.orientation === 'vertical';
+        const w = isVert ? this.height * 0.9 : this.width;
+        const h = isVert ? this.width : this.height * 0.9;
+
+        // Initial full geometry, scaled later
+        const geometry = new THREE.BoxGeometry(w, h, this.depth * 0.9);
         const material = new THREE.MeshStandardMaterial({
             color: this.fillColor,
             metalness: 0.5,
@@ -217,16 +360,35 @@ export class Slider3D extends BaseControl3D {
         });
 
         this.fillMesh = new THREE.Mesh(geometry, material);
-        this.fillMesh.position.x = 0;
         this.fillMesh.castShadow = true;
         this.fillMesh.receiveShadow = true;
-
-        // Set initial scale based on value
-        const fillRatio = (this.value - this.min) / (this.max - this.min);
-        this.fillMesh.scale.x = fillRatio;
-        this.fillMesh.position.x = -this.width / 2 + (this.width * fillRatio) / 2;
-
         this.group.add(this.fillMesh);
+
+        this.updateFillState();
+    }
+
+    updateFillState() {
+        if (!this.fillMesh) return;
+
+        const fillRatio = (this.value - this.min) / (this.max - this.min);
+        const isVert = this.orientation === 'vertical';
+
+        if (isVert) {
+            // Scale Y from bottom
+            this.fillMesh.scale.y = Math.max(0.001, fillRatio);
+            this.fillMesh.scale.x = 1.0;
+            // Center is 0. Bottom is -height/2.
+            const fullHeight = this.width; // width property is length
+            this.fillMesh.position.y = -fullHeight / 2 + (fullHeight * fillRatio) / 2;
+            this.fillMesh.position.x = 0;
+        } else {
+            // Scale X from left
+            this.fillMesh.scale.x = Math.max(0.001, fillRatio);
+            this.fillMesh.scale.y = 1.0;
+            const fullWidth = this.width;
+            this.fillMesh.position.x = -fullWidth / 2 + (fullWidth * fillRatio) / 2;
+            this.fillMesh.position.y = 0;
+        }
     }
 
     createHandle() {
@@ -236,32 +398,24 @@ export class Slider3D extends BaseControl3D {
             this.handleMesh.material.dispose();
         }
 
-        let geometry;
-        switch (this.modes[this.mode]) {
-            case 'box':
-                geometry = new THREE.BoxGeometry(this.handleSize, this.handleSize, this.handleDepth);
-                break;
-            case 'sphere':
-                geometry = new THREE.SphereGeometry(this.handleSize / 2, 16, 16);
-                break;
-            case 'sacred':
-                // Create octahedron for sacred geometry
-                geometry = new THREE.OctahedronGeometry(this.handleSize / 2, 0);
-                break;
-        }
+        const size = this.handleSize;
+        let geoOptions = { width: size, height: size, depth: size, radius: size / 2 };
+        const geometry = GeometryFactory.create(this.handleShape, geoOptions);
 
-        const material = new THREE.MeshStandardMaterial({
+        const material = MaterialFactory.create(this.handleMaterialType, {
             color: this.handleColor,
-            metalness: 0.7,
-            roughness: 0.2,
             emissive: this.handleColor,
             emissiveIntensity: 0.4
         });
 
         this.handleMesh = new THREE.Mesh(geometry, material);
-        this.handleMesh.position.x = this.handlePosition;
-        this.handleMesh.position.y = 0;
-        this.handleMesh.position.z = this.depth / 2 + this.handleDepth / 2;
+
+        if (this.orientation === 'vertical') {
+            this.handleMesh.position.set(0, this.handlePosition, this.depth / 2 + this.handleDepth / 2);
+        } else {
+            this.handleMesh.position.set(this.handlePosition, 0, this.depth / 2 + this.handleDepth / 2);
+        }
+
         this.handleMesh.castShadow = true;
         this.handleMesh.receiveShadow = true;
         this.handleMesh.userData.isHandle = true;
@@ -367,43 +521,26 @@ export class Slider3D extends BaseControl3D {
 
 
     valueToPosition(value) {
-        if (this.values && Array.isArray(this.values)) {
-            // Use values array mode - convert index to position
-            const index = typeof value === 'number' && value >= 0 && value < this.values.length
-                ? value
-                : this.values.indexOf(value);
-            if (index >= 0 && index < this.values.length) {
-                const normalized = index / (this.values.length - 1);
-                return -this.width / 2 + normalized * this.width;
-            }
-            return -this.width / 2;
-        } else {
-            // Use min/max/step mode
-            const normalized = (value - this.min) / (this.max - this.min);
-            return -this.width / 2 + normalized * this.width;
-        }
+        let normalized = (value - this.min) / (this.max - this.min);
+        const length = this.width; // In vertical mode, 'width' is still the length property
+        return -length / 2 + normalized * length;
     }
 
     positionToValue(position) {
-        if (this.values && Array.isArray(this.values)) {
-            // Use values array mode - convert position to index
-            const normalized = (position + this.width / 2) / this.width;
-            const index = Math.round(normalized * (this.values.length - 1));
-            const clampedIndex = Math.max(0, Math.min(this.values.length - 1, index));
-            return this.values[clampedIndex];
-        } else {
-            // Use min/max/step mode
-            const normalized = (position + this.width / 2) / this.width;
-            let value = this.min + normalized * (this.max - this.min);
+        const length = this.width;
 
-            // Apply step
-            if (this.step > 0) {
-                value = Math.round(value / this.step) * this.step;
-            }
+        // Position is typically local X (horizontal) or local Y (vertical)
+        const normalized = (position + length / 2) / length;
 
-            // Clamp to min/max
-            return Math.max(this.min, Math.min(this.max, value));
+        let value = this.min + normalized * (this.max - this.min);
+
+        // Apply step
+        if (this.step > 0) {
+            value = Math.round(value / this.step) * this.step;
         }
+
+        // Clamp to min/max
+        return Math.max(this.min, Math.min(this.max, value));
     }
 
     positionToIndex(position) {
@@ -446,18 +583,7 @@ export class Slider3D extends BaseControl3D {
 
         if (changed) {
             this.targetHandlePosition = this.valueToPosition(this.value);
-
-            // Update fill
-            if (this.fillMesh) {
-                let fillRatio;
-                if (this.values && Array.isArray(this.values)) {
-                    fillRatio = this.valueIndex / (this.values.length - 1);
-                } else {
-                    fillRatio = (this.value - this.min) / (this.max - this.min);
-                }
-                this.fillMesh.scale.x = fillRatio;
-                this.fillMesh.position.x = -this.width / 2 + (this.width * fillRatio) / 2;
-            }
+            this.updateFillState();
 
             // Update value display
             this.updateValueDisplay();
@@ -527,7 +653,7 @@ export class Slider3D extends BaseControl3D {
         const raycaster = new THREE.Raycaster();
         raycaster.setFromCamera(mouse, this.camera);
 
-        // Define plane in world space that matches the slider's local XY plane
+        // Define plane in world space
         const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(this.group.getWorldQuaternion(new THREE.Quaternion()));
         const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(normal, this.group.getWorldPosition(new THREE.Vector3()));
 
@@ -535,11 +661,12 @@ export class Slider3D extends BaseControl3D {
         const hasIntersection = raycaster.ray.intersectPlane(plane, intersection);
 
         if (hasIntersection) {
-            // Convert world intersection to local space
             this.group.worldToLocal(intersection);
 
-            // Now intersection.x is the local X position along the track
-            const newValue = this.positionToValue(intersection.x);
+            // Depends on orientation
+            let pos = this.orientation === 'vertical' ? intersection.y : intersection.x;
+
+            const newValue = this.positionToValue(pos);
             this.setValue(newValue, true);
         }
     }
@@ -564,11 +691,12 @@ export class Slider3D extends BaseControl3D {
                 const hasIntersection = this.raycaster.ray.intersectPlane(plane, intersection);
 
                 if (hasIntersection) {
-                    // Convert world intersection to local space
                     this.group.worldToLocal(intersection);
 
-                    // intersection.x is now the correct local X position
-                    const newValue = this.positionToValue(intersection.x);
+                    // Depends on orientation
+                    let pos = this.orientation === 'vertical' ? intersection.y : intersection.x;
+
+                    const newValue = this.positionToValue(pos);
                     this.setValue(newValue, true);
                 }
             }
@@ -645,16 +773,35 @@ export class Slider3D extends BaseControl3D {
         // Update handle position with animation
         if (this.handleMesh) {
             this.handlePosition += (this.targetHandlePosition - this.handlePosition) * this.animationSpeed;
-            this.handleMesh.position.x = this.handlePosition;
+
+            if (this.orientation === 'vertical') {
+                this.handleMesh.position.y = this.handlePosition;
+                this.handleMesh.position.x = 0;
+            } else {
+                this.handleMesh.position.x = this.handlePosition;
+                this.handleMesh.position.y = 0;
+            }
 
             // Update glow position
             if (this.glowMesh) {
-                this.glowMesh.position.x = this.handlePosition;
+                if (this.orientation === 'vertical') {
+                    this.glowMesh.position.y = this.handlePosition;
+                    this.glowMesh.position.x = 0;
+                } else {
+                    this.glowMesh.position.x = this.handlePosition;
+                    this.glowMesh.position.y = 0;
+                }
             }
 
             // Update value display position to follow handle
             if (this.valueMesh) {
-                this.valueMesh.position.x = this.handlePosition;
+                if (this.orientation === 'vertical') {
+                    this.valueMesh.position.y = this.handlePosition;
+                    this.valueMesh.position.x = this.handleSize / 2 + 0.4;
+                } else {
+                    this.valueMesh.position.x = this.handlePosition;
+                    this.valueMesh.position.y = this.handleSize / 2 + 0.3;
+                }
             }
         }
 

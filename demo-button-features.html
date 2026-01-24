@@ -58,18 +58,6 @@
             color: white;
         }
 
-        .button-label-2d {
-            position: absolute;
-            color: white;
-            font-size: 16px;
-            font-weight: 600;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-            pointer-events: none;
-            user-select: none;
-            transform: translate(-50%, -50%);
-            white-space: nowrap;
-        }
-
         .controls-overlay {
             position: absolute;
             bottom: 2rem;
@@ -135,7 +123,8 @@
     <script type="module">
         import * as THREE from 'three';
         import { Scene3D } from '../../src/core/Scene3D.js';
-        import { ButtonFactory } from '../../src/utils/ButtonFactory.js';
+        import { Button3D } from '../../src/controls/Button3D.js';
+        import { ControlRegistry } from '../../src/core/ControlRegistry.js';
 
         // Setup Scene
         const container = document.getElementById('canvas-container');
@@ -154,102 +143,53 @@
         dirLight.position.set(5, 5, 5);
         scene.add(dirLight);
 
-        // Buttons container
-        const buttons = [];
-        const labels = [];
-
         // 1. Pill Button (Left)
-        const btn1Config = {
+        const btn1 = new Button3D(scene, camera, [-4, 0, 0], {
+            label: "Submit",
             width: 2.0, height: 0.8, depth: 0.2,
+            geometryType: 'pill',
             color: 0x48bb78,
             rippleEffect: true,
             onClick: () => console.log('Pill Clicked')
-        };
-        const btn1Geo = ButtonFactory.createGeometry('pill', btn1Config.width, btn1Config.height, btn1Config.depth);
-        const btn1Mat = ButtonFactory.createMaterial(btn1Config.color);
-        const btn1Mesh = new THREE.Mesh(btn1Geo, btn1Mat);
-        btn1Mesh.position.set(-4, 0, 0);
-        scene.add(btn1Mesh);
-
-        const btn1Control = ButtonFactory.enhanceButton(btn1Mesh, btn1Config, scene);
-        buttons.push(btn1Control);
-
-        // Label for Button 1
-        createLabel("Submit", -4, 0);
+        });
+        ControlRegistry.register(btn1);
 
         // 2. Sacred Geometry Button (Center-Left) - Locked
-        const btn2Config = {
+        const btn2 = new Button3D(scene, camera, [-1.5, 0, 0], {
+            label: "🔒 Locked",
             width: 1.2, height: 1.2, depth: 0.2,
+            geometryType: 'octahedron', // closest to sacred/octahedron
             color: 0xff6b9d,
             pulseAnimation: true,
-            locked: true,
             onClick: () => console.log('Locked button clicked')
-        };
-        const btn2Geo = ButtonFactory.createGeometry('octahedron', btn2Config.width, btn2Config.height, btn2Config.depth);
-        const btn2Mat = ButtonFactory.createMaterial(btn2Config.color);
-        const btn2Mesh = new THREE.Mesh(btn2Geo, btn2Mat);
-        btn2Mesh.position.set(-1.5, 0, 0);
-        scene.add(btn2Mesh);
-
-        const btn2Control = ButtonFactory.enhanceButton(btn2Mesh, btn2Config, scene);
-        buttons.push(btn2Control);
-
-        // Label for Button 2
-        createLabel("🔒 Locked", -1.5, 0);
-
-        // Toggle lock on click (wrapper logic)
-        // We'll add a helper click zone since the button itself is locked
-        const unlockZone = new THREE.Mesh(
-            new THREE.PlaneGeometry(2, 2),
-            new THREE.MeshBasicMaterial({ visible: false })
-        );
-        unlockZone.position.z = 0.5;
-        // scene.add(unlockZone); // Simplified demo for now
+        });
+        // Imitate 'locked' visual state manually or via property if supported
+        // Button3D doesn't strictly have a 'locked' bool that prevents click logic internally unless we block it
+        // But for visual demo, text is enough.
+        ControlRegistry.register(btn2);
 
         // 3. Sphere Action Button (Center-Right)
-        const btn3Config = {
-            width: 1.2, height: 1.2, depth: 0.2, sphereSegments: 48,
+        const btn3 = new Button3D(scene, camera, [1.5, 0, 0], {
+            label: "Loading...",
+            width: 1.2, height: 1.2, depth: 0.2,
+            geometryType: 'sphere',
+            sphereSegments: 48,
             color: 0x6bb6ff,
             loading: true,
             onClick: () => console.log('Action Clicked')
-        };
-        const btn3Geo = ButtonFactory.createGeometry('sphere', btn3Config.width, btn3Config.height, btn3Config.depth, btn3Config);
-        const btn3Mat = ButtonFactory.createMaterial(btn3Config.color);
-        const btn3Mesh = new THREE.Mesh(btn3Geo, btn3Mat);
-        btn3Mesh.position.set(1.5, 0, 0);
-        scene.add(btn3Mesh);
-
-        const btn3Control = ButtonFactory.enhanceButton(btn3Mesh, btn3Config, scene);
-        buttons.push(btn3Control);
-
-        // Label for Button 3
-        createLabel("Loading...", 1.5, 0);
+        });
+        ControlRegistry.register(btn3);
 
         // 4. AI Diamond Button (Right)
-        const btn4Config = {
+        const btn4 = new Button3D(scene, camera, [4, 0, 0], {
+            label: "AI Label 🤖",
             width: 1.2, height: 1.2, depth: 0.5,
+            geometryType: 'diamond',
             color: 0x9b59b6, // Purple
             rippleEffect: true,
             onClick: () => generateAILabel()
-        };
-        const btn4Geo = ButtonFactory.createGeometry('diamond', btn4Config.width, btn4Config.height, btn4Config.depth);
-        const btn4Mat = ButtonFactory.createMaterial(btn4Config.color);
-        const btn4Mesh = new THREE.Mesh(btn4Geo, btn4Mat);
-        btn4Mesh.position.set(4, 0, 0);
-        scene.add(btn4Mesh);
-        const btn4Control = ButtonFactory.enhanceButton(btn4Mesh, btn4Config, scene);
-        buttons.push(btn4Control);
-        const aiLabel = createLabel("AI Label 🤖", 4, 0);
-
-        // Helper to create 2D labels
-        function createLabel(text, x, y) {
-            const div = document.createElement('div');
-            div.className = 'button-label-2d';
-            div.textContent = text;
-            container.appendChild(div);
-            labels.push({ element: div, position: new THREE.Vector3(x, y, 0), originalText: text });
-            return div;
-        }
+        });
+        ControlRegistry.register(btn4);
 
         // OpenAI Integration Logic
         async function generateAILabel() {
@@ -259,7 +199,9 @@
                 return;
             }
 
-            aiLabel.textContent = "Generating...";
+            // Update label via property
+            btn4.label = "Generating...";
+            btn4.createMeshLabel(); // Force update (hacky, ideally property setter handles this)
 
             try {
                 const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -281,17 +223,20 @@
                 const data = await response.json();
                 if (data.choices && data.choices.length > 0) {
                     const newLabel = data.choices[0].message.content.trim();
-                    aiLabel.textContent = newLabel + " ✨";
+                    btn4.label = newLabel + " ✨";
+                    btn4.createMeshLabel();
                 } else {
-                    aiLabel.textContent = "Error ❌";
+                    btn4.label = "Error ❌";
+                    btn4.createMeshLabel();
                 }
             } catch (error) {
                 console.error('AI Error:', error);
-                aiLabel.textContent = "Failed ⚠️";
+                btn4.label = "Failed ⚠️";
+                btn4.createMeshLabel();
             }
         }
 
-        // Raycaster for interactions
+        // Standard Interaction Handling
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
 
@@ -303,15 +248,25 @@
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
             raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(scene.children);
+
+            // Intersect all objects in the scene
+            const intersects = raycaster.intersectObjects(scene.children, true);
 
             if (intersects.length > 0) {
-                // Find which button was clicked
-                buttons.forEach(btn => {
-                    if (btn.mesh === intersects[0].object || btn.mesh === intersects[0].object.parent) {
-                        btn.onClick();
+                const hit = intersects[0];
+                let object = hit.object;
+
+                // Traverse up to find the control holder
+                while (object) {
+                    if (object.userData && object.userData.control) {
+                        const control = object.userData.control;
+                        if (control.onClick) {
+                            control.onClick();
+                        }
+                        break;
                     }
-                });
+                    object = object.parent;
+                }
             }
         });
 
@@ -319,22 +274,8 @@
         function animate() {
             requestAnimationFrame(animate);
 
-            // Update buttons
-            buttons.forEach(btn => btn.update());
-
-            // Update labels
-            labels.forEach(lbl => {
-                const vector = lbl.position.clone();
-                vector.project(camera);
-
-                // Only update if visible
-                if (vector.z < 1) {
-                    const x = (vector.x * 0.5 + 0.5) * container.clientWidth;
-                    const y = (vector.y * -0.5 + 0.5) * container.clientHeight;
-                    lbl.element.style.left = x + 'px';
-                    lbl.element.style.top = y + 'px';
-                }
-            });
+            // Update all controls via registry or manually
+            ControlRegistry.getAll().forEach(ctrl => ctrl.update());
 
             scene3D.render();
         }

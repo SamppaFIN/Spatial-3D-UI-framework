@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Bay 2050 - Spatial UI 3D Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Consolas', monospace;
+            background: #f0f4f8;
+            color: #2c3e50;
+            overflow: hidden;
+        }
+
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .medical-info {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #4a90e2;
+            padding: 20px;
+            max-width: 400px;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(74, 144, 226, 0.3);
+            border-radius: 8px;
+        }
+
+        .medical-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #4a90e2;
+            text-shadow: 0 0 10px rgba(74, 144, 226, 0.3);
+        }
+
+        .medical-text {
+            color: #34495e;
+            line-height: 1.6;
+            font-size: 13px;
+        }
+
+        .vitals-monitor {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #5cb85c;
+            padding: 15px;
+            z-index: 100;
+            min-width: 250px;
+            border-radius: 8px;
+        }
+
+        .vitals-title {
+            color: #5cb85c;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .vitals-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 12px;
+        }
+
+        .vitals-label {
+            color: #7f8c8d;
+        }
+
+        .vitals-value {
+            color: #2c3e50;
+            font-weight: bold;
+        }
+
+        .vitals-value.normal {
+            color: #5cb85c;
+        }
+
+        .vitals-value.warning {
+            color: #f39c12;
+        }
+
+        .patient-info {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #9b59b6;
+            padding: 15px;
+            z-index: 100;
+            max-width: 350px;
+            border-radius: 8px;
+        }
+
+        .patient-title {
+            color: #9b59b6;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .patient-item {
+            color: #34495e;
+            margin: 5px 0;
+            font-size: 12px;
+            padding-left: 15px;
+        }
+
+        .alert-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #3498db;
+            padding: 15px;
+            z-index: 100;
+            max-width: 300px;
+            border-radius: 8px;
+        }
+
+        .alert-title {
+            color: #3498db;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .alert-text {
+            color: #34495e;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .pulse {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, rgba(92, 184, 92, 0.8), transparent);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: heartbeat 1.2s infinite;
+        }
+
+        @keyframes heartbeat {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            50% {
+                transform: scale(1.3);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <!-- Pulse indicators -->
+    <div class="pulse" style="top: 60px; right: 60px;"></div>
+
+    <!-- Medical Info -->
+    <div class="medical-info">
+        <div class="medical-title">🏥 MEDICAL BAY 2050</div>
+        <div class="medical-text">
+            <strong>PATIENT MONITORING SYSTEM</strong><br><br>
+            Welcome to the Medical Bay 2050 Advanced Patient Care Center.
+            You are monitoring Patient #4521 in Post-Operative Recovery.
+            All systems are integrated with AI-assisted diagnostics.<br><br>
+            <strong>CURRENT STATUS:</strong><br>
+            Patient vitals stable. Continue monitoring and adjust
+            medication as needed.
+        </div>
+    </div>
+
+    <!-- Vitals Monitor -->
+    <div class="vitals-monitor">
+        <div class="vitals-title">📊 VITAL SIGNS</div>
+        <div class="vitals-item">
+            <span class="vitals-label">Heart Rate:</span>
+            <span class="vitals-value normal" id="heart-rate">72 BPM</span>
+        </div>
+        <div class="vitals-item">
+            <span class="vitals-label">Blood Pressure:</span>
+            <span class="vitals-value normal" id="bp">120/80 mmHg</span>
+        </div>
+        <div class="vitals-item">
+            <span class="vitals-label">Oxygen Sat:</span>
+            <span class="vitals-value normal" id="o2">98%</span>
+        </div>
+        <div class="vitals-item">
+            <span class="vitals-label">Temperature:</span>
+            <span class="vitals-value normal" id="temp">37.1°C</span>
+        </div>
+        <div class="vitals-item">
+            <span class="vitals-label">Respiration:</span>
+            <span class="vitals-value normal" id="resp">16 /min</span>
+        </div>
+    </div>
+
+    <!-- Patient Info -->
+    <div class="patient-info">
+        <div class="patient-title">👤 PATIENT RECORD</div>
+        <div class="patient-item">📋 ID: #4521 - John Doe</div>
+        <div class="patient-item">🎂 Age: 45 years</div>
+        <div class="patient-item">📅 Admitted: 2050-01-20 14:30</div>
+        <div class="patient-item">🏥 Condition: Post-operative recovery</div>
+        <div class="patient-item">💊 Allergies: Penicillin</div>
+        <div class="patient-item">⏱️ Time in Recovery: 18h 42m</div>
+    </div>
+
+    <!-- Alert Panel -->
+    <div class="alert-panel">
+        <div class="alert-title">ℹ️ SYSTEM STATUS</div>
+        <div class="alert-text">
+            All monitoring systems operational. Patient vitals within
+            normal parameters. Next medication dose scheduled in 2h 15m.
+        </div>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { Chart3D } from '../../src/controls/Chart3D.js';
+        import { Slider3D } from '../../src/controls/Slider3D.js';
+        import { Toggle3D } from '../../src/controls/Toggle3D.js';
+        import { Accordion3D } from '../../src/controls/Accordion3D.js';
+        import { Button3D } from '../../src/controls/Button3D.js';
+        import { Modal3D } from '../../src/controls/Modal3D.js';
+        import { HaloCard3D } from '../../src/controls/HaloCard3D.js';
+        import * as THREE from 'three';
+
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+
+        // Medical environment - clean white with soft blue
+        scene.background = new THREE.Color(0xf0f4f8);
+        scene.fog = new THREE.Fog(0xf0f4f8, 10, 50);
+
+        // Medical lighting - soft and clean
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+
+        const mainLight = new THREE.DirectionalLight(0xe3f2fd, 0.6);
+        mainLight.position.set(5, 10, 5);
+        scene.add(mainLight);
+
+        const fillLight = new THREE.PointLight(0x4a90e2, 0.3, 30);
+        fillLight.position.set(-5, 5, -5);
+        scene.add(fillLight);
+
+        camera.position.set(0, 2, 12);
+
+        // Section Labels with HaloCard3D
+        const vitalsLabel = new HaloCard3D(scene, camera, [-6, 4, 0], {
+            text: 'VITALS MONITOR',
+            width: 4,
+            height: 0.5,
+            color: 0x5cb85c,
+            mode: 0,
+            renderer: renderer
+        });
+
+        const medicationLabel = new HaloCard3D(scene, camera, [0, 4, 0], {
+            text: 'MEDICATION',
+            width: 4,
+            height: 0.5,
+            color: 0x4a90e2,
+            mode: 0,
+            renderer: renderer
+        });
+
+        const recordsLabel = new HaloCard3D(scene, camera, [6, 4, 0], {
+            text: 'PATIENT RECORDS',
+            width: 4,
+            height: 0.5,
+            color: 0x9b59b6,
+            mode: 0,
+            renderer: renderer
+        });
+
+        // Heart Rate Chart (24h)
+        const heartRateData = [];
+        for (let i = 0; i < 24; i++) {
+            heartRateData.push(68 + Math.sin(i * 0.5) * 8 + Math.random() * 4);
+        }
+
+        const heartRateChart = new Chart3D(scene, camera, [-6, 2, 0], {
+            chartType: 'line',
+            data: {
+                labels: ['00:00', '02:00', '04:00', '06:00', '08:00', '10:00', '12:00',
+                    '14:00', '16:00', '18:00', '20:00', '22:00'],
+                datasets: [{
+                    label: 'Heart Rate (BPM)',
+                    data: heartRateData.filter((_, i) => i % 2 === 0),
+                    borderColor: '#5cb85c',
+                    backgroundColor: 'rgba(92, 184, 92, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            width: 4.5,
+            height: 3,
+            mode: 0,
+            renderer: renderer
+        });
+
+        // Blood Pressure Chart
+        const bpChart = new Chart3D(scene, camera, [6, 2, 0], {
+            chartType: 'bar',
+            data: {
+                labels: ['Systolic', 'Diastolic', 'Pulse Pressure'],
+                datasets: [{
+                    label: 'Blood Pressure (mmHg)',
+                    data: [120, 80, 40],
+                    backgroundColor: [
+                        'rgba(74, 144, 226, 0.8)',
+                        'rgba(52, 152, 219, 0.8)',
+                        'rgba(155, 89, 182, 0.8)'
+                    ]
+                }]
+            },
+            width: 4.5,
+            height: 3,
+            mode: 0,
+            renderer: renderer
+        });
+
+        // Pain Medication Dosage Slider
+        const medicationSlider = new Slider3D(scene, camera, [0, 1, 0], {
+            label: '💊 MORPHINE (mg/hr)',
+            width: 4,
+            height: 0.3,
+            min: 0,
+            max: 10,
+            value: 4.5,
+            mode: 0,
+            renderer: renderer,
+            onChange: (slider, value) => {
+                console.log(`Medication dosage: ${value.toFixed(1)}mg/hr`);
+            }
+        });
+
+        // Patient Monitoring Alerts Toggle
+        const alertsToggle = new Toggle3D(scene, camera, [0, 0, 0], {
+            label: '🔔 ALERTS',
+            width: 2,
+            height: 0.7,
+            isOn: true,
+            onColor: 0x5cb85c,
+            offColor: 0x95a5a6,
+            mode: 0,
+            renderer: renderer
+        });
+
+        // Continuous Monitoring Toggle
+        const monitoringToggle = new Toggle3D(scene, camera, [0, -1.2, 0], {
+            label: '📊 CONTINUOUS',
+            width: 2,
+            height: 0.7,
+            isOn: true,
+            onColor: 0x4a90e2,
+            offColor: 0x95a5a6,
+            mode: 0,
+            renderer: renderer
+        });
+
+        // Lab Results Accordion
+        const labResultsAccordion = new Accordion3D(scene, camera, [-6, -1, 0], {
+            width: 5,
+            itemHeight: 0.7,
+            itemSpacing: 0.15,
+            mode: 0,
+            renderer: renderer,
+            items: [
+                {
+                    title: '🩸 Blood Work',
+                    contentHeight: 3,
+                    content: `# Complete Blood Count
+
+## Results (2050-01-21 08:00)
+- **WBC**: 7.2 K/µL (Normal: 4.5-11.0)
+- **RBC**: 4.8 M/µL (Normal: 4.5-5.5)
+- **Hemoglobin**: 14.2 g/dL (Normal: 13.5-17.5)
+- **Platelets**: 250 K/µL (Normal: 150-400)
+- **Neutrophils**: 62% (Normal: 40-70%)
+
+## Assessment
+All values within normal range. No signs of infection or anemia.`
+                },
+                {
+                    title: '🧪 Urinalysis',
+                    contentHeight: 3,
+                    content: `# Urinalysis Results
+
+## Physical Properties
+- **Color**: Pale yellow
+- **Clarity**: Clear
+- **pH**: 6.5 (Normal: 4.5-8.0)
+- **Specific Gravity**: 1.020 (Normal: 1.005-1.030)
+
+## Chemical Analysis
+- **Protein**: Negative
+- **Glucose**: Negative
+- **Ketones**: Negative
+- **Blood**: Negative
+
+## Assessment
+Normal urinalysis. Adequate hydration.`
+                },
+                {
+                    title: '🔬 CT Scan Results',
+                    contentHeight: 3,
+                    content: `# Post-Operative CT Scan
+
+## Scan Date
+2050-01-21 10:30
+
+## Findings
+- **Surgical site**: Healing normally
+- **No complications**: No bleeding or fluid accumulation
+- **Organs**: All within normal limits
+- **Bones**: No fractures detected
+
+## Radiologist Notes
+Post-operative changes consistent with recent surgery. 
+No acute abnormalities detected. Recommend follow-up 
+scan in 2 weeks.`
+                }
+            ],
+            openItems: [0]
+        });
+
+        // Request Nurse Button
+        const nurseButton = new Button3D(scene, camera, [6, -1, 0], {
+            label: '👨‍⚕️ REQUEST NURSE',
+            width: 3,
+            height: 1,
+            color: 0x3498db,
+            mode: 0,
+            renderer: renderer,
+            onClick: () => {
+                console.log('Nurse assistance requested');
+                alert('Nurse has been notified and will arrive shortly.');
+            }
+        });
+
+        // Emergency Protocols Modal
+        const emergencyModal = new Modal3D(scene, camera, [6, -2.5, 0], {
+            title: '⚠️ EMERGENCY',
+            content: `# Emergency Protocols
+
+## Code Blue - Cardiac Arrest
+1. Call emergency team
+2. Begin CPR immediately
+3. Prepare defibrillator
+4. Administer emergency medications
+
+## Code Red - Fire
+1. Evacuate patients
+2. Close fire doors
+3. Use fire extinguisher if safe
+4. Call fire department
+
+## Rapid Response
+Available 24/7 for patient deterioration`,
+            width: 3,
+            height: 1,
+            buttonLabel: 'PROTOCOLS',
+            mode: 0,
+            renderer: renderer
+        });
+
+        // Simulate realistic vital sign variations
+        let time = 0;
+        setInterval(() => {
+            time++;
+
+            // Heart rate variation (68-76 BPM)
+            const hr = 72 + Math.sin(time * 0.1) * 3 + (Math.random() - 0.5) * 2;
+            document.getElementById('heart-rate').textContent = Math.round(hr) + ' BPM';
+
+            // Slight BP variation
+            const systolic = 120 + Math.round((Math.random() - 0.5) * 4);
+            const diastolic = 80 + Math.round((Math.random() - 0.5) * 4);
+            document.getElementById('bp').textContent = `${systolic}/${diastolic} mmHg`;
+
+            // O2 saturation (97-99%)
+            const o2 = 98 + Math.round((Math.random() - 0.5) * 2);
+            document.getElementById('o2').textContent = o2 + '%';
+
+            // Temperature (36.8-37.2°C)
+            const temp = 37.0 + (Math.random() - 0.5) * 0.4;
+            document.getElementById('temp').textContent = temp.toFixed(1) + '°C';
+
+            // Respiration (14-18 /min)
+            const resp = 16 + Math.round((Math.random() - 0.5) * 4);
+            document.getElementById('resp').textContent = resp + ' /min';
+        }, 2000);
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            vitalsLabel.update();
+            medicationLabel.update();
+            recordsLabel.update();
+            heartRateChart.update();
+            bpChart.update();
+            medicationSlider.update();
+            alertsToggle.update();
+            monitoringToggle.update();
+            labResultsAccordion.update();
+            nurseButton.update();
+            emergencyModal.update();
+
+            // Subtle light pulsing
+            fillLight.intensity = 0.3 + Math.sin(Date.now() * 0.001) * 0.05;
+
+            scene3D.render();
+        }
+
+        animate();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mars 2100: The Red Gate - Spatial UI 3D</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+        }
+
+        #canvas {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .hud {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: #4ecdc4;
+            font-family: 'Inter', sans-serif;
+            pointer-events: none;
+            text-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+        }
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+
+<body>
+    <div class="hud">
+        <h1>🚀 Mars 2100: The Red Gate</h1>
+        <p>Approach the portal to initiate transfer.</p>
+    </div>
+    <canvas id="canvas"></canvas>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { AIPortal3D } from '../../src/controls/AIPortal3D.js';
+        import { Button3D } from '../../src/controls/Button3D.js';
+        import { Slider3D } from '../../src/controls/Slider3D.js';
+        import { ControlRegistry } from '../../src/core/ControlRegistry.js';
+
+        // 1. Setup Scene
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+
+        // 2. Initial "Airlock" Environment
+        scene.background = new THREE.Color(0x050510); // Deep space blue/black
+        scene.fog = new THREE.FogExp2(0x050510, 0.02);
+
+        // Airlock Lighting
+        const airlockAmbient = new THREE.AmbientLight(0x4040a0, 0.5);
+        scene.add(airlockAmbient);
+        const airlockSpot = new THREE.SpotLight(0x4ecdc4, 2);
+        airlockSpot.position.set(0, 5, 5);
+        scene.add(airlockSpot);
+
+        // 3. The Portal
+        const portal = new AIPortal3D(scene, camera, [0, 1.5, -4], {
+            width: 4, height: 6,
+            portalRadius: 3.0,
+            color: 0xff3300, // Mars Red
+            content: "TERRAFORM COMMAND",
+            onTraverse: () => enterMarsRealm()
+        });
+
+        // 4. Mars Environment (Hidden initially)
+        const marsGroup = new THREE.Group();
+        marsGroup.visible = false;
+        scene.add(marsGroup);
+
+        // Mars Terrain (Simple Grid)
+        const gridHelper = new THREE.GridHelper(100, 100, 0xff3300, 0x551100);
+        marsGroup.add(gridHelper);
+
+        // Mars Lighting
+        const marsSun = new THREE.DirectionalLight(0xffaa33, 3);
+        marsSun.position.set(-10, 20, -10);
+        marsGroup.add(marsSun);
+
+        // Mars Dust Particles
+        const dustGeometry = new THREE.BufferGeometry();
+        const dustCount = 2000;
+        const dustPos = new Float32Array(dustCount * 3);
+
+        for (let i = 0; i < dustCount * 3; i++) {
+            dustPos[i] = (Math.random() - 0.5) * 50;
+        }
+        dustGeometry.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+        const dustMaterial = new THREE.PointsMaterial({
+            color: 0xff4400,
+            size: 0.05,
+            transparent: true,
+            opacity: 0.6
+        });
+        const dustSystem = new THREE.Points(dustGeometry, dustMaterial);
+        marsGroup.add(dustSystem);
+
+        // 5. Mars Controls
+        const terraformBtn = new Button3D(scene, camera, [0, 1, -8], {
+            label: "INITIATE TERRAFORM",
+            width: 3, height: 1,
+            color: 0x00ff00,
+            onClick: () => triggerTerraform()
+        });
+        marsGroup.add(terraformBtn.getGroup()); // Add manually to group logic
+        // Register manually since we added to a group not scene directly (usually handled by control)
+        ControlRegistry.register(terraformBtn);
+
+        const atmosphereSlider = new Slider3D(scene, camera, [3, 1, -7], {
+            label: "Atmosphere Density",
+            width: 3, height: 0.3,
+            value: 50,
+            color: 0x4ecdc4
+        });
+        marsGroup.add(atmosphereSlider.getGroup());
+        ControlRegistry.register(atmosphereSlider);
+
+        // 6. Transition Logic
+        let isMars = false;
+        let transitionTime = 0;
+
+        function enterMarsRealm() {
+            if (isMars) return;
+            isMars = true;
+            console.log("Welcome to Mars.");
+
+            // Visual transition
+            marsGroup.visible = true;
+
+            // Fade fog to red
+            const startColor = new THREE.Color(0x050510);
+            const targetColor = new THREE.Color(0x330500); // Dark Red
+
+            let progress = 0;
+            const duration = 2000; // 2s transition
+            const startTime = Date.now();
+
+            function transition() {
+                const elapsed = Date.now() - startTime;
+                progress = Math.min(elapsed / duration, 1.0);
+
+                // Lerp fog color
+                scene.fog.color.lerpColors(startColor, targetColor, progress);
+                scene.background.lerpColors(startColor, targetColor, progress);
+                scene.fog.density = 0.02 + (progress * 0.03); // Thicker fog on Mars
+
+                if (progress < 1) {
+                    requestAnimationFrame(transition);
+                } else {
+                    // Hide airlock elements to save performance?
+                    // portal.group.visible = false;
+                }
+            }
+            transition();
+        }
+
+        function triggerTerraform() {
+            // Explosion of green particles
+            console.log("Terraforming...");
+            marsSun.color.setHex(0xccffcc); // Greenish sun
+            scene.fog.color.setHex(0xaaffaa); // Green fog
+            dustMaterial.color.setHex(0x88ff88); // Green dust
+        }
+
+        // 7. Loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            portal.update();
+
+            if (isMars) {
+                dustSystem.rotation.y += 0.001;
+                terraformBtn.update();
+                atmosphereSlider.update();
+            }
+
+            scene3D.render();
+        }
+        animate();
+
+        // 8. Auto-move camera for demo (optional, user can walk)
+        // Let user walk with WASD (default in Scene3D/SpatialControls if enabled)
+        // Or we simulate "approaching"
+
+        window.addEventListener('keydown', (e) => {
+            // Simple forward movement for testing
+            if (e.key === 'w') {
+                camera.position.z -= 0.1;
+            }
+            if (e.key === 's') {
+                camera.position.z += 0.1;
+            }
+        });
+
+    </script>
+</body>
+
+</html>

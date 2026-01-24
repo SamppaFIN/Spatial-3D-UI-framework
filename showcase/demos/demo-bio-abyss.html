@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bio-Luminescent Abyss - Spatial UI 3D</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        #canvas {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .overlay-text {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(100, 200, 255, 0.6);
+            font-size: 0.9em;
+            letter-spacing: 2px;
+            pointer-events: none;
+            text-transform: uppercase;
+        }
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+
+<body>
+    <div class="overlay-text">
+        Depth: 4200m &bull; Pressure: 420 atm &bull; Life Signs: Detected
+    </div>
+    <canvas id="canvas"></canvas>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { LiquidStateContainer3D } from '../../src/controls/LiquidStateContainer3D.js';
+        import { TextDisplay3D } from '../../src/controls/TextDisplay3D.js';
+        import { ControlRegistry } from '../../src/core/ControlRegistry.js';
+
+        // 1. Setup Scene
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+
+        // Deep Ocean Atmosphere
+        scene.background = new THREE.Color(0x000510);
+        scene.fog = new THREE.FogExp2(0x000510, 0.04);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x001133, 2.0); // Bright ambient for glow
+        scene.add(ambientLight);
+
+        const spotLight = new THREE.SpotLight(0x00aaff, 3, 20, 0.5, 0.5);
+        spotLight.position.set(0, 10, 5);
+        scene.add(spotLight);
+
+        // 2. Particulates (Marine Snow)
+        const particlesGeo = new THREE.BufferGeometry();
+        const count = 5000;
+        const pos = new Float32Array(count * 3);
+        const velocity = [];
+
+        for (let i = 0; i < count * 3; i += 3) {
+            pos[i] = (Math.random() - 0.5) * 40;
+            pos[i + 1] = (Math.random() - 0.5) * 40;
+            pos[i + 2] = (Math.random() - 0.5) * 40;
+            velocity.push({
+                x: (Math.random() - 0.5) * 0.002,
+                y: -Math.random() * 0.01 // Sink slowly
+            });
+        }
+        particlesGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        const particlesMat = new THREE.PointsMaterial({
+            color: 0x88ccff,
+            size: 0.03,
+            transparent: true,
+            opacity: 0.4
+        });
+        const marineSnow = new THREE.Points(particlesGeo, particlesMat);
+        scene.add(marineSnow);
+
+        // 3. Jellyfish UI (Liquid Containers)
+        const jellyfishList = [];
+
+        function createJellyfish(x, y, z, color, label) {
+            const jelly = new LiquidStateContainer3D(scene, camera, [x, y, z], {
+                width: 1.5,
+                color: color,
+                highlightColor: 0xffffff,
+                tension: 0.3,
+                viscosity: 0.4
+            });
+            ControlRegistry.register(jelly);
+            jellyfishList.push(jelly);
+
+            // Tendrils (Lines)
+            const tendrilMat = new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: 0.5 });
+            const tendrilGeo = new THREE.BufferGeometry();
+            const points = [];
+            for (let i = 0; i < 20; i++) {
+                points.push(new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.5,
+                    -i * 0.1,
+                    (Math.random() - 0.5) * 0.5
+                ));
+            }
+            tendrilGeo.setFromPoints(points);
+            const startPositions = points.map(p => p.clone()); // Store start pos
+            const tendrils = new THREE.Line(tendrilGeo, tendrilMat);
+            tendrils.position.y = -0.5;
+            jelly.getGroup().add(tendrils);
+
+            jelly.userData = { tendrils, startPositions };
+
+            // Label
+            if (label) {
+                const text = new TextDisplay3D(scene, camera, [x, y - 1.5, z], {
+                    content: `### ${label}`,
+                    width: 2, height: 1,
+                    style: 'minimal'
+                });
+                // Sync position logic if moving?
+                // For now static
+            }
+        }
+
+        createJellyfish(0, 0, 0, 0x00ffff, "System Status");
+        createJellyfish(-3, 1, -2, 0xff00aa, "Life Support");
+        createJellyfish(3, -1, -1, 0xccff00, "Navigation");
+
+
+        // 4. Animation Loop
+        let time = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            // Animate Marine Snow
+            const positions = marineSnow.geometry.attributes.position.array;
+            for (let i = 0; i < count; i++) {
+                const idx = i * 3;
+                positions[idx] += velocity[i].x + Math.sin(time + positions[idx + 1]) * 0.002;
+                positions[idx + 1] += velocity[i].y;
+
+                // Reset if too low
+                if (positions[idx + 1] < -20) positions[idx + 1] = 20;
+            }
+            marineSnow.geometry.attributes.position.needsUpdate = true;
+
+            // Animate Jellyfish floating
+            jellyfishList.forEach((jelly, index) => {
+                jelly.update();
+
+                // Bobbing motion
+                const group = jelly.getGroup();
+                group.position.y += Math.sin(time + index) * 0.005;
+
+                // Tendril animation
+                if (jelly.userData.tendrils) {
+                    const positions = jelly.userData.tendrils.geometry.attributes.position;
+                    for (let i = 1; i < 20; i++) { // Skip root
+                        const x = jelly.userData.startPositions[i].x + Math.sin(time * 2 + i * 0.2) * 0.1;
+                        const z = jelly.userData.startPositions[i].z + Math.cos(time * 1.5 + i * 0.1) * 0.1;
+                        positions.setXYZ(i, x, jelly.userData.startPositions[i].y, z);
+                    }
+                    positions.needsUpdate = true;
+                }
+            });
+
+            scene3D.render();
+        }
+        animate();
+    </script>
+</body>
+
+</html>

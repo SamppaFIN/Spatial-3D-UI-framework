@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Spatial Mixer - Spatial UI 3D</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #111;
+            font-family: 'Helvetica', sans-serif;
+        }
+
+        #ui-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #ff00ff;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        h1 {
+            margin: 0;
+            font-weight: 900;
+            letter-spacing: -2px;
+            font-style: italic;
+            text-shadow: 2px 2px 0px #00ffff;
+        }
+
+        .instruction {
+            margin-top: 10px;
+            font-size: 0.8em;
+            color: #fff;
+            background: #000;
+            padding: 10px;
+            border: 1px solid #ff00ff;
+            max-width: 250px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="ui-overlay">
+        <h1>SPATIAL MIXER</h1>
+        <div class="instruction">
+            <p>> <strong>PROBLEM:</strong> Audio mixing lacks tactile feedback on digital screens.</p>
+            <p>> <strong>SOLUTION:</strong> Giant floating faders and spatial echo visualization.</p>
+            <p>> Adjust levels with Sliders.</p>
+            <p>> Click empty space to trigger ECHO visualization.</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+        import Scene3D from './src/core/Scene3D.js';
+        import { Slider3D } from './src/controls/Slider3D.js';
+        import { Button3D } from './src/controls/Button3D.js';
+        import { EchoInteraction3D } from './src/controls/EchoInteraction3D.js';
+        import { LandscapeRoom } from './src/environments/LandscapeRoom.js';
+
+        // 1. Scene Setup
+        const scene3D = new Scene3D({
+            container: document.body,
+            enableOrbitControls: true,
+            cameraPosition: [0, 4, 10]
+        });
+
+        // 2. Environment (Neon Grid Landscape)
+        new LandscapeRoom(scene3D.scene, {
+            gridColor: 0xff00ff,
+            floorColor: 0x110011,
+            fogColor: 0x110011
+        });
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene3D.scene.add(ambientLight);
+        const spotLight = new THREE.SpotLight(0x00ffff, 2);
+        spotLight.position.set(0, 10, 5);
+        scene3D.scene.add(spotLight);
+
+        // 3. Mixer Board
+        const mixerGroup = new THREE.Group();
+        scene3D.scene.add(mixerGroup);
+        mixerGroup.rotation.x = -0.2; // Tilt back
+        mixerGroup.position.y = 1;
+
+        // Create 4 Channels
+        const channels = ['VOCAL', 'SYNTH', 'BASS', 'DRUMS'];
+        const colors = [0xff00cc, 0x00ffff, 0xffff00, 0x00ff00];
+
+        channels.forEach((name, i) => {
+            const xPos = (i - 1.5) * 3;
+
+            // Fader
+            const slider = new Slider3D(scene3D.scene, scene3D.camera, [xPos, 0, 0], {
+                width: 0.5, // Vertical thin but... Slider3D is horizontal by default. 
+                // We need to rotate it or use width/height swap? 
+                // Slider3D "width" is track length.
+                height: 0.5,
+                depth: 0.2,
+                label: name,
+                min: 0,
+                max: 100,
+                value: 75,
+                fillColor: colors[i],
+                handleColor: 0xffffff,
+                handleSize: 0.6,
+                trackColor: 0x222222
+            });
+            // Rotate to be vertical fader
+            slider.group.rotation.z = Math.PI / 2;
+            slider.group.position.set(xPos, 0, 0); // Reset pos after rotation logic might mess up? 
+            // Actually Slider3D adds to group at 0,0,0 usually.
+            // Let's adjust rotation on the group we added to scene.
+
+            mixerGroup.add(slider.group);
+
+            // Mute Button below
+            const btn = new Button3D(scene3D.scene, scene3D.camera, [xPos, -2.5, 0], {
+                label: 'MUTE',
+                width: 1.5,
+                height: 0.6,
+                baseColor: 0x330000,
+                activeColor: 0xff0000,
+                isToggle: true
+            });
+            mixerGroup.add(btn.group);
+        });
+
+        // 4. Echo Interaction
+        const echo = new EchoInteraction3D(scene3D.scene, scene3D.camera, {
+            pulseSpeed: 15,
+            maxRadius: 30,
+            glowColor: 0xffffff
+        });
+
+        // Register mixer components to react to pulse
+        mixerGroup.traverse(child => {
+            if (child.isMesh) {
+                echo.registerObject(child, {
+                    onReveal: () => {
+                        // Flash effect?
+                        child.material.emissiveIntensity = 2.0;
+                        setTimeout(() => child.material.emissiveIntensity = 0.5, 200);
+                    }
+                });
+            }
+        });
+
+        // 5. Visualizer Bars (Background)
+        const bars = [];
+        for (let i = 0; i < 20; i++) {
+            const h = Math.random() * 5;
+            const geo = new THREE.BoxGeometry(0.5, h, 0.5);
+            const mat = new THREE.MeshBasicMaterial({ color: 0x222222, wireframe: true });
+            const bar = new THREE.Mesh(geo, mat);
+            bar.position.set((i - 10) * 1.5, h / 2, -5);
+            scene3D.scene.add(bar);
+            bars.push(bar);
+        }
+
+        // 6. Animation
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = Date.now() * 0.001;
+
+            // Animate visualizer bars
+            bars.forEach((bar, i) => {
+                const h = 2 + Math.sin(time * 5 + i) * 2 + Math.cos(time * 10 - i) * 1;
+                bar.scale.y = Math.max(0.1, h);
+                bar.position.y = (h * 0.5) / 2; // Keep bottom grounded? No, simple scale center usually
+                // If geometry centered:
+                // bar.scale.y = h; 
+                // bar.position.y = 0; // if centered geometry, this scales from center. 
+                // To scale from bottom need translation.
+            });
+
+            scene3D.render();
+        }
+        animate();
+
+        window.addEventListener('resize', () => scene3D.onWindowResize());
+    </script>
+</body>
+
+</html>

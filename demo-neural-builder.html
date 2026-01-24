@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Neural Builder - Spatial UI 3D</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000510;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #ui-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #00ffff;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        h1 {
+            margin: 0;
+            font-weight: 300;
+            letter-spacing: 4px;
+            text-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+        }
+
+        .instruction {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: rgba(200, 255, 255, 0.8);
+            background: linear-gradient(90deg, rgba(0, 20, 60, 0.8), transparent);
+            padding: 20px;
+            border-left: 2px solid #00ffff;
+            max-width: 400px;
+        }
+
+        #stats {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            text-align: right;
+            color: #00ffff;
+            font-family: monospace;
+        }
+
+        .metric {
+            font-size: 1.2em;
+            margin-bottom: 5px;
+        }
+
+        .value {
+            color: #ffffff;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="ui-overlay">
+        <h1>NEURAL BUILDER</h1>
+        <div class="instruction">
+            <p>> <strong>PROBLEM:</strong> Designing AI architectures via text/code is abstract and disconnected.</p>
+            <p>> <strong>SOLUTION:</strong> Spatial graph manipulation and "loom" weaving.</p>
+            <p>> Use the mouse to drag connections between nodes to "train" the network.</p>
+            <p>> Stabilize the entropy to open the Deployment Portal.</p>
+        </div>
+    </div>
+
+    <div id="stats">
+        <div class="metric">ENTROPY: <span id="entropy-val" class="value">100%</span></div>
+        <div class="metric">CONNECTIONS: <span id="conn-val" class="value">0</span></div>
+        <div class="metric">STATUS: <span id="status-val" class="value">UNSTABLE</span></div>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { Scene3D } from './src/core/Scene3D.js';
+        import { NetworkGraph3D } from './src/controls/NetworkGraph3D.js';
+        import { GestureLoom3D } from './src/controls/GestureLoom3D.js';
+        import { AIPortal3D } from './src/controls/AIPortal3D.js';
+        import { SpaceRoom } from './src/environments/SpaceRoom.js';
+
+        // 1. Scene Setup
+        const canvas = document.createElement('canvas');
+        canvas.id = 'canvas';
+        document.body.appendChild(canvas);
+        const scene3D = new Scene3D(canvas);
+
+        // 2. Environment
+        const room = new SpaceRoom(scene3D.scene, {
+            gridColor: 0x003366,
+            fogDensity: 0.02
+        });
+
+        scene3D.scene.add(new THREE.AmbientLight(0x404040, 2));
+        const dirLight = new THREE.DirectionalLight(0x00aaff, 3);
+        dirLight.position.set(5, 10, 7);
+        scene3D.scene.add(dirLight);
+
+        // 3. Network Graph (The "Brain")
+        // Generate random nodes
+        const nodes = [];
+        for (let i = 0; i < 30; i++) {
+            nodes.push({ id: i, val: Math.random() + 0.5 });
+        }
+
+        // Initial random chaotic links
+        const initialLinks = [];
+        for (let i = 0; i < 20; i++) {
+            initialLinks.push({
+                source: Math.floor(Math.random() * 30),
+                target: Math.floor(Math.random() * 30)
+            });
+        }
+
+        const graph = new NetworkGraph3D(scene3D.scene, scene3D.camera, [0, 0, 0], {
+            nodes: nodes,
+            links: initialLinks,
+            nodeColor: 0x00ffff,
+            linkColor: 0xff00ff,
+            repulsion: 100,
+            enablePhysics: true
+        });
+
+        // 4. Gesture Loom (Interactivity)
+        // We overlay the loom nodes on top of the graph nodes to make them interactive
+        const loom = new GestureLoom3D(scene3D.scene, scene3D.camera, [0, 0, 0], {
+            nodeSize: 0.01, // Invisible nodes, just for raycasting? 
+            // Actually, let's make them visible anchors
+            nodeColor: 0xffffff,
+            lineColor: 0x00ff00
+        });
+        scene3D.scene.add(loom.group);
+
+        // Sync Loom nodes to Graph nodes positions
+        // We need to update this every frame as the graph moves physics-wise
+        // But for initial interaction, we just create them.
+        nodes.forEach(n => {
+            const loomNode = loom.addNode([0, 0, 0], { graphId: n.id });
+            // We'll update position in animate
+        });
+
+        // 5. AI Portal (The Goal)
+        const portal = new AIPortal3D(scene3D.scene, scene3D.camera, [0, 5, -15], {
+            content: "MODEL DEPLOYED",
+            width: 4,
+            height: 6,
+            color: 0x00ff00,
+            onTraverse: () => {
+                alert("SYSTEM DEPLOYED. WELCOME TO PRODUCTION.");
+                window.location.reload();
+            }
+        });
+        portal.group.visible = false; // Hidden initially
+
+        // 6. Game Logic
+        let entropy = 100;
+        let connections = 0;
+        const entropyEl = document.getElementById('entropy-val');
+        const connEl = document.getElementById('conn-val');
+        const statusEl = document.getElementById('status-val');
+
+        loom.on('connectionCreated', (data) => {
+            connections++;
+            entropy -= 5;
+            if (entropy < 0) entropy = 0;
+
+            // Add physics link to graph to pull nodes together
+            // graph.addLink({ source: data.from.userData.graphId, target: data.to.userData.graphId }); 
+            // NetworkGraph3D doesn't have addLink exposed publicly in standard API yet, 
+            // so we'll just simulate the effect by increasing damping or reducing repulsion
+
+            graph.repulsion *= 0.9; // Reduce chaos
+            graph.damping += 0.02;  // Increase stability
+
+            connEl.innerText = connections;
+            entropyEl.innerText = Math.round(entropy) + '%';
+
+            if (entropy < 20) {
+                statusEl.innerText = "STABILIZING...";
+                statusEl.style.color = "yellow";
+            }
+
+            if (entropy === 0 && !portal.group.visible) {
+                statusEl.innerText = "STABLE - PORTAL OPEN";
+                statusEl.style.color = "#00ff00";
+                portal.group.visible = true;
+
+                // Fly camera towards portal hint
+                // scene3D.camera.position.z = 10;
+            }
+        });
+
+        // 7. Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = Date.now() * 0.001;
+
+            // Update Graph Physics
+            graph.update(time);
+
+            // Sync Loom Nodes to Graph Nodes
+            graph.nodePositions.forEach((pos, i) => {
+                if (loom.nodes[i]) {
+                    loom.nodes[i].position.copy(pos);
+                }
+            });
+
+            loom.update();
+            portal.update();
+
+            scene3D.render();
+        }
+        animate();
+
+        window.addEventListener('resize', () => scene3D.onWindowResize());
+    </script>
+</body>
+
+</html>

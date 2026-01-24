@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Security Vault - Spatial UI 3D</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050510;
+            font-family: 'Courier New', monospace;
+        }
+
+        #ui-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #ff3333;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        h1 {
+            margin: 0;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255, 50, 50, 0.5);
+        }
+
+        .instruction {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.7);
+            background: rgba(40, 0, 0, 0.6);
+            padding: 15px;
+            border-left: 3px solid #ff3333;
+            max-width: 350px;
+        }
+
+        #status-display {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            text-align: center;
+            font-size: 2em;
+            color: #ff3333;
+            text-shadow: 0 0 10px #ff0000;
+            pointer-events: none;
+        }
+
+        .code-display {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border: 1px solid #ff3333;
+            margin-top: 10px;
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="ui-overlay">
+        <h1>SECURITY VAULT 🔒</h1>
+        <div class="instruction">
+            <p>> <strong>PROBLEM:</strong> Digital security inputs lack weight and intentionality.</p>
+            <p>> <strong>SOLUTION:</strong> A physical combination lock interface.</p>
+            <p>> Hover over the Radial Dial segments to enter the code.</p>
+            <p>> <strong>HINT:</strong> The code is 1 - 2 - 3</p>
+            <div id="input-sequence" class="code-display">INPUT: _ _ _</div>
+        </div>
+    </div>
+    <div id="status-display">STATUS: LOCKED</div>
+
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+        import Scene3D from './src/core/Scene3D.js';
+        import { RadialMenu3D } from './src/controls/RadialMenu3D.js';
+        import { VolumetricCard3D } from './src/controls/VolumetricCard3D.js';
+        import { StarfieldBackground } from './src/environments/StarfieldBackground.js';
+        import { Toggle3D } from './src/controls/Toggle3D.js';
+
+        // 1. Scene Setup
+        const scene3D = new Scene3D({
+            container: document.body,
+            enableOrbitControls: true,
+            cameraPosition: [0, 0, 8]
+        });
+
+        // 2. Environment (Dark Security Room)
+        scene3D.scene.background = new THREE.Color(0x050000);
+        const starfield = new StarfieldBackground(scene3D.scene, {
+            count: 1000,
+            color: 0xff0000,
+            size: 0.1,
+            speed: 0.1
+        });
+
+        // Lighting
+        const spotLight = new THREE.SpotLight(0xffaaaa, 5);
+        spotLight.position.set(0, 5, 5);
+        spotLight.angle = Math.PI / 4;
+        spotLight.penumbra = 0.5;
+        scene3D.scene.add(spotLight);
+        scene3D.scene.add(new THREE.AmbientLight(0x220000, 1.0));
+
+        // 3. Vault Logic
+        const secretCode = [0, 1, 2]; // Indices corresponding to 1, 2, 3
+        let inputSequence = [];
+        const statusDisplay = document.getElementById('status-display');
+        const inputDisplay = document.getElementById('input-sequence');
+
+        function checkCode() {
+            inputDisplay.innerText = `INPUT: ${inputSequence.map(i => i + 1).join(' ')}`;
+
+            if (inputSequence.length === secretCode.length) {
+                // Check match
+                const isMatch = inputSequence.every((val, index) => val === secretCode[index]);
+
+                if (isMatch) {
+                    unlockVault();
+                } else {
+                    failVault();
+                }
+            }
+        }
+
+        function unlockVault() {
+            statusDisplay.innerText = "STATUS: ACCESS GRANTED";
+            statusDisplay.style.color = "#00ff00";
+            statusDisplay.style.textShadow = "0 0 10px #00ff00";
+
+            // Turn everything green
+            dial.group.traverse(child => {
+                if (child.material) {
+                    if (child.material.color) child.material.color.setHex(0x00ff00);
+                    if (child.material.emissive) child.material.emissive.setHex(0x00ff00);
+                }
+            });
+
+            // Reveal Content
+            moveVaultDoor();
+        }
+
+        function failVault() {
+            statusDisplay.innerText = "STATUS: ACCESS DENIED";
+            inputSequence = [];
+            setTimeout(() => {
+                statusDisplay.innerText = "STATUS: LOCKED";
+                inputDisplay.innerText = "INPUT: _ _ _";
+            }, 1000);
+
+            // Red flash
+            scene3D.scene.background.setHex(0x330000);
+            setTimeout(() => scene3D.scene.background.setHex(0x050000), 200);
+        }
+
+        function moveVaultDoor() {
+            // Animate dial away
+            const startPos = dial.group.position.z;
+            const animateOpen = () => {
+                if (dial.group.position.z > -5) {
+                    dial.group.position.z -= 0.1;
+                    dial.group.rotation.z += 0.1;
+                    requestAnimationFrame(animateOpen);
+                } else {
+                    dial.group.visible = false;
+                    // Show treasure
+                    card.group.visible = true;
+                    card.group.position.z = 0; // Bring forward
+                }
+            };
+            animateOpen();
+        }
+
+        // 4. Components
+
+        // The Combination Lock (Radial Menu)
+        const dial = new RadialMenu3D(scene3D.scene, scene3D.camera, [0, 0, 0], {
+            radius: 2.5,
+            innerRadius: 1.5,
+            sectorColor: 0x330000,
+            activeColor: 0xff0000,
+            items: [
+                { label: '1', action: () => { inputSequence.push(0); checkCode(); } },
+                { label: '2', action: () => { inputSequence.push(1); checkCode(); } },
+                { label: '3', action: () => { inputSequence.push(2); checkCode(); } },
+                { label: '4', action: () => { inputSequence.push(3); checkCode(); } },
+                { label: '5', action: () => { inputSequence.push(4); checkCode(); } },
+                { label: '6', action: () => { inputSequence.push(5); checkCode(); } }
+            ]
+        });
+
+        // The Treasure (Volumetric Card) - Initially Hidden
+        const card = new VolumetricCard3D(scene3D.scene, scene3D.camera, [0, 0, -10], {
+            width: 3,
+            height: 4,
+            baseColor: 0x003300,
+            popHeight: 1.0
+        });
+        card.group.visible = false;
+
+        // Add a "Diamond" to the card
+        const diamondGeo = new THREE.OctahedronGeometry(1.0, 0);
+        const diamondMat = new THREE.MeshPhongMaterial({
+            color: 0x00ffff,
+            shininess: 100,
+            specular: 0xffffff,
+            transparent: true,
+            opacity: 0.9
+        });
+        const diamond = new THREE.Mesh(diamondGeo, diamondMat);
+        card.modelContainer.add(diamond);
+        card.activeModel = diamond; // Link for animation
+
+        // 5. Interaction Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            starfield.update();
+            dial.updateVisuals(); // Manual update for now if simplest
+            card.update();
+            scene3D.render();
+        }
+        animate();
+
+        window.addEventListener('resize', () => scene3D.onWindowResize());
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spatial UI 3D - Zen Consciousness Garden</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to bottom, #eef2f3, #8e9eab);
+            /* Calming Mist */
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #ui-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #4a5568;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        h1 {
+            font-weight: 300;
+            letter-spacing: 2px;
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+        }
+
+        p {
+            max-width: 400px;
+            line-height: 1.6;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .controls {
+            margin-top: 20px;
+            pointer-events: auto;
+        }
+
+        button {
+            background: transparent;
+            border: 1px solid #4a5568;
+            color: #4a5568;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #4a5568;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+    <div id="ui-overlay">
+        <h1>Zen Garden 🌿</h1>
+        <p>
+            Experience the <strong>LiquidStateContainer3D</strong>.
+            These organic interface elements mimic fluid dynamics and surface tension.
+            <br><br>
+            <i>Hover to disturb the surface. Click to ripple.</i>
+        </p>
+        <div class="controls">
+            <button id="reset-cam">Recentering Breath</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+        import Scene3D from './src/core/Scene3D.js';
+        import { LiquidStateContainer3D } from './src/controls/LiquidStateContainer3D.js';
+
+        // Initialize Scene
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
+
+        // Customize Scene Environment
+        scene3D.scene.background = new THREE.Color(0xeef2f3);
+
+        scene3D.scene.fog = new THREE.FogExp2(0xeef2f3, 0.02);
+
+        // Add Soft Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene3D.scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffeedd, 0.8);
+        dirLight.position.set(5, 10, 7);
+        dirLight.castShadow = true;
+        scene3D.scene.add(dirLight);
+
+        // --- Create Liquid Stones ---
+
+        // 1. The Water Stone (Center)
+        const waterStone = new LiquidStateContainer3D(scene3D.scene, scene3D.camera, [0, 0, 0], {
+            width: 2.5,
+            color: 0x4fa3d1, // Calm Blue
+            highlightColor: 0xa8e6cf, // Mint highlight
+            viscosity: 0.4,
+            tension: 0.6,
+            label: 'Harmony' // If base control supports labels
+        });
+        scene3D.add(waterStone.group);
+
+        // 2. The Jade Stone (Left)
+        const jadeStone = new LiquidStateContainer3D(scene3D.scene, scene3D.camera, [-3.5, -1, 1], {
+            width: 1.8,
+            color: 0x84fab0, // Jade/Mint
+            highlightColor: 0xffffff,
+            viscosity: 0.7, // Thicker
+            tension: 0.4
+        });
+        scene3D.add(jadeStone.group);
+
+        // 3. The Rose Quartz (Right)
+        const roseStone = new LiquidStateContainer3D(scene3D.scene, scene3D.camera, [3.5, -1, 1], {
+            width: 1.8,
+            color: 0xfccb90, // Soft Rose/Peach
+            highlightColor: 0xffecd2,
+            viscosity: 0.6,
+            tension: 0.5
+        });
+        scene3D.add(roseStone.group);
+
+        // 4. Floating 'Droplets' (Background)
+        for (let i = 0; i < 5; i++) {
+            const scale = 0.5 + Math.random() * 0.5;
+            const x = (Math.random() - 0.5) * 10;
+            const y = (Math.random() - 0.5) * 6 + 3; // Higher up
+            const z = (Math.random() - 0.5) * 5 - 2;
+
+            const drop = new LiquidStateContainer3D(scene3D.scene, scene3D.camera, [x, y, z], {
+                width: scale,
+                color: 0xffffff,
+                highlightColor: 0xccccff,
+                viscosity: 0.2, // Very fluid
+                tension: 0.8
+            });
+            // Make them float gently
+            drop.userData = {
+                speed: 0.005 + Math.random() * 0.01,
+                offset: Math.random() * Math.PI * 2,
+                baseY: y
+            };
+            drop.onUpdate = function () { // Custom update hook if system allows, otherwise handle in animation loop
+                this.group.position.y = this.userData.baseY + Math.sin(Date.now() * 0.001 + this.userData.offset) * 0.5;
+            };
+            scene3D.add(drop.group);
+        }
+
+        // Animation Loop
+        const animate = () => {
+            requestAnimationFrame(animate);
+
+            // Update all controls
+            // Scene3D usually handles this if added to a registry, but let's be explicit
+            waterStone.update();
+            jadeStone.update();
+            roseStone.update();
+
+            // Render
+            scene3D.render();
+        };
+
+        animate();
+
+        // Button logic
+        document.getElementById('reset-cam').addEventListener('click', () => {
+            // Reset camera logic (Scene3D usually has controls access)
+            if (scene3D.controls) scene3D.controls.reset();
+        });
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Chronos Navigator - Spatial UI 3D</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Inter', sans-serif;
+        }
+
+        #ui-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #4ecdc4;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        h1 {
+            margin: 0;
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+        }
+
+        .instruction {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.7);
+            background: rgba(0, 20, 40, 0.8);
+            padding: 15px;
+            border-left: 3px solid #4ecdc4;
+            max-width: 300px;
+        }
+
+        #time-display {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            text-align: center;
+            font-size: 2em;
+            color: #ffd700;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="ui-overlay">
+        <h1>CHRONOS NAVIGATOR</h1>
+        <div class="instruction">
+            <p>> <strong>PROBLEM:</strong> Linear 2D timelines are difficult to navigate for complex, non-linear
+                history.</p>
+            <p>> <strong>SOLUTION:</strong> A spatial spiral timeline providing depth and context.</p>
+            <p>> Drag the cyan handle to scrub through time.</p>
+            <p>> Look through the lens to see the underlying data structure.</p>
+        </div>
+    </div>
+    <div id="time-display">YEAR: 2024</div>
+
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+        import Scene3D from './src/core/Scene3D.js';
+        import { TimeRibbon3D } from './src/controls/TimeRibbon3D.js';
+        import { ChronoLens3D } from './src/controls/ChronoLens3D.js';
+        import { StarfieldBackground } from './src/environments/StarfieldBackground.js';
+        import { FloatingParticles } from './src/effects/ShaderEffects.js';
+
+        // 1. Scene Setup
+        const scene3D = new Scene3D({
+            container: document.body,
+            enableOrbitControls: true,
+            cameraPosition: [0, 5, 15]
+        });
+
+        // 2. Environment
+        const starfield = new StarfieldBackground(scene3D.scene, {
+            count: 3000,
+            color: 0x4ecdc4,
+            size: 0.15,
+            speed: 0.2
+        });
+
+        // Add specific ambient lighting for the ribbon
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene3D.scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+        dirLight.position.set(5, 10, 5);
+        scene3D.scene.add(dirLight);
+
+        // 3. Timeline Data
+        const timelineData = [
+            { time: 1900, label: 'Industrial Age' },
+            { time: 1950, label: 'Digital Dawn' },
+            { time: 1969, label: 'Moon Landing' },
+            { time: 2000, label: 'Y2K' },
+            { time: 2024, label: 'AI Era' },
+            { time: 2050, label: 'Singularity' },
+            { time: 2100, label: 'Expansion' }
+        ];
+
+        // 4. Time Ribbon
+        const timeDisplay = document.getElementById('time-display');
+
+        const ribbon = new TimeRibbon3D(scene3D.scene, scene3D.camera, [0, -2, 0], {
+            timeline: timelineData,
+            radius: 6,
+            turns: 3,
+            ribbonWidth: 0.8,
+            renderer: scene3D.renderer,
+            onTimeChange: (time) => {
+                timeDisplay.innerText = `YEAR: ${Math.round(time)}`;
+                // Rotate backdrop slightly based on time
+                starfield.group.rotation.y = time * 0.001;
+            }
+        });
+
+        // 5. Chrono Lens (The "Truth" View)
+        const lens = new ChronoLens3D(scene3D.scene, scene3D.camera, [3, 2, 8], {
+            width: 4,
+            height: 3,
+            renderer: scene3D.renderer
+        });
+        // Orient lens towards center
+        lens.group.lookAt(0, 0, 0);
+
+        // 6. Central "Event" Object that changes with time
+        const eventGeo = new THREE.IcosahedronGeometry(1, 1);
+        const eventMat = new THREE.MeshPhongMaterial({
+            color: 0xff00ff,
+            wireframe: false,
+            shininess: 100,
+            emissive: 0x440044
+        });
+        const eventMesh = new THREE.Mesh(eventGeo, eventMat);
+        scene3D.scene.add(eventMesh);
+
+        // 7. Interaction Loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Update Components
+            starfield.update();
+            ribbon.update();
+            lens.update();
+
+            // Animate Central Object based on time
+            const timeVal = Date.now() * 0.001;
+            eventMesh.rotation.x = timeVal;
+            eventMesh.rotation.y = timeVal * 0.5;
+
+            const scale = 1 + Math.sin(timeVal * 2) * 0.2;
+            eventMesh.scale.setScalar(scale);
+
+            // Render Main Scene
+            scene3D.render();
+        }
+
+        animate();
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            scene3D.onWindowResize();
+        });
+    </script>
+</body>
+
+</html>

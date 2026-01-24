@@ -109,6 +109,12 @@ export class DataVolume3D extends BaseControl3D {
         if (!this.voxelMesh || !this.data) return;
 
         const size = this.resolution;
+        const expectedCount = size * size * size;
+        if (this.data.length !== expectedCount) {
+            console.warn(`DataVolume3D: Data size mismatch. Expected ${expectedCount}, got ${this.data.length}`);
+            return;
+        }
+
         const dummy = new THREE.Object3D();
         const color = new THREE.Color();
         const cLow = new THREE.Color(this.config.colorLow);
@@ -116,7 +122,7 @@ export class DataVolume3D extends BaseControl3D {
 
         let instanceIdx = 0;
         const voxelSize = this.dimensions.x / size;
-        const scaleBase = this.config.pointSize * (10 / size); // Adjust scale relative to resolution
+        const scaleBase = this.config.pointSize * (10 / size);
 
         for (let z = 0; z < size; z++) {
             for (let y = 0; y < size; y++) {
@@ -124,16 +130,12 @@ export class DataVolume3D extends BaseControl3D {
                     const idx = x + y * size + z * size * size;
                     const val = this.data[idx];
 
-                    // Positioning
-                    // Center the volume at 0,0,0
                     const posX = (x - size / 2) * voxelSize;
                     const posY = (y - size / 2) * voxelSize;
                     const posZ = (z - size / 2) * voxelSize;
 
-                    // Visibility logic
                     let visible = val >= this.threshold;
 
-                    // Slicing logic
                     if (visible) {
                         if (x / size > this.sliceX) visible = false;
                         if (y / size > this.sliceY) visible = false;
@@ -142,16 +144,14 @@ export class DataVolume3D extends BaseControl3D {
 
                     if (visible) {
                         dummy.position.set(posX, posY, posZ);
-                        dummy.scale.setScalar(scaleBase * val); // Scale by density
+                        dummy.scale.setScalar(scaleBase * val);
                         dummy.updateMatrix();
 
                         this.voxelMesh.setMatrixAt(instanceIdx, dummy.matrix);
 
-                        // Color interpolation
                         color.lerpColors(cLow, cHigh, val);
                         this.voxelMesh.setColorAt(instanceIdx, color);
                     } else {
-                        // Move invisible instances to infinity or scale to 0
                         dummy.position.set(0, 0, 0);
                         dummy.scale.setScalar(0);
                         dummy.updateMatrix();
@@ -165,6 +165,15 @@ export class DataVolume3D extends BaseControl3D {
 
         this.voxelMesh.instanceMatrix.needsUpdate = true;
         this.voxelMesh.instanceColor.needsUpdate = true;
+    }
+
+    setData(newData) {
+        if (Array.isArray(newData)) {
+            this.data = new Float32Array(newData);
+        } else {
+            this.data = newData;
+        }
+        this.updateVisuals();
     }
 
     setSlice(axis, value) {

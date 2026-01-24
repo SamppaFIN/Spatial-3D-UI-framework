@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crystal Archives - Spatial UI 3D</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Montserrat:wght@300;400&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #111;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        #canvas {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .overlay-title {
+            position: fixed;
+            top: 40px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2em;
+            letter-spacing: 5px;
+            pointer-events: none;
+            mix-blend-mode: overlay;
+        }
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+
+<body>
+    <div class="overlay-title">THE CRYSTAL ARCHIVES</div>
+    <canvas id="canvas"></canvas>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { Scene3D } from '../../src/core/Scene3D.js';
+        import { VolumetricCard3D } from '../../src/controls/VolumetricCard3D.js';
+        import { Modal3D } from '../../src/controls/Modal3D.js';
+        import { EchoInteraction3D } from '../../src/controls/EchoInteraction3D.js';
+        import { Button3D } from '../../src/controls/Button3D.js';
+        import { ControlRegistry } from '../../src/core/ControlRegistry.js';
+
+        // 1. Setup Scene
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+
+        scene.background = new THREE.Color(0x101015);
+        scene.fog = new THREE.FogExp2(0x101015, 0.05);
+
+        // Moody Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+        scene.add(ambientLight);
+
+        const pointLight1 = new THREE.PointLight(0xcc99ff, 2, 20);
+        pointLight1.position.set(0, 5, 0);
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0x99ccff, 2, 20);
+        pointLight2.position.set(5, -2, 5);
+        scene.add(pointLight2);
+
+
+        // 2. Crystal Environment Map (Fake refraction)
+        const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256);
+        const cubeCamera = new THREE.CubeCamera(0.1, 1000, cubeRenderTarget);
+        scene.add(cubeCamera);
+
+        const crystalMaterial = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            metalness: 0.1,
+            roughness: 0,
+            transmission: 0.9, // Glass-like
+            thickness: 2.0,
+            envMap: cubeRenderTarget.texture,
+            envMapIntensity: 1.0,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.1
+        });
+
+        // Crystal Spire 1 (Center)
+        const spireGeo = new THREE.ConeGeometry(2, 8, 5); // Pentagonal spire
+        const spire = new THREE.Mesh(spireGeo, crystalMaterial);
+        spire.position.y = -2;
+        scene.add(spire);
+
+        // Echo interaction for mystical effect
+        const echo = new EchoInteraction3D(scene, camera, [0, 0, 0], {
+            color: 0xcc99ff,
+            sensitivity: 2.0,
+            decay: 0.95
+        });
+        ControlRegistry.register(echo);
+
+        // 3. Volumetric Artifacts
+        // Artifact 1: Ancient Sword
+        const card1 = new VolumetricCard3D(scene, camera, [-3, 0, 2], {
+            width: 2, height: 3,
+            label: "Excalibur",
+            depthEffect: 2.0
+        });
+        // Create simple sword shape for volumetric content
+        const swordGroup = new THREE.Group();
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.5, 0.05), new THREE.MeshStandardMaterial({ color: 0xcccccc }));
+        const hilt = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.1, 0.2), new THREE.MeshStandardMaterial({ color: 0x884400 }));
+        hilt.position.y = -1.25;
+        swordGroup.add(blade);
+        swordGroup.add(hilt);
+
+        card1.setVolumetricContent(swordGroup);
+        ControlRegistry.register(card1);
+
+
+        // Artifact 2: Magic Orb
+        const card2 = new VolumetricCard3D(scene, camera, [3, 0, 2], {
+            width: 2, height: 3,
+            label: "Orb of Insight",
+            depthEffect: 2.0
+        });
+        const orbGroup = new THREE.Group();
+        const orb = new THREE.Mesh(new THREE.SphereGeometry(0.8, 32, 32), new THREE.MeshStandardMaterial({
+            color: 0x00ffff,
+            emissive: 0x0044aa,
+            wireframe: true
+        }));
+        orbGroup.add(orb);
+        card2.setVolumetricContent(orbGroup);
+        ControlRegistry.register(card2);
+
+
+        // 4. Modal for details
+        const detailsModal = new Modal3D(scene, camera, [0, 1, -1], {
+            width: 4, height: 3,
+            title: "Archive Data",
+            content: "Select an artifact to analyze spectrum.\n\nCrystal resonance: 98.4%\nEther density: High",
+            isOpen: false
+        });
+        ControlRegistry.register(detailsModal);
+
+        // Connect clicks
+        // (Assuming VolumetricCard3D has onClick/Event support or we raycast)
+        // For visual demo, we'll auto-open when hovering crystals?
+        // Let's just add a floor button to trigger scan
+
+        // Create Scan Button using Button3D
+        const scanBtn = new Button3D(scene, camera, [0, -3, 3], {
+            width: 1.0,
+            height: 1.0,
+            depth: 0.2,
+            geometryType: 'cylinder',
+            color: 0x333333,
+            label: "SCAN",
+            onClick: () => {
+                detailsModal.open();
+                // Button3D handles visual feedback automatically
+            }
+        });
+
+        // Rotate button to lie flat on the floor (cylinder axis is Y by default in Button3D if rotated? 
+        // Button3D.createCylinderGeometry rotates X 90, so it faces Z.
+        // We want it facing Y (up). So rotate X -90.
+        scanBtn.group.rotation.x = -Math.PI / 2;
+
+        ControlRegistry.register(scanBtn);
+        // Simple click logic manually
+        // 6. Interaction Handling
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        window.addEventListener('click', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+
+            // Get all interactive objects from ControlRegistry
+            const interactiveObjects = ControlRegistry.getInteractiveObjects();
+            const intersects = raycaster.intersectObjects(interactiveObjects, true);
+
+            if (intersects.length > 0) {
+                // Find the first intersected object that belongs to a control
+                const hit = intersects[0];
+                let object = hit.object;
+
+                // Traverse up to find the control holder
+                while (object) {
+                    if (object.userData && object.userData.control) {
+                        const control = object.userData.control;
+                        if (control.onClick) {
+                            control.onClick();
+                        }
+                        break;
+                    }
+                    object = object.parent;
+                }
+            }
+        });
+
+
+        // 5. Animation
+        let time = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.01;
+
+            // Spire rotation
+            spire.rotation.y = time * 0.05;
+
+            // Update Cube Camera (expensive, do sparingly or lower res)
+            spire.visible = false; // Hide self
+            cubeCamera.update(scene3D.getRenderer(), scene);
+            spire.visible = true;
+
+            // Animate cards
+            card1.update();
+            card2.update();
+            detailsModal.update();
+            echo.update();
+
+            // Floating lights
+            pointLight1.position.x = Math.sin(time) * 5;
+            pointLight1.position.z = Math.cos(time) * 5;
+
+            pointLight2.position.y = Math.sin(time * 0.5) * 5;
+
+            // Orb pulsation
+            if (orb) orb.scale.setScalar(1 + Math.sin(time * 3) * 0.1);
+
+            scene3D.render();
+        }
+        animate();
+
+    </script>
+</body>
+
+</html>

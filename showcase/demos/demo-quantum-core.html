@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Core Reactor - Spatial UI 3D</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Fira Code', monospace;
+        }
+
+        #canvas {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .hud-warning {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            color: #ff3333;
+            border: 2px solid #ff3333;
+            padding: 15px;
+            background: rgba(50, 0, 0, 0.5);
+            display: none;
+            animation: pulse-red 1s infinite;
+        }
+
+        @keyframes pulse-red {
+            0% {
+                opacity: 0.5;
+                box-shadow: 0 0 10px #ff0000;
+            }
+
+            50% {
+                opacity: 1;
+                box-shadow: 0 0 30px #ff0000;
+            }
+
+            100% {
+                opacity: 0.5;
+                box-shadow: 0 0 10px #ff0000;
+            }
+        }
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+
+<body>
+    <div class="hud-warning" id="warning-box">
+        ⚠ CRITICAL STABILITY WARNING ⚠<br>
+        CORE MELTDOWN IMMINENT
+    </div>
+    <canvas id="canvas"></canvas>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { Scene3D } from '../../src/core/Scene3D.js?v=2';
+        import { SpatialScrubber3D } from '../../src/controls/SpatialScrubber3D.js?v=2';
+        import { DataVolume3D } from '../../src/controls/DataVolume3D.js?v=2';
+        import { Button3D } from '../../src/controls/Button3D.js?v=2';
+        import { ControlRegistry } from '../../src/core/ControlRegistry.js?v=2';
+
+        // 1. Setup Scene
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+        const renderer = scene3D.getRenderer();
+
+        scene.background = new THREE.Color(0x050505);
+        scene.fog = new THREE.FogExp2(0x000000, 0.03);
+
+        // Core Lighting
+        const coreLight = new THREE.PointLight(0x00ffff, 5, 20);
+        coreLight.position.set(0, 0, 0);
+        scene.add(coreLight);
+
+        // 2. The Quantum Core (Custom Volumetric Mesh)
+        const coreGeometry = new THREE.IcosahedronGeometry(2, 4);
+        const coreMaterial = new THREE.MeshStandardMaterial({
+            color: 0x00ffff,
+            emissive: 0x0088ff,
+            emissiveIntensity: 1,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.8
+        });
+        const reactorCore = new THREE.Mesh(coreGeometry, coreMaterial);
+        scene.add(reactorCore);
+
+        // Inner core (Energy blob)
+        const innerGeo = new THREE.SphereGeometry(1.2, 32, 32);
+        const innerMat = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.6
+        });
+        const innerCore = new THREE.Mesh(innerGeo, innerMat);
+        reactorCore.add(innerCore);
+
+        // Orbital Rings
+        const ringGeo = new THREE.TorusGeometry(3.5, 0.05, 16, 100);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+        const ring1 = new THREE.Mesh(ringGeo, ringMat);
+        const ring2 = new THREE.Mesh(ringGeo, ringMat);
+        ring2.rotation.x = Math.PI / 2;
+        reactorCore.add(ring1);
+        reactorCore.add(ring2);
+
+        // 3. Controls
+
+        // Time Dilation Scrubber
+        const scrubber = new SpatialScrubber3D(scene, camera, [0, -4, 2], {
+            width: 6,
+            label: "TIME DILATION",
+            min: 0.1, max: 5.0, value: 1.0,
+            color: 0x00ddff
+        });
+        ControlRegistry.register(scrubber);
+
+        // Output Graph
+        const dataVolume = new DataVolume3D(scene, camera, [5, 0, 0], {
+            width: 3, height: 3, depth: 3,
+            resolution: 5,
+            label: "ENERGY OUTPUT",
+            colorLow: 0x00ff88,
+            colorHigh: 0xffffff
+        });
+        // Mock some data
+        dataVolume.setData(generateData());
+        ControlRegistry.register(dataVolume);
+
+        // Emergency Scram Button
+        const scramBtn = new Button3D(scene, camera, [-5, 0, 0], {
+            label: "EMERGENCY SCRAM",
+            color: 0xff0000,
+            onClick: () => triggerMeltdown() // Or safety? Let's make it chaotic.
+        });
+        ControlRegistry.register(scramBtn);
+
+
+        // 4. Logic & Animation
+        let timeSpeed = 1.0;
+        let stability = 100;
+        let isMeltdown = false;
+
+        function triggerMeltdown() {
+            isMeltdown = !isMeltdown;
+            if (isMeltdown) {
+                document.getElementById('warning-box').style.display = 'block';
+                coreMaterial.color.setHex(0xff0000);
+                coreMaterial.emissive.setHex(0xff0000);
+                coreLight.color.setHex(0xff0000);
+            } else {
+                document.getElementById('warning-box').style.display = 'none';
+                coreMaterial.color.setHex(0x00ffff);
+                coreMaterial.emissive.setHex(0x0088ff);
+                coreLight.color.setHex(0x00ffff);
+            }
+        }
+
+        function generateData() {
+            // Returns 3D grid of values
+            const data = [];
+            for (let x = 0; x < 5; x++) {
+                for (let y = 0; y < 5; y++) {
+                    for (let z = 0; z < 5; z++) {
+                        data.push(Math.random());
+                    }
+                }
+            }
+            return data;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Update controls
+            scrubber.update();
+            timeSpeed = scrubber.getValue(); // Get speed from scrubber
+
+            // Core Animation
+            const speed = 0.01 * timeSpeed;
+            reactorCore.rotation.y += speed;
+            reactorCore.rotation.z += speed * 0.5;
+
+            // Pulse effect
+            const pulse = Math.sin(Date.now() * 0.005 * timeSpeed) * 0.2 + 1.0;
+            reactorCore.scale.setScalar(pulse);
+
+            // Ring animation
+            ring1.rotation.x += speed * 2;
+            ring2.rotation.y += speed * 2;
+
+            // Update other components
+            dataVolume.update();
+            scramBtn.update();
+
+            // Random data updates if meltdown
+            if (isMeltdown) {
+                if (Math.random() > 0.9) dataVolume.setData(generateData());
+                // Shake camera
+                camera.position.x += (Math.random() - 0.5) * 0.05;
+                camera.position.y += (Math.random() - 0.5) * 0.05;
+            }
+
+            scene3D.render();
+        }
+        animate();
+
+    </script>
+</body>
+
+</html>

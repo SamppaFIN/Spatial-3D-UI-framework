@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>City Flow - Spatial UI 3D</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050510;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        #ui-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #0088ff;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        h1 {
+            margin: 0;
+            font-weight: 300;
+            letter-spacing: 5px;
+            text-shadow: 0 0 10px rgba(0, 136, 255, 0.5);
+        }
+
+        .instruction {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: rgba(200, 230, 255, 0.7);
+            background: rgba(0, 10, 30, 0.8);
+            padding: 20px;
+            border-left: 2px solid #0088ff;
+            max-width: 350px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="ui-overlay">
+        <h1>CITY FLOW</h1>
+        <div class="instruction">
+            <p>> <strong>PROBLEM:</strong> Urban data (wind, traffic, signals) is invisible and chaotic.</p>
+            <p>> <strong>SOLUTION:</strong> Particle Flow Fields overlaying city geometry.</p>
+            <p>> Adjust the sliders to control Flow Speed and Density.</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+        import Scene3D from './src/core/Scene3D.js';
+        import { FlowFieldController3D } from './src/controls/FlowFieldController3D.js';
+        import { Slider3D } from './src/controls/Slider3D.js';
+        import { CoordinateRoom } from './src/environments/CoordinateRoom.js';
+
+        // 1. Scene Setup
+        const scene3D = new Scene3D({
+            container: document.body,
+            enableOrbitControls: true,
+            cameraPosition: [10, 8, 10]
+        });
+
+        // 2. Environment (Urban Grid)
+        new CoordinateRoom(scene3D.scene, {
+            size: 30,
+            gridColor: 0x111133,
+            axisColor: 0x222266
+        });
+
+        scene3D.scene.add(new THREE.AmbientLight(0x222244, 2));
+        const cityLight = new THREE.DirectionalLight(0xaaccff, 1);
+        cityLight.position.set(-5, 10, -5);
+        scene3D.scene.add(cityLight);
+
+        // 3. City Geometry (Procedural Blocks)
+        const cityGroup = new THREE.Group();
+        scene3D.scene.add(cityGroup);
+
+        const buildMat = new THREE.MeshPhongMaterial({ color: 0x111111, specular: 0x111111, shininess: 10 });
+        const buildEdgeMat = new THREE.LineBasicMaterial({ color: 0x004488, transparent: true, opacity: 0.3 });
+
+        for (let x = -4; x <= 4; x++) {
+            for (let z = -4; z <= 4; z++) {
+                if (Math.random() > 0.7) continue; // Random gaps
+
+                const h = Math.random() * 3 + 0.5;
+                const geo = new THREE.BoxGeometry(0.8, h, 0.8);
+
+                const mesh = new THREE.Mesh(geo, buildMat);
+                mesh.position.set(x * 1.5, h / 2, z * 1.5);
+
+                // Add edges
+                const edges = new THREE.EdgesGeometry(geo);
+                const line = new THREE.LineSegments(edges, buildEdgeMat);
+                mesh.add(line);
+
+                cityGroup.add(mesh);
+            }
+        }
+
+        // 4. Flow Field (The "Wind/Data")
+        const flow = new FlowFieldController3D(scene3D.scene, scene3D.camera, [0, 0, 0], {
+            renderer: scene3D.renderer,
+            particleCount: 15000,
+            fieldStrength: 0.5,
+            particleSize: 1.5,
+            velocityColorRange: [new THREE.Color(0x0088ff), new THREE.Color(0xffffff)],
+            preset: 'turbulence'
+        });
+
+        // 5. Controls
+        const speedSlider = new Slider3D(scene3D.scene, scene3D.camera, [-8, 2, 8], {
+            label: 'Speed',
+            min: 0,
+            max: 2,
+            value: 0.5,
+            width: 3,
+            fillColor: 0x0088ff,
+            onChange: (val) => {
+                // FlowField doesn't expose speed factor directly in API nicely yet without digging into shader uniforms
+                // But we can modulate time update delta
+                flowUpdateSpeed = val.getValue() * 0.03;
+            }
+        });
+        speedSlider.group.lookAt(0, 2, 0); // Face center
+
+        let flowUpdateSpeed = 0.016;
+
+        const presetSlider = new Slider3D(scene3D.scene, scene3D.camera, [-8, 1, 8], {
+            label: 'Mode',
+            values: ['Vortex', 'Wave', 'Turbulence'],
+            valueIndex: 2,
+            width: 3,
+            fillColor: 0x00ff88,
+            onChange: (slider, val, idx) => {
+                const modes = ['vortex', 'wave', 'turbulence'];
+                flow.setPreset(modes[idx]);
+            }
+        });
+        presetSlider.group.lookAt(0, 1, 0);
+
+
+        // 6. Animation
+        function animate() {
+            requestAnimationFrame(animate);
+
+            flow.update(flowUpdateSpeed);
+            speedSlider.update();
+            presetSlider.update();
+
+            scene3D.update(); // Handles renderer check internally
+            scene3D.render();
+        }
+        animate();
+
+        window.addEventListener('resize', () => scene3D.onWindowResize());
+    </script>
+</body>
+
+</html>

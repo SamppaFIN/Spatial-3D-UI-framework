@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Focus Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            color: #fff;
+        }
+
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .instructions {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #00f0ff;
+        }
+
+        .instructions h2 {
+            margin: 0 0 10px 0;
+            color: #00f0ff;
+        }
+
+        .instructions p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div class="instructions">
+        <h2>Camera Focus Test</h2>
+        <p>✨ <strong>Double-click</strong> any card to focus camera on it</p>
+        <p>🎯 Camera will smoothly zoom and center on the control</p>
+        <p>🔄 Try double-clicking different cards!</p>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { Scene3D } from './src/core/Scene3D.js?v=3';
+        import { VolumetricCard3D } from './src/controls/VolumetricCard3D.js?v=3';
+        import { ControlRegistry } from './src/core/ControlRegistry.js?v=3';
+
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas, { antialias: true });
+        const { scene, camera } = scene3D;
+
+        camera.position.set(0, 0, 15);
+
+        // Create multiple cards in a grid
+        const positions = [
+            [-4, 2, 0],
+            [0, 2, 0],
+            [4, 2, 0],
+            [-4, -2, 0],
+            [0, -2, 0],
+            [4, -2, 0]
+        ];
+
+        const titles = [
+            "Card 1",
+            "Card 2",
+            "Card 3",
+            "Card 4",
+            "Card 5",
+            "Card 6"
+        ];
+
+        positions.forEach((pos, i) => {
+            const card = new VolumetricCard3D(scene, camera, pos, {
+                title: titles[i],
+                description: "Double-click me to focus!",
+                baseColor: 0x222244
+            });
+            ControlRegistry.register(card);
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            ControlRegistry.controls.forEach(c => c.update && c.update());
+            scene3D.render();
+        }
+        animate();
+    </script>
+</body>
+
+</html>

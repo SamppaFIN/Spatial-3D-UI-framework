@@ -220,22 +220,51 @@
                         <input type="text" id="label-input" value="Settings" placeholder="Toggle label">
                     </div>
 
+
+                    <div class="control-row">
+                        <label>Preset Skins</label>
+                        <div class="button-group" style="grid-template-columns: repeat(3, 1fr);">
+                            <button class="control-btn active" data-skin="cosmic">Cosmic</button>
+                            <button class="control-btn" data-skin="cyberpunk">Cyberpunk</button>
+                            <button class="control-btn" data-skin="minimal">Minimal</button>
+                        </div>
+                    </div>
+
                     <div class="control-row">
                         <label>Track Shape</label>
                         <div class="button-group" style="grid-template-columns: repeat(2, 1fr);">
                             <button class="control-btn active" data-shape="pill">Pill</button>
                             <button class="control-btn" data-shape="box">Box</button>
                             <button class="control-btn" data-shape="circle">Circle</button>
-                            <button class="control-btn" data-shape="square">Square</button>
+                            <button class="control-btn" data-shape="hexagon">Hexagon</button>
                         </div>
                     </div>
 
                     <div class="control-row">
-                        <label>Handle Mode</label>
+                        <label>Handle Shape</label>
                         <div class="button-group" style="grid-template-columns: repeat(3, 1fr);">
-                            <button class="control-btn active" data-mode="1">Sphere</button>
-                            <button class="control-btn" data-mode="0">Box</button>
-                            <button class="control-btn" data-mode="2">Sacred</button>
+                            <button class="control-btn active" data-handle-shape="sphere">Sphere</button>
+                            <button class="control-btn" data-handle-shape="box">Box</button>
+                            <button class="control-btn" data-handle-shape="cylinder">Cyl</button>
+                        </div>
+                    </div>
+
+                    <div class="control-row">
+                        <label>Icon</label>
+                        <div class="button-group" style="grid-template-columns: repeat(4, 1fr);">
+                            <button class="control-btn active" data-icon="none">None</button>
+                            <button class="control-btn" data-icon="power">Pwr</button>
+                            <button class="control-btn" data-icon="sun">Sun</button>
+                            <button class="control-btn" data-icon="check">Chk</button>
+                        </div>
+                    </div>
+
+                    <div class="control-row">
+                        <label>Handle Material</label>
+                        <div class="button-group" style="grid-template-columns: repeat(3, 1fr);">
+                            <button class="control-btn active" data-handle-mat="standard">Standard</button>
+                            <button class="control-btn" data-handle-mat="neon">Neon</button>
+                            <button class="control-btn" data-handle-mat="glass">Glass</button>
                         </div>
                     </div>
 
@@ -359,18 +388,22 @@ function animate() {
         camera.position.set(0, 0, 6);
         camera.lookAt(0, 0, 0);
 
+
         // 2. Default Configuration
         let config = {
             label: 'Settings',
             width: 2.0,
             height: 0.8,
             depth: 0.2,
-            mode: 1, // Sphere handle
+            mode: 1,
             trackShape: 'pill',
+            trackMaterialType: 'standard',
+            handleShape: 'sphere',
+            handleMaterialType: 'standard',
             animationPreset: 'slide',
             isOn: false,
             onColor: 0x3366ff,
-            offColor: 0x666666,
+            offColor: 0x444444,
             scale: 1.0
         };
 
@@ -380,7 +413,6 @@ function animate() {
         function createToggle() {
             if (toggle) toggle.dispose();
 
-            // Apply scaling to base dimensions
             const s = config.scale;
 
             toggle = new Toggle3D(scene, camera, [0, 0, 0], {
@@ -388,8 +420,15 @@ function animate() {
                 width: config.width * s,
                 height: config.height * s,
                 depth: config.depth * s,
-                mode: config.mode,
+
                 trackShape: config.trackShape,
+                trackMaterialType: config.trackMaterialType,
+
+                handleShape: config.handleShape,
+                handleMaterialType: config.handleMaterialType,
+
+                icon: config.icon,
+
                 animationPreset: config.animationPreset,
                 isOn: config.isOn,
                 onColor: config.onColor,
@@ -428,6 +467,51 @@ function animate() {
 
         // 6. UI Controls Event Listeners
 
+        // Skin Presets
+        document.querySelectorAll('[data-skin]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('[data-skin]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+
+                const skin = e.target.dataset.skin;
+                applySkin(skin);
+                createToggle();
+            });
+        });
+
+        function applySkin(skin) {
+            switch (skin) {
+                case 'cosmic':
+                    config.trackShape = 'pill';
+                    config.trackMaterialType = 'glass';
+                    config.handleShape = 'sphere';
+                    config.handleMaterialType = 'neon';
+                    config.onColor = 0x00f0ff;
+                    config.offColor = 0x222222;
+                    config.icon = 'power';
+                    break;
+                case 'cyberpunk':
+                    config.trackShape = 'hexagon';
+                    config.trackMaterialType = 'metal';
+                    config.handleShape = 'box';
+                    config.handleMaterialType = 'standard';
+                    config.onColor = 0xff0055;
+                    config.offColor = 0x1a1a1a;
+                    config.icon = 'check';
+                    break;
+                case 'minimal':
+                    config.trackShape = 'rounded';
+                    config.trackMaterialType = 'matte';
+                    config.handleShape = 'rounded';
+                    config.handleMaterialType = 'matte';
+                    config.onColor = 0x44dd44;
+                    config.offColor = 0xeeeeee;
+                    config.label = "Minimal";
+                    config.icon = 'none';
+                    break;
+            }
+        }
+
         // Label
         document.getElementById('label-input').addEventListener('input', (e) => {
             config.label = e.target.value;
@@ -444,12 +528,32 @@ function animate() {
             });
         });
 
-        // Handle Mode Buttons
-        document.querySelectorAll('[data-mode]').forEach(btn => {
+        // Handle Shape Buttons
+        document.querySelectorAll('[data-handle-shape]').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                document.querySelectorAll('[data-mode]').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('[data-handle-shape]').forEach(b => b.classList.remove('active'));
                 e.target.classList.add('active');
-                config.mode = parseInt(e.target.dataset.mode);
+                config.handleShape = e.target.dataset.handleShape;
+                createToggle();
+            });
+        });
+
+        // Icon Buttons
+        document.querySelectorAll('[data-icon]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('[data-icon]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                config.icon = e.target.dataset.icon;
+                createToggle();
+            });
+        });
+
+        // Handle Material Buttons
+        document.querySelectorAll('[data-handle-mat]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('[data-handle-mat]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                config.handleMaterialType = e.target.dataset.handleMat;
                 createToggle();
             });
         });

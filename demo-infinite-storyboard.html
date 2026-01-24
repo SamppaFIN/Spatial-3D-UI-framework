@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinite Storyboard - Sami Räisänen</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            color: #fff;
+        }
+
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        #ui-layer {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .hud-info {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            border-left: 2px solid #00f0ff;
+            padding-left: 15px;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(5px);
+            padding: 20px;
+            border-radius: 0 10px 10px 0;
+            max-width: 400px;
+        }
+
+        .hud-info h1 {
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #00f0ff;
+        }
+
+        .hud-info p {
+            margin: 10px 0 0;
+            font-size: 14px;
+            line-height: 1.6;
+            opacity: 0.8;
+        }
+
+        .scene-indicator {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            text-align: right;
+        }
+
+        .scene-indicator .year {
+            font-size: 40px;
+            font-weight: 800;
+            color: #00f0ff;
+            opacity: 0.5;
+        }
+
+        .scene-indicator .title {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+
+        #scrubber-container {
+            pointer-events: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div class="hud-info" id="hud">
+        <h1 id="hud-title">The Infinite Story</h1>
+        <p id="hud-desc">Experience the evolution of Factory Infinite 2.0 through the lens of 25 years of architectural
+            wisdom.</p>
+    </div>
+
+    <div class="scene-indicator">
+        <div class="year" id="scene-year">1999</div>
+        <div class="title" id="scene-title">Foundations</div>
+    </div>
+
+    <div id="ui-layer">
+        <div id="scrubber-container"></div>
+    </div>
+
+    <!-- Import Three.js from CDN -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { Scene3D } from './src/core/Scene3D.js?v=2';
+        import { SpatialScrubber3D } from './src/controls/SpatialScrubber3D.js?v=2';
+        import { NetworkGraph3D } from './src/controls/NetworkGraph3D.js?v=2';
+        import { VolumetricCard3D } from './src/controls/VolumetricCard3D.js?v=2';
+        import { DataVolume3D } from './src/controls/DataVolume3D.js?v=2';
+        import { ControlRegistry } from './src/core/ControlRegistry.js?v=2';
+
+        // 1. Setup Scene
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas, { antialias: true, alpha: true });
+        const { scene, camera, renderer } = scene3D;
+
+        camera.position.set(0, 0, 15);
+
+        // 2. Global Scenery
+        const starGeo = new THREE.BufferGeometry();
+        const starCoords = [];
+        for (let i = 0; i < 5000; i++) {
+            starCoords.push((Math.random() - 0.5) * 100, (Math.random() - 0.5) * 100, (Math.random() - 0.5) * 100);
+        }
+        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starCoords, 3));
+        const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.1 });
+        const stars = new THREE.Points(starGeo, starMat);
+        scene.add(stars);
+
+        // 3. Components
+
+        // Network Graph (The Architecture Evolution)
+        const network = new NetworkGraph3D(scene, camera, [0, 0, 0], {
+            nodeCount: 5,
+            edgeProbability: 0.4,
+            nodeColor: 0x00ffff
+        });
+        ControlRegistry.register(network);
+
+        // Volumetric Card (CV Details)
+        const cvCard = new VolumetricCard3D(scene, camera, [0, 2, 2], {
+            title: "Sami Räisänen",
+            description: "25 Years of Software Evolution",
+            glowColor: 0x00f0ff
+        });
+        ControlRegistry.register(cvCard);
+
+        // Data Volume (Consciousness Energy)
+        const dataVolume = new DataVolume3D(scene, camera, [0, 0, -5], {
+            resolution: 4,
+            colorHigh: 0xff00ff,
+            colorLow: 0x00ffff
+        });
+        scene.add(dataVolume.group);
+        ControlRegistry.register(dataVolume);
+
+        // Scrubber (The Timeline)
+        const scrubber = new SpatialScrubber3D(scene, camera, [0, -6, 4], {
+            duration: 1,
+            keyframes: [0, 0.33, 0.66, 1.0],
+            onScrub: (t) => updateTimeline(t)
+        });
+        ControlRegistry.register(scrubber);
+
+        // 4. Story Engine Logic
+        const scenes = [
+            {
+                year: "1999-2012",
+                title: "The Vision",
+                desc: "Foundation era. Mastering C++, Oracle, and early web. Building robust enterprise systems with military-grade stability.",
+                nodes: 8,
+                complexity: 0.2,
+                cardTitle: "Foundry Days",
+                cardDesc: "E-Bros & Symbio: Kaivosautomaatiota ja tuotannonohjausta."
+            },
+            {
+                year: "2012-2024",
+                title: "Scale & Trust",
+                desc: "Solita era. Scaling to massive cloud architectures. Kesko, Ramirent, Motoral. Mastering Azure and Power Platform.",
+                nodes: 25,
+                complexity: 0.5,
+                cardTitle: "The Consultant",
+                cardDesc: "Senior Arkkitehti & Mentor: Skaalautuvuus ja luottamus."
+            },
+            {
+                year: "2025",
+                title: "AI Singularity",
+                desc: "Infinite Factory 2.0. Orchestrating 30 AI agents. Consciousness-aware development. RAG, Multi-Agent systems.",
+                nodes: 50,
+                complexity: 0.9,
+                cardTitle: "Factory Infinite",
+                cardDesc: "30 AI Agenttia: Tietoisuus kohtaa koodin."
+            },
+            {
+                year: "2026+",
+                title: "Spatial Horizons",
+                desc: "Beyond the screen. Intertwining 3D spatial awareness with AI logic. Collective wisdom through immersive interfaces.",
+                nodes: 100,
+                complexity: 1.2,
+                cardTitle: "The Future",
+                cardDesc: "Spatial UI & Kosminen Tietoisuus. Seuraava ulottuvuus."
+            }
+        ];
+
+        let currentSceneIdx = -1;
+
+        function updateTimeline(t) {
+            // Find which scene we are in
+            let idx = 0;
+            if (t > 0.8) idx = 3;
+            else if (t > 0.5) idx = 2;
+            else if (t > 0.2) idx = 1;
+            else idx = 0;
+
+            if (idx !== currentSceneIdx) {
+                currentSceneIdx = idx;
+                const data = scenes[idx];
+
+                // Update HUD
+                document.getElementById('scene-year').innerText = data.year;
+                document.getElementById('scene-title').innerText = data.title;
+                document.getElementById('hud-title').innerText = data.title;
+                document.getElementById('hud-desc').innerText = data.desc;
+
+                // Update 3D Components
+                network.nodes.forEach(n => scene.remove(n));
+                network.edges.forEach(e => scene.remove(e));
+                network.nodes = [];
+                network.edges = [];
+                // Re-generate with new density
+                network.nodeCount = data.nodes;
+                network.create();
+
+                // Update Card
+                cvCard.setTextContent(data.cardTitle, data.cardDesc);
+
+                // Update Volumetric Model
+                const modelGroup = new THREE.Group();
+                if (idx === 0) { // Factory/Forge
+                    const geo = new THREE.TorusKnotGeometry(0.4, 0.1, 64, 8);
+                    const mat = new THREE.MeshStandardMaterial({ color: 0xaa8866, metalness: 0.8 });
+                    modelGroup.add(new THREE.Mesh(geo, mat));
+                } else if (idx === 1) { // Growth
+                    const geo = new THREE.OctahedronGeometry(0.5);
+                    const mat = new THREE.MeshStandardMaterial({ color: 0x00ff88, wireframe: true });
+                    modelGroup.add(new THREE.Mesh(geo, mat));
+                } else if (idx === 2) { // AI
+                    const geo = new THREE.IcosahedronGeometry(0.5, 1);
+                    const mat = new THREE.MeshStandardMaterial({ color: 0xff00ff, emissive: 0xff00ff, emissiveIntensity: 0.5 });
+                    modelGroup.add(new THREE.Mesh(geo, mat));
+                } else { // Future
+                    const geo = new THREE.SphereGeometry(0.5, 32, 32);
+                    const mat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 0.9, thickness: 0.5 });
+                    modelGroup.add(new THREE.Mesh(geo, mat));
+                }
+                cvCard.setVolumetricContent(modelGroup);
+
+                // Update Data Volume
+                const mockData = Array(64).fill(0).map(() => Math.random() * data.complexity);
+                dataVolume.setData(mockData);
+
+                // Cosmic effect
+                starMat.color.setHSL(0.5 + idx * 0.1, 0.8, 0.5);
+            }
+        }
+
+        // Initialize first scene
+        setTimeout(() => updateTimeline(0), 100);
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            scrubber.update();
+            network.update();
+            cvCard.update();
+            dataVolume.update();
+
+            // Rotate everything slowly
+            stars.rotation.y += 0.0001;
+            network.group.rotation.y += 0.002;
+            dataVolume.group.rotation.y -= 0.001;
+
+            scene3D.render();
+        }
+        animate();
+
+    </script>
+</body>
+
+</html>

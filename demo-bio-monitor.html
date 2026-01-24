@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Bio Monitor - Spatial UI 3D</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Arial', sans-serif;
+        }
+
+        #ui-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #00ff88;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        h1 {
+            margin: 0;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        .instruction {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: rgba(200, 255, 220, 0.8);
+            background: rgba(0, 20, 10, 0.8);
+            padding: 15px;
+            border-left: 3px solid #00ff88;
+            max-width: 300px;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            pointer-events: auto;
+        }
+
+        button {
+            background: rgba(0, 50, 20, 0.8);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            padding: 10px 20px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #00ff88;
+            color: #000;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="ui-overlay">
+        <h1>BIO MONITOR 3000</h1>
+        <div class="instruction">
+            <p>> <strong>PROBLEM:</strong> Flat medical dashboards struggle to show volumetric relationships.</p>
+            <p>> <strong>SOLUTION:</strong> Spatial visualization of organs, vitals, and scan data.</p>
+            <p>> Left: Organ Holo-Sphere</p>
+            <p>> Center: Volumetric Body Scan</p>
+            <p>> Right: Real-time Vital Charts</p>
+        </div>
+    </div>
+
+    <div id="controls">
+        <button onclick="scan('brain')">SCAN: BRAIN</button>
+        <button onclick="scan('torso')">SCAN: TORSO</button>
+        <button onclick="scan('full')">SCAN: FULL BODY</button>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+        import Scene3D from './src/core/Scene3D.js';
+        import { DataVolume3D } from './src/controls/DataVolume3D.js';
+        import { HoloMap3D } from './src/controls/HoloMap3D.js';
+        import { Chart3D } from './src/controls/Chart3D.js';
+        import { CoordinateRoom } from './src/environments/CoordinateRoom.js';
+
+        // 1. Scene Setup
+        const scene3D = new Scene3D({
+            container: document.body,
+            enableOrbitControls: true,
+            cameraPosition: [0, 2, 12]
+        });
+
+        // 2. Environment (Medical Lab)
+        new CoordinateRoom(scene3D.scene, {
+            size: 20,
+            gridColor: 0x004422,
+            axisColor: 0x00ff88
+        });
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene3D.scene.add(ambientLight);
+        const pointLight = new THREE.PointLight(0x00ff88, 1, 20);
+        pointLight.position.set(5, 5, 5);
+        scene3D.scene.add(pointLight);
+
+        // 3. Volumetric Body Scan (Center)
+        const volume = new DataVolume3D(scene3D.scene, scene3D.camera, [0, 0, 0], {
+            resolution: 32,
+            pointSize: 0.2,
+            colorLow: 0x003311,
+            colorHigh: 0x00ff88,
+            threshold: 0.1,
+            dimensions: new THREE.Vector3(4, 6, 4)
+        });
+
+        // 4. Organ Map (Left)
+        // Abstract representation of organ locations
+        const organMap = new HoloMap3D(scene3D.scene, scene3D.camera, [-6, 0, 0], {
+            radius: 2,
+            gridColor: 0x00ff88,
+            glowColor: 0x004422,
+            rotationSpeed: 0.005,
+            markers: [
+                { lat: 45, lon: 0, data: 'BRAIN' },
+                { lat: 10, lon: -20, data: 'HEART' },
+                { lat: 10, lon: 20, data: 'LUNGS' },
+                { lat: -20, lon: 0, data: 'LIVER' }
+            ]
+        });
+
+        // 5. Vital Charts (Right)
+
+        // HR Chart
+        const hrChart = new Chart3D(scene3D.scene, scene3D.camera, [6, 1.5, 0], {
+            width: 4,
+            height: 2.5,
+            chartType: 'line',
+            backgroundColor: 0x001105,
+            borderColor: 0x00ff88,
+            data: {
+                labels: ['1', '2', '3', '4', '5', '6', '7', '8'],
+                datasets: [{
+                    label: 'Heart Rate',
+                    data: [72, 75, 73, 78, 82, 75, 70, 72],
+                    borderColor: '#ff3333',
+                    backgroundColor: 'rgba(255, 50, 50, 0.2)'
+                }]
+            }
+        });
+        hrChart.group.rotation.y = -0.3;
+
+        // O2 Chart
+        const o2Chart = new Chart3D(scene3D.scene, scene3D.camera, [6, -1.5, 0], {
+            width: 4,
+            height: 2.5,
+            chartType: 'bar',
+            backgroundColor: 0x001105,
+            borderColor: 0x00ff88,
+            data: {
+                labels: ['L', 'R', 'Sys', 'Dia'],
+                datasets: [{
+                    label: 'Oxygen',
+                    data: [98, 99, 95, 97],
+                    borderColor: '#33ccff',
+                    backgroundColor: 'rgba(50, 200, 255, 0.2)'
+                }]
+            }
+        });
+        o2Chart.group.rotation.y = -0.3;
+
+        // 6. Interaction Logic
+        window.scan = (type) => {
+            if (type === 'brain') {
+                volume.setSlice('y', 1.0); // Reset
+                volume.setSlice('y', 0.8); // Top only? 
+                // A better way is to animate the threshold/slices
+                // For now, let's just shift slicing
+                volume.setSlice('y', 0.3); // Show bottom (wait, slice logic hides ABOVE)
+                // So specific range isn't supported by simple sliceX,Y,Z yet, only max value.
+                // Let's rely on threshold.
+                volume.setThreshold(0.4);
+            } else if (type === 'torso') {
+                volume.setSlice('y', 1.0);
+                volume.setThreshold(0.2);
+            } else {
+                volume.setSlice('y', 1.0);
+                volume.setThreshold(0.1);
+            }
+        };
+
+        // Real-time data simulation
+        let time = 0;
+        setInterval(() => {
+            time += 0.5;
+
+            // Random HR update
+            const newHR = 70 + Math.sin(time) * 10 + Math.random() * 5;
+            const hrData = hrChart.data.datasets[0].data;
+            hrData.shift();
+            hrData.push(newHR);
+            hrChart.updateChart();
+
+            // Pulse Volume
+            const pulse = 1 + Math.sin(time * 2) * 0.05;
+            volume.group.scale.setScalar(pulse);
+
+            // Pulse Organ Markers
+            // (Handled internally by HoloMap update)
+
+        }, 500);
+
+        // 7. Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const t = Date.now() * 0.001;
+
+            volume.update(t);
+            organMap.update(t * 1000);
+            hrChart.update();
+            o2Chart.update();
+
+            scene3D.render();
+        }
+        animate();
+
+        window.addEventListener('resize', () => scene3D.onWindowResize());
+    </script>
+</body>
+
+</html>

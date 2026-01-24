@@ -449,6 +449,20 @@ export class SpatialScrubber3D extends BaseControl3D {
     }
 
     /**
+     * Get current scrubber value [0, 1]
+     */
+    getValue() {
+        return this.handlePosition;
+    }
+
+    /**
+     * Set scrubber value [0, 1]
+     */
+    setValue(val) {
+        this.scrubToPosition(val);
+    }
+
+    /**
      * Update method called each frame
      */
     update() {

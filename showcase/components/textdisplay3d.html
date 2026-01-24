@@ -431,6 +431,7 @@ function animate() {
             height: 3.0,
             depth: 0.2,
             mode: 0,
+            style: 'default',
             backgroundColor: 0x1a1a2e,
             borderColor: 0x4a4a6e
         };
@@ -447,6 +448,7 @@ function animate() {
                 height: config.height,
                 depth: config.depth,
                 mode: config.mode,
+                style: config.style,
                 backgroundColor: config.backgroundColor,
                 borderColor: config.borderColor,
                 renderer: renderer
@@ -487,6 +489,22 @@ function animate() {
             });
         });
 
+        // Style Buttons
+        document.querySelectorAll('[data-style]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('[data-style]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                config.style = e.target.dataset.style;
+
+                // Use the setStyle method if available for smoother transition
+                if (textDisplay && typeof textDisplay.setStyle === 'function') {
+                    textDisplay.setStyle(config.style);
+                } else {
+                    createTextDisplay();
+                }
+            });
+        });
+
         // Color Buttons
         document.querySelectorAll('[data-color]').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -507,7 +525,7 @@ function animate() {
         document.getElementById('height-slider').addEventListener('input', (e) => {
             config.height = parseFloat(e.target.value);
             document.getElementById('height-value').textContent = config.height.toFixed(1);
-            createTextDisplay();
+            createTextDisplay(); // Recreating for dimension changes as mesh geometry changes
         });
 
     </script>
