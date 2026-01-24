@@ -90,6 +90,7 @@ export class KineticSculpture3D extends BaseControl3D {
      * Internal create method
      */
     _createInternal() {
+        console.log('KineticSculpture3D: Creating sculpture');
         this.group = new THREE.Group();
         this.group.position.set(...this.position);
 
@@ -122,11 +123,11 @@ export class KineticSculpture3D extends BaseControl3D {
                 varying vec3 vPosition;
                 varying float vNoise;
 
-                // Simplex 3D Noise
+                // Simplex 3D Noise -- Fixed for WebGL 1 (No Overloading)
                 // Source: https://github.com/ashima/webgl-noise
-                vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-                vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-                vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
+                vec3 mod289_v3(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+                vec4 mod289_v4(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+                vec4 permute(vec4 x) { return mod289_v4(((x*34.0)+1.0)*x); }
                 vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
 
                 float snoise(vec3 v) {
@@ -145,7 +146,7 @@ export class KineticSculpture3D extends BaseControl3D {
                     vec3 x2 = x0 - i2 + C.yyy;
                     vec3 x3 = x0 - D.yyy;
 
-                    i = mod289(i);
+                    i = mod289_v3(i);
                     vec4 p = permute(permute(permute(
                         i.z + vec4(0.0, i1.z, i2.z, 1.0))
                         + i.y + vec4(0.0, i1.y, i2.y, 1.0))

@@ -70,6 +70,7 @@ export class HoloMap3D extends BaseControl3D {
     }
 
     create() {
+        console.log('HoloMap3D: Creating holo sphere');
         // Initialization check
         if (!this.globeGroup) return;
 
