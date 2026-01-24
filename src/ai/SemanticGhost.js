@@ -1,14 +1,11 @@
 import * as THREE from 'three';
-import { TextInput3D } from '../controls/TextInput3D.js';
 
 /**
- * SemanticGhost - A predictive help avatar.
+ * SemanticGhost (Holo-Companion)
  * 
- * Behavior:
- * 1. Follows the user (camera) but stays invisible/dispersed when moving.
- * 2. When user stops moving (Hesitation), it coalesces into a form.
- * 3. It raycasts forward to see what the user is looking at.
- * 4. If target has `userData.helpText`, it displays a speech bubble.
+ * A persistent AI drone that hovers near the user and scans the environment.
+ * When the user focuses on an interactive object, the ghost flies to it
+ * and projects a holographic information panel.
  */
 export class SemanticGhost extends THREE.Group {
     constructor(camera, scene, renderer) {
@@ -22,380 +19,318 @@ export class SemanticGhost extends THREE.Group {
             aurora: {
                 name: "Aurora",
                 prefix: "🌸",
-                color: 0xff66cc, // Pink
-                desc: "Gentle, nature-inspired, empathetic."
+                color: 0xff66cc,
+                desc: "Gentle guide"
             },
             infinite: {
                 name: "Infinite",
                 prefix: "♾️",
-                color: 0x00ccff, // Cyan
-                desc: "Cosmic, limitless, precise."
+                color: 0x00ccff,
+                desc: "Cosmic observer"
             }
         };
-        this.currentPersona = this.personas.aurora; // Default
+        this.currentPersona = this.personas.aurora;
 
         // State
-        this.state = 'IDLE'; // IDLE, FORMING, ACTIVE, DISPERSING
+        this.state = 'FOLLOWING'; // FOLLOWING, SCANNING, ENGAGED
         this.targetObject = null;
-        this.lastCameraPos = new THREE.Vector3();
-        this.lastCameraQuat = new THREE.Quaternion();
-        this.idleTime = 0;
-        this.isGhostVisible = false;
-        this.forced = false;
+        this.scanTimer = 0;
 
         // Raycaster
         this.raycaster = new THREE.Raycaster();
-        this.raycaster.far = 10;
+        this.raycaster.far = 15;
 
         // Visuals
-        this.initParticles();
-        this.initGlow();
-        this.initGhostMesh();
-        this.initSpeechBubble();
-        this.initInput();
+        this.initVisuals();
+        this.initHoloPanel();
 
-        // Input Listeners
-        window.addEventListener('dblclick', () => this.forceSummon());
-        window.addEventListener('keydown', (e) => {
-            if (e.key.toLowerCase() === 'h') this.forceSummon();
-        });
+        // Initial set
+        this.setPersona('aurora');
     }
 
-    forceSummon() {
-        this.forced = true;
-        this.state = 'FORMING';
-        this.idleTime = 5.0; // Artificial idle time
-        // Immediate Greeting
-        if (!this.targetObject) {
-            this.updateSpeech("Greetings. I am the Semantic Ghost.");
+    initVisuals() {
+        // --- Core Orb ---
+        const coreGeo = new THREE.IcosahedronGeometry(0.15, 1);
+        const coreMat = new THREE.MeshStandardMaterial({
+            color: 0xffffff,
+            emissive: this.currentPersona.color,
+            emissiveIntensity: 1.0,
+            roughness: 0.2,
+            metalness: 0.9,
+            flatShading: true,
+            depthTest: false // Always visible
+        });
+        this.core = new THREE.Mesh(coreGeo, coreMat);
+        this.core.renderOrder = 999;
+        this.add(this.core);
+
+        // --- Outer Rings ---
+        // Ring 1 (Horizontal)
+        const r1Geo = new THREE.TorusGeometry(0.25, 0.01, 8, 32);
+        const rMat = new THREE.MeshBasicMaterial({
+            color: this.currentPersona.color,
+            transparent: true,
+            opacity: 0.8,
+            depthTest: false // Always visible
+        });
+        this.ring1 = new THREE.Mesh(r1Geo, rMat);
+        this.ring1.renderOrder = 999;
+        this.add(this.ring1);
+
+        // Ring 2 (Vertical-ish)
+        this.ring2 = new THREE.Mesh(r1Geo, rMat);
+        this.ring2.rotation.x = Math.PI / 2;
+        this.ring2.scale.set(0.8, 0.8, 0.8);
+        this.ring2.renderOrder = 999;
+        this.add(this.ring2);
+
+        // --- Scanner Beam ---
+        const beamGeo = new THREE.ConeGeometry(0.05, 2, 8, 1, true);
+        beamGeo.translate(0, 1, 0); // Origin at tip
+        beamGeo.rotateX(-Math.PI / 2); // Point forward
+        const beamMat = new THREE.MeshBasicMaterial({
+            color: this.currentPersona.color,
+            transparent: true,
+            opacity: 0,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            side: THREE.DoubleSide,
+            depthTest: false // Always visible
+        });
+        this.scannerBeam = new THREE.Mesh(beamGeo, beamMat);
+        this.scannerBeam.renderOrder = 999;
+        this.add(this.scannerBeam);
+    }
+
+    setVisible(isVisible) {
+        this.visible = isVisible;
+        if (!isVisible) {
+            this.state = 'IDLE';
+            this.targetObject = null;
+        } else {
+            this.state = 'FOLLOWING';
         }
     }
 
-    initGhostMesh() {
-        // A translucent, wispy capsule to give it form
-        const geo = new THREE.CapsuleGeometry(0.12, 0.4, 4, 8);
+    initHoloPanel() {
+        this.panelCanvas = document.createElement('canvas');
+        this.panelCanvas.width = 512;
+        this.panelCanvas.height = 256;
+        this.panelCtx = this.panelCanvas.getContext('2d');
+
+        this.panelTex = new THREE.CanvasTexture(this.panelCanvas);
+        // Anisotropy helps text readablity at angles
+        if (this.renderer) this.panelTex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+
         const mat = new THREE.MeshBasicMaterial({
-            color: 0xffffff,
+            map: this.panelTex,
             transparent: true,
-            opacity: 0.0,
+            opacity: 0.9,
             side: THREE.DoubleSide,
             blending: THREE.AdditiveBlending,
-            depthWrite: false
-        });
-        this.ghostMesh = new THREE.Mesh(geo, mat);
-        this.ghostMesh.position.y = -0.1;
-        this.add(this.ghostMesh);
-    }
-
-    initGlow() {
-        // Inner glow light
-        this.pointLight = new THREE.PointLight(this.currentPersona.color, 0, 3);
-        this.add(this.pointLight);
-
-        // Sprite Glow
-        const canvas = document.createElement('canvas');
-        canvas.width = 64; canvas.height = 64;
-        const ctx = canvas.getContext('2d');
-        const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-        gradient.addColorStop(0, 'rgba(255,255,255,0.8)');
-        gradient.addColorStop(0.5, 'rgba(255,255,255,0.2)');
-        gradient.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, 64, 64);
-
-        const tex = new THREE.CanvasTexture(canvas);
-        const mat = new THREE.SpriteMaterial({
-            map: tex,
-            color: this.currentPersona.color,
-            transparent: true,
-            opacity: 0.0,
-            blending: THREE.AdditiveBlending
-        });
-        this.glowSprite = new THREE.Sprite(mat);
-        this.glowSprite.scale.set(1.5, 1.5, 1.5);
-        this.add(this.glowSprite);
-    }
-
-    initParticles() {
-        // Create a cloud of particles with volume
-        const particleCount = 400;
-        const geom = new THREE.BufferGeometry();
-        const positions = new Float32Array(particleCount * 3);
-        const originalPositions = new Float32Array(particleCount * 3);
-        const randoms = new Float32Array(particleCount);
-
-        for (let i = 0; i < particleCount; i++) {
-            const x = (Math.random() - 0.5);
-            const y = (Math.random() - 0.5);
-            const z = (Math.random() - 0.5);
-
-            // Normalize to sphere volume
-            const v = new THREE.Vector3(x, y, z).normalize().multiplyScalar(0.2 * Math.random() + 0.1);
-
-            positions[i * 3] = v.x;
-            positions[i * 3 + 1] = v.y;
-            positions[i * 3 + 2] = v.z;
-
-            originalPositions[i * 3] = v.x;
-            originalPositions[i * 3 + 1] = v.y;
-            originalPositions[i * 3 + 2] = v.z;
-
-            randoms[i] = Math.random() * Math.PI * 2;
-        }
-
-        geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        geom.setAttribute('originalPosition', new THREE.BufferAttribute(originalPositions, 3));
-        geom.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1));
-
-        const mat = new THREE.PointsMaterial({
-            color: this.currentPersona.color,
-            size: 0.03,
-            transparent: true,
-            opacity: 0.0,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
+            depthWrite: false,
+            depthTest: false // Always visible
         });
 
-        this.particles = new THREE.Points(geom, mat);
-        this.add(this.particles);
+        const geo = new THREE.PlaneGeometry(1.5, 0.75);
+        this.holoPanel = new THREE.Mesh(geo, mat);
+        this.holoPanel.position.set(0, 0.6, 0); // Above drone
+        this.holoPanel.scale.set(0, 0, 0); // Start hidden
+        this.holoPanel.renderOrder = 999;
+        this.add(this.holoPanel);
     }
 
-    initInput() {
-        if (!this.renderer) return;
+    updatePanelText(text) {
+        const ctx = this.panelCtx;
+        const w = 512, h = 256;
 
-        // Add a 3D Text Input below the ghost
-        this.inputControl = new TextInput3D(this.scene, this.camera, [0, -0.6, 0], {
-            width: 1.8,
-            height: 0.4,
-            placeholder: "Speak to me...",
-            renderer: this.renderer,
-            backgroundColor: 0x000000,
-            backgroundOpacity: 0.3, // Glassy
-            borderColor: this.currentPersona.color,
-            onSubmit: (ctrl, text) => {
-                this.handleInput(text);
-                ctrl.setValue(""); // Clear after submit
+        ctx.clearRect(0, 0, w, h);
+
+        // Holo Background
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, `rgba(${this.hexToRgb(this.currentPersona.color)}, 0.1)`);
+        grad.addColorStop(0.5, `rgba(${this.hexToRgb(this.currentPersona.color)}, 0.4)`);
+        grad.addColorStop(1, `rgba(${this.hexToRgb(this.currentPersona.color)}, 0.1)`);
+
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+
+        // Tech Borders
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(10, 10, w - 20, h - 20);
+
+        // Corner Accents
+        ctx.fillStyle = this.getHexString(this.currentPersona.color);
+        ctx.fillRect(0, 0, 40, 4);
+        ctx.fillRect(0, 0, 4, 40);
+        ctx.fillRect(w - 40, h - 4, 40, 4);
+        ctx.fillRect(w - 4, h - 40, 4, 40);
+
+        // Text
+        ctx.shadowColor = this.getHexString(this.currentPersona.color);
+        ctx.shadowBlur = 10;
+
+        // Header
+        ctx.font = 'bold 30px "Courier New", monospace';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'left';
+        ctx.fillText(`${this.currentPersona.prefix} ANALYSIS`, 40, 50);
+
+        // Body
+        ctx.font = '24px "Inter", sans-serif';
+        ctx.textAlign = 'center';
+
+        // Simple wrap (split by spaces for demo)
+        const words = text.split(' ');
+        let line = '';
+        let y = 100;
+        for (let word of words) {
+            const testLine = line + word + ' ';
+            const metrics = ctx.measureText(testLine);
+            if (metrics.width > 440) {
+                ctx.fillText(line, w / 2, y);
+                line = word + ' ';
+                y += 35;
+            } else {
+                line = testLine;
             }
-        });
+        }
+        ctx.fillText(line, w / 2, y);
 
-        // Attach to ghost group
-        this.add(this.inputControl.group);
-        this.inputControl.group.visible = false;
-    }
-
-    handleInput(text) {
-        // Echo back for now
-        this.updateSpeech(`${this.currentPersona.prefix} I heard: "${text}"`);
+        this.panelTex.needsUpdate = true;
     }
 
     setPersona(key) {
         if (this.personas[key]) {
             this.currentPersona = this.personas[key];
-            this.particles.material.color.setHex(this.currentPersona.color);
-            this.pointLight.color.setHex(this.currentPersona.color);
-            this.glowSprite.material.color.setHex(this.currentPersona.color);
+            const col = new THREE.Color(this.currentPersona.color);
 
-            if (this.inputControl) {
-                // Update input border color if possible, or just re-create? 
-                // BaseControl logic needed, for now just simplistic
-            }
+            this.core.material.emissive.set(col);
+            this.ring1.material.color.set(col);
+            this.ring2.material.color.set(col);
+            this.scannerBeam.material.color.set(col);
 
-            // If active, refresh bubble
-            if (this.state === 'ACTIVE' && this.targetObject) {
-                this.updateSpeech(this.targetObject.userData.helpText);
-            } else if (this.state === 'ACTIVE' && !this.targetObject) {
-                this.updateSpeech(`${this.currentPersona.prefix} I am here.`);
+            // Re-render current panel
+            if (this.holoPanel.visible && this.targetObject) {
+                this.updatePanelText(this.targetObject.userData.helpText);
             }
         }
     }
 
-    initSpeechBubble() {
-        // Simple sprite for text
-        this.bubbleCanvas = document.createElement('canvas');
-        this.bubbleCanvas.width = 512;
-        this.bubbleCanvas.height = 256;
-        this.bubbleContext = this.bubbleCanvas.getContext('2d');
-
-        this.bubbleTexture = new THREE.CanvasTexture(this.bubbleCanvas);
-        const mat = new THREE.SpriteMaterial({ map: this.bubbleTexture, transparent: true, opacity: 0 });
-
-        this.bubble = new THREE.Sprite(mat);
-        this.bubble.scale.set(1, 0.5, 1);
-        this.bubble.position.set(0, 0.5, 0); // Above ghost
-        this.add(this.bubble);
+    // --- Helpers ---
+    hexToRgb(hex) {
+        const r = (hex >> 16) & 255;
+        const g = (hex >> 8) & 255;
+        const b = hex & 255;
+        return `${r},${g},${b}`;
     }
 
-    updateSpeech(text) {
-        const ctx = this.bubbleContext;
-        ctx.clearRect(0, 0, 512, 256);
-
-        // Styling
-        ctx.fillStyle = 'rgba(0, 20, 40, 0.9)';
-        ctx.strokeStyle = '#' + this.currentPersona.color.toString(16).padStart(6, '0');
-        ctx.lineWidth = 4;
-
-        // Rounded rect
-        const x = 10, y = 10, w = 492, h = 236, r = 30;
-        ctx.beginPath();
-        ctx.moveTo(x + r, y);
-        ctx.lineTo(x + w - r, y);
-        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-        ctx.lineTo(x + w, y + h - r);
-        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-        ctx.lineTo(x + r, y + h);
-        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-        ctx.lineTo(x, y + r);
-        ctx.quadraticCurveTo(x, y, x + r, y);
-        ctx.fill();
-        ctx.stroke();
-
-        // Header (Persona Name)
-        ctx.font = 'bold 30px "Inter", sans-serif';
-        ctx.fillStyle = ctx.strokeStyle;
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        ctx.fillText(`${this.currentPersona.prefix} ${this.currentPersona.name}`, 40, 30);
-
-        // Body Text
-        ctx.font = '36px "Inter", sans-serif';
-        ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-
-        const words = text.split(' ');
-        if (words.length > 6) {
-            ctx.fillText(text.substring(0, text.length / 2), 256, 120);
-            ctx.fillText(text.substring(text.length / 2), 256, 170);
-        } else {
-            ctx.fillText(text, 256, 148);
-        }
-
-        this.bubbleTexture.needsUpdate = true;
+    getHexString(hex) {
+        return '#' + hex.toString(16).padStart(6, '0');
     }
 
     update(delta, time) {
-        // 1. Detect Motion (High sensitivity or Forced)
-        const dist = this.camera.position.distanceTo(this.lastCameraPos);
-        const rot = this.camera.quaternion.angleTo(this.lastCameraQuat);
-        const isMoving = (dist > 0.005 || rot > 0.005) && !this.forced;
+        // 1. Raycasting (Vision)
+        this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
+        const intersects = this.raycaster.intersectObjects(this.scene.children, true);
 
-        if (isMoving) {
-            this.idleTime = 0;
-            this.state = 'DISPERSING';
-            this.lastCameraPos.copy(this.camera.position);
-            this.lastCameraQuat.copy(this.camera.quaternion);
-            this.forced = false;
-        } else {
-            this.idleTime += delta;
-            // Short wait trigger (1.0s)
-            if (this.idleTime > 1.0 && this.state !== 'ACTIVE') {
-                this.state = 'FORMING';
-            }
-        }
-
-        // 2. State Machine behavior
-        if (this.state === 'FORMING') {
-            // Raycast check
-            this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
-            const intersects = this.raycaster.intersectObjects(this.scene.children, true);
-
-            let foundTarget = null;
-            for (let hit of intersects) {
-                let obj = hit.object;
-                if (obj === this.ghostMesh) continue; // Ignore self
-
-                while (obj) {
-                    if (obj.userData && obj.userData.helpText) {
-                        foundTarget = obj;
-                        break;
-                    }
-                    obj = obj.parent;
+        let visibleTarget = null;
+        for (let hit of intersects) {
+            let obj = hit.object;
+            // Traverse up to find userData
+            while (obj) {
+                if (obj.userData && obj.userData.helpText) {
+                    visibleTarget = obj;
+                    break;
                 }
-                if (foundTarget) break;
+                obj = obj.parent;
+                if (obj && obj.type === 'Scene') break;
             }
+            if (visibleTarget) break;
+        }
 
-            if (foundTarget) {
-                this.targetObject = foundTarget;
-                this.updateSpeech(foundTarget.userData.helpText);
-                this.state = 'ACTIVE';
-                this.visible = true;
-            } else if (this.forced) {
-                // If forced but no target, just appear generic
+        // 2. Logic & State Machine
+        if (visibleTarget) {
+            if (this.targetObject !== visibleTarget) {
+                // New target found
+                this.targetObject = visibleTarget;
+                this.scanTimer = 0;
+                this.state = 'SCANNING';
+            } else {
+                // Sustained focus
+                this.scanTimer += delta;
+                if (this.scanTimer > 0.6 && this.state !== 'ENGAGED') {
+                    // Lock on!
+                    this.state = 'ENGAGED';
+                    this.updatePanelText(this.targetObject.userData.helpText);
+                }
+            }
+        } else {
+            // Lost target
+            if (this.state !== 'FOLLOWING') {
                 this.targetObject = null;
-                // Text already set in forceSummon, but ensure it sticks or updates
-                this.updateSpeech(`${this.currentPersona.prefix} I am the Semantic Ghost.`);
-                this.state = 'ACTIVE';
-                this.visible = true;
-            } else {
-                this.state = 'IDLE';
+                this.state = 'FOLLOWING';
+                this.scanTimer = 0;
             }
         }
 
-        // 3. Animation
-        const targetOpacity = (this.state === 'ACTIVE') ? 1.0 : 0.0;
+        // 3. Movement Logic
+        const targetPos = new THREE.Vector3();
 
-        // Float lerp
-        this.particles.material.opacity = THREE.MathUtils.lerp(this.particles.material.opacity, (this.state === 'ACTIVE' ? 1.0 : 0), delta * 3);
-        this.glowSprite.material.opacity = THREE.MathUtils.lerp(this.glowSprite.material.opacity, (this.state === 'ACTIVE' ? 0.8 : 0), delta * 3);
-        this.pointLight.intensity = THREE.MathUtils.lerp(this.pointLight.intensity, (this.state === 'ACTIVE' ? 1.5 : 0), delta * 3);
-        this.bubble.material.opacity = THREE.MathUtils.lerp(this.bubble.material.opacity, (this.state === 'ACTIVE' ? 1 : 0), delta * 5);
-        this.ghostMesh.material.opacity = THREE.MathUtils.lerp(this.ghostMesh.material.opacity, (this.state === 'ACTIVE' ? 0.5 : 0), delta * 2);
+        if (this.state === 'ENGAGED' && this.targetObject) {
+            // Fly to object
+            this.targetObject.getWorldPosition(targetPos);
+            // Hover slightly above/right of it
+            targetPos.y += 0.8;
+            targetPos.x += 0.5;
+            targetPos.z += 0.2; // slight bias
 
-        // Input Visibility
-        if (this.inputControl) {
-            this.inputControl.group.visible = (this.state === 'ACTIVE');
-            if (this.state === 'ACTIVE') this.inputControl.update();
-        }
-
-        // Position the ghost
-        if (this.state === 'ACTIVE') {
-            const targetPos = new THREE.Vector3();
-
-            if (this.targetObject && this.targetObject.position) {
-                this.targetObject.getWorldPosition(targetPos);
-                // Offset towards camera
-                const toCam = new THREE.Vector3().subVectors(this.camera.position, targetPos).normalize();
-                targetPos.add(toCam.multiplyScalar(0.7));
-                targetPos.y += 0.4;
-            } else {
-                // Default position (floating in front of camera)
-                const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion);
-                targetPos.copy(this.camera.position).add(forward.multiplyScalar(1.2));
-                targetPos.y -= 0.1;
-            }
-
-            // Smooth follow
-            this.position.lerp(targetPos, delta * 4);
+            // Look at camera
             this.lookAt(this.camera.position);
 
-            // Animate particles (breathing + organic noise)
-            const positions = this.particles.geometry.attributes.position;
-            const originals = this.particles.geometry.attributes.originalPosition;
-            const randoms = this.particles.geometry.attributes.aRandom;
+        } else {
+            // Shoulder Hover Mode (FOLLOWING / SCANNING)
+            // Relative to camera
+            const offset = new THREE.Vector3(0.6, 0.3, -1.2); // Right shoulder, slightly forward
+            offset.applyQuaternion(this.camera.quaternion);
+            targetPos.copy(this.camera.position).add(offset);
 
-            for (let i = 0; i < positions.count; i++) {
-                const ox = originals.getX(i);
-                const oy = originals.getY(i);
-                const oz = originals.getZ(i);
-                const r = randoms.getX(i);
-
-                const breathe = 1.0 + Math.sin(time * 2 + r) * 0.1;
-                const driftX = Math.sin(time * 1.5 + r * 2) * 0.05;
-                const driftY = Math.cos(time * 1.2 + r * 3) * 0.05;
-
-                positions.setXYZ(i, ox * breathe + driftX, oy * breathe + driftY, oz * breathe);
+            // Look forward (or at target if scanning)
+            if (this.state === 'SCANNING' && this.targetObject) {
+                const lookPos = new THREE.Vector3();
+                this.targetObject.getWorldPosition(lookPos);
+                this.lookAt(lookPos);
+            } else {
+                // Look same dir as camera (roughly)
+                const camForward = new THREE.Vector3(0, 0, -5).applyQuaternion(this.camera.quaternion);
+                this.lookAt(this.camera.position.clone().add(camForward));
             }
-            positions.needsUpdate = true;
-
-            // Wobble
-            this.ghostMesh.position.y = -0.1 + Math.sin(time * 2) * 0.05;
-
-        } else if (this.state === 'DISPERSING') {
-            this.particles.material.opacity = THREE.MathUtils.lerp(this.particles.material.opacity, 0, delta * 10);
-            this.glowSprite.material.opacity = THREE.MathUtils.lerp(this.glowSprite.material.opacity, 0, delta * 10);
-            this.ghostMesh.material.opacity = THREE.MathUtils.lerp(this.ghostMesh.material.opacity, 0, delta * 10);
-            this.bubble.material.opacity = THREE.MathUtils.lerp(this.bubble.material.opacity, 0, delta * 10);
-            if (this.inputControl) this.inputControl.group.visible = false;
         }
+
+        // Smooth Move
+        this.position.lerp(targetPos, delta * 3.0);
+
+        // 4. Visual Animations
+
+        // Rings rotation
+        this.ring1.rotation.z = time * 0.5;
+        this.ring2.rotation.y = time * 0.7;
+
+        // Core breathing
+        const pulse = 0.8 + Math.sin(time * 3) * 0.2;
+        this.core.scale.setScalar(pulse);
+
+        // Scanner Beam
+        if (this.state === 'SCANNING') {
+            this.scannerBeam.material.opacity = THREE.MathUtils.lerp(this.scannerBeam.material.opacity, 0.4, delta * 10);
+            this.scannerBeam.scale.x = 1.0 + Math.sin(time * 20) * 0.2; // Flicker
+        } else {
+            this.scannerBeam.material.opacity = THREE.MathUtils.lerp(this.scannerBeam.material.opacity, 0, delta * 10);
+        }
+
+        // Holo Panel Scale
+        const targetScale = (this.state === 'ENGAGED') ? 1 : 0;
+        this.holoPanel.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), delta * 4);
     }
 }
