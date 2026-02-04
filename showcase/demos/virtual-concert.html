@@ -4,410 +4,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Virtual Concert Stage - Spatial UI 3D Demo</title>
+    <title>Aurora Live: Virtual Metaverse Arena</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Arial', sans-serif;
-            background: #0a0015;
-            color: #ff00ff;
+            margin: 0;
             overflow: hidden;
+            background: #0a0015;
+            font-family: 'Arial', sans-serif;
         }
 
-        #canvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-        }
-
-        .concert-info {
-            position: fixed;
+        #concert-hud {
+            position: absolute;
             top: 20px;
             left: 20px;
-            background: rgba(10, 0, 21, 0.95);
-            border: 2px solid #ff00ff;
-            padding: 20px;
-            max-width: 400px;
-            z-index: 100;
-            box-shadow: 0 0 30px rgba(255, 0, 255, 0.6);
-        }
-
-        .concert-title {
-            font-size: 22px;
-            font-weight: bold;
-            margin-bottom: 10px;
+            pointer-events: none;
             color: #ff00ff;
-            text-shadow: 0 0 15px #ff00ff;
+            text-shadow: 0 0 10px rgba(255, 0, 255, 0.6);
         }
 
-        .concert-text {
-            color: #ff66ff;
-            line-height: 1.6;
-            font-size: 13px;
+        h1 {
+            margin: 0;
+            font-size: 1.6rem;
+            letter-spacing: 2px;
         }
 
-        .mixer-panel {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(10, 0, 21, 0.95);
-            border: 2px solid #00ffff;
-            padding: 15px;
-            z-index: 100;
-            min-width: 280px;
-        }
-
-        .mixer-title {
+        .sub {
+            font-size: 0.8rem;
             color: #00ffff;
-            font-weight: bold;
-            margin-bottom: 10px;
+            opacity: 0.8;
         }
 
-        .mixer-item {
-            display: flex;
-            justify-content: space-between;
-            margin: 5px 0;
-            font-size: 12px;
-        }
-
-        .mixer-label {
-            color: #00ffff;
-        }
-
-        .mixer-value {
-            color: #fff;
-            font-weight: bold;
-        }
-
-        .setlist {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(10, 0, 21, 0.95);
-            border: 2px solid #ffff00;
-            padding: 15px;
-            z-index: 100;
-            max-width: 300px;
-        }
-
-        .setlist-title {
-            color: #ffff00;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .setlist-item {
-            color: #ffff66;
-            margin: 5px 0;
-            font-size: 12px;
-            padding: 5px;
-        }
-
-        .setlist-item.playing {
-            background: rgba(255, 255, 0, 0.2);
-            font-weight: bold;
-        }
-
-        .audience-stats {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(10, 0, 21, 0.95);
-            border: 2px solid #00ff00;
-            padding: 15px;
-            z-index: 100;
-            min-width: 250px;
-        }
-
-        .stats-title {
-            color: #00ff00;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .stats-item {
-            color: #66ff66;
-            margin: 5px 0;
-            font-size: 12px;
-        }
-
-        .light-show {
-            position: fixed;
+        /* Neon vignette */
+        #neon-wash {
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
+            background: radial-gradient(circle, transparent 40%, rgba(10, 0, 21, 0.7) 100%);
             pointer-events: none;
-            z-index: 1;
-        }
-
-        .light-beam {
-            position: absolute;
-            width: 100px;
-            height: 100%;
-            opacity: 0.3;
-            background: linear-gradient(to bottom, transparent, #ff00ff, transparent);
-            animation: sweep 3s infinite;
-        }
-
-        @keyframes sweep {
-            0% {
-                left: -100px;
-            }
-
-            100% {
-                left: 100%;
-            }
+            z-index: 5;
         }
     </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
 </head>
 
 <body>
-    <canvas id="canvas"></canvas>
-    <div class="light-show">
-        <div class="light-beam" style="animation-delay: 0s;"></div>
-        <div class="light-beam"
-            style="animation-delay: 1s; background: linear-gradient(to bottom, transparent, #00ffff, transparent);">
-        </div>
-        <div class="light-beam"
-            style="animation-delay: 2s; background: linear-gradient(to bottom, transparent, #ffff00, transparent);">
-        </div>
+    <div id="neon-wash"></div>
+    <div id="concert-hud">
+        <h1>AURORA LIVE XR</h1>
+        <div class="sub">Attendance: 47,892 • Energy: PEAK</div>
     </div>
-
-    <div class="concert-info">
-        <div class="concert-title">🎸 AURORA LIVE IN 3D</div>
-        <div class="concert-text">
-            <strong>VENUE:</strong> Virtual Metaverse Arena<br>
-            <strong>CAPACITY:</strong> Unlimited<br>
-            <strong>CURRENT ATTENDANCE:</strong> 47,892 avatars<br><br>
-
-            Welcome to the future of live music! Experience the concert in full 3D
-            immersion. Control the audio mix, lighting effects, and camera angles.
-            Feel the bass, see the lights, and connect with fans worldwide in real-time.<br><br>
-
-            <strong>NOW PLAYING:</strong> "Digital Dreams"<br>
-            <strong>NEXT UP:</strong> "Infinite Echoes"
-        </div>
-    </div>
-
-    <div class="mixer-panel">
-        <div class="mixer-title">🎚️ AUDIO MIXER</div>
-        <div class="mixer-item">
-            <span class="mixer-label">Master Volume:</span>
-            <span class="mixer-value" id="master">85%</span>
-        </div>
-        <div class="mixer-item">
-            <span class="mixer-label">Bass:</span>
-            <span class="mixer-value" id="bass">70%</span>
-        </div>
-        <div class="mixer-item">
-            <span class="mixer-label">Treble:</span>
-            <span class="mixer-value" id="treble">65%</span>
-        </div>
-        <div class="mixer-item">
-            <span class="mixer-label">Vocals:</span>
-            <span class="mixer-value" id="vocals">90%</span>
-        </div>
-        <div class="mixer-item">
-            <span class="mixer-label">Effects:</span>
-            <span class="mixer-value" id="effects">55%</span>
-        </div>
-    </div>
-
-    <div class="setlist">
-        <div class="setlist-title">📋 TONIGHT'S SETLIST</div>
-        <div class="setlist-item">1. Cosmic Awakening</div>
-        <div class="setlist-item playing">2. Digital Dreams ▶</div>
-        <div class="setlist-item">3. Infinite Echoes</div>
-        <div class="setlist-item">4. Neon Nights</div>
-        <div class="setlist-item">5. Virtual Reality</div>
-        <div class="setlist-item">6. Aurora Borealis (Encore)</div>
-    </div>
-
-    <div class="audience-stats">
-        <div class="stats-title">👥 AUDIENCE ENERGY</div>
-        <div class="stats-item">🔥 Hype Level: MAXIMUM</div>
-        <div class="stats-item">💬 Chat Messages: 2,847/min</div>
-        <div class="stats-item">👏 Applause: 98%</div>
-        <div class="stats-item">🌍 Countries: 127</div>
-        <div class="stats-item">⭐ Rating: 4.9/5.0</div>
-    </div>
-
-    <script type="importmap">
-    { "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-    }}
-    </script>
 
     <script type="module">
-        import { Scene3D } from '../../src/core/Scene3D.js';
-        import { Slider3D } from '../../src/controls/Slider3D.js';
-        import { Toggle3D } from '../../src/controls/Toggle3D.js';
-        import { VolumetricCard3D } from '../../src/controls/VolumetricCard3D.js';
-        import { RadialMenu3D } from '../../src/controls/RadialMenu3D.js';
         import * as THREE from 'three';
+        import { SpatialEnvironment } from '../../src/environments/SpatialEnvironment.js';
+        import { SemanticGhost } from '../../src/ai/SemanticGhost.js';
 
-        const canvas = document.getElementById('canvas');
-        const scene3D = new Scene3D(canvas);
-        const scene = scene3D.getScene();
-        const camera = scene3D.getCamera();
-        const renderer = scene3D.getRenderer();
+        // Components
+        import { FlowFieldController3D } from '../../src/controls/FlowFieldController3D.js';
+        import { AIPortal3D } from '../../src/controls/AIPortal3D.js';
+        import { HaloCard3D } from '../../src/controls/HaloCard3D.js';
+        import { Slider3D } from '../../src/controls/Slider3D.js';
+        import { RadialMenu3D } from '../../src/controls/RadialMenu3D.js';
 
-        scene.background = new THREE.Color(0x0a0015);
-        scene.fog = new THREE.Fog(0x0a0015, 10, 50);
+        // 1. Setup
+        const env = new SpatialEnvironment(document.body, { cameraPos: [0, 1.8, 5] });
+        env.init();
+        env.scene.background = new THREE.Color(0x0a0015);
 
-        // Stage lights
-        const magentaLight = new THREE.PointLight(0xff00ff, 3, 25);
-        magentaLight.position.set(-5, 5, 5);
-        scene.add(magentaLight);
+        // Concert Lighting
+        const amb = new THREE.AmbientLight(0xff00ff, 0.4);
+        env.scene.add(amb);
 
-        const cyanLight = new THREE.PointLight(0x00ffff, 3, 25);
-        cyanLight.position.set(5, 5, 5);
-        scene.add(cyanLight);
+        const spot = new THREE.SpotLight(0x00ffff, 4, 20, 0.5, 1);
+        spot.position.set(0, 8, 2);
+        env.scene.add(spot);
 
-        const yellowLight = new THREE.PointLight(0xffff00, 2, 20);
-        yellowLight.position.set(0, 7, 0);
-        scene.add(yellowLight);
+        // 2. V-Host AI (Ghost)
+        const vHost = new SemanticGhost(env.camera, env.scene, env.renderer);
+        env.add(vHost);
+        env.updatables.push(vHost);
 
-        camera.position.set(0, 2, 12);
+        setTimeout(() => {
+            vHost.updatePanelText("WELCOME TO THE METAVERSE TOUR");
+            vHost.guideTo(nowPlaying.group, "Currently: Digital Dreams");
+        }, 1500);
 
-        // Audio Sliders
-        const volumeSlider = new Slider3D(scene, camera, [-6, 3, 0], {
-            label: '🔊 MASTER VOLUME',
-            width: 4,
-            height: 0.3,
-            min: 0,
-            max: 100,
-            value: 85,
-            mode: 0,
-            renderer: renderer,
-            onChange: (slider, value) => {
-                document.getElementById('master').textContent = Math.round(value) + '%';
+
+        // 3. STAGE TOOLS
+
+        // Flow Field Center (Stage Visuals)
+        const flow = new FlowFieldController3D(env.scene, env.camera, [0, 1.8, -3], {
+            pointCount: 2000, color: 0x00ffff, spread: 5
+        });
+        env.add(flow.group);
+        env.updatables.push(flow);
+
+        // Backstage Entrance (Portal)
+        const stageGate = new AIPortal3D(env.scene, env.camera, [4, 1.8, -3], {
+            width: 2.2, height: 3.5, label: "BACKSTAGE", theme: 'cyber'
+        });
+        env.add(stageGate.group);
+        env.updatables.push(stageGate);
+
+
+        // 4. NOW PLAYING
+
+        const nowPlaying = new HaloCard3D(env.scene, env.camera, [0, 1, -1.5], {
+            title: "NOW PLAYING", description: "Aurora - Digital Dreams (Remix)",
+            width: 2.5, height: 0.6, color: 0xff00ff
+        });
+        env.add(nowPlaying.group);
+        env.updatables.push(nowPlaying);
+
+        // Mixer Sliders
+        const bassSlider = new Slider3D(env.scene, env.camera, [-4, 2, -3], {
+            label: "BASS_BOOST", width: 2.5, color: 0x00ffff,
+            onChange: (c, v) => {
+                flow.speed = 1 + (v * 5);
+                spot.intensity = 2 + (v * 6);
             }
         });
+        bassSlider.group.rotation.y = 0.4;
+        env.add(bassSlider.group);
+        env.updatables.push(bassSlider);
 
-        const bassSlider = new Slider3D(scene, camera, [-6, 2, 0], {
-            label: '🎸 BASS',
-            width: 4,
-            height: 0.3,
-            min: 0,
-            max: 100,
-            value: 70,
-            mode: 0,
-            renderer: renderer,
-            onChange: (slider, value) => {
-                document.getElementById('bass').textContent = Math.round(value) + '%';
-            }
-        });
-
-        const trebleSlider = new Slider3D(scene, camera, [-6, 1, 0], {
-            label: '🎵 TREBLE',
-            width: 4,
-            height: 0.3,
-            min: 0,
-            max: 100,
-            value: 65,
-            mode: 0,
-            renderer: renderer,
-            onChange: (slider, value) => {
-                document.getElementById('treble').textContent = Math.round(value) + '%';
-            }
-        });
-
-        // Effect Toggles
-        const strobeToggle = new Toggle3D(scene, camera, [-6, -0.2, 0], {
-            label: '💡 STROBE LIGHTS',
-            width: 2.5,
-            height: 0.7,
-            isOn: true,
-            onColor: 0xffff00,
-            offColor: 0x666666,
-            mode: 0,
-            renderer: renderer
-        });
-
-        const laserToggle = new Toggle3D(scene, camera, [-6, -1.2, 0], {
-            label: '🔴 LASER SHOW',
-            width: 2.5,
-            height: 0.7,
-            isOn: true,
-            onColor: 0xff0000,
-            offColor: 0x666666,
-            mode: 0,
-            renderer: renderer
-        });
-
-        // Stage Elements
-        const stage1 = new VolumetricCard3D(scene, camera, [3, 2, 0], {
-            width: 3,
-            height: 4,
-            title: '🎤 MAIN STAGE',
-            content: 'Aurora Live Performance',
-            modelType: 'sphere',
-            mode: 0,
-            renderer: renderer
-        });
-
-        const stage2 = new VolumetricCard3D(scene, camera, [7, 2, 0], {
-            width: 3,
-            height: 4,
-            title: '🎹 SYNTH STATION',
-            content: 'Electronic Beats',
-            modelType: 'torus',
-            mode: 0,
-            renderer: renderer
-        });
-
-        // Camera Angle Menu
-        const cameraMenu = new RadialMenu3D(scene, camera, [5, -1.5, 0], {
+        // Camera Menu
+        const camMenu = new RadialMenu3D(env.scene, env.camera, [-4, 0.8, -3], {
             items: [
-                { label: '📷 Front', icon: '📷' },
-                { label: '🎥 Side', icon: '🎥' },
-                { label: '🎬 Aerial', icon: '🎬' },
-                { label: '👁️ Close-up', icon: '👁️' },
-                { label: '🌐 360°', icon: '🌐' }
+                { label: "Front", icon: "📷" },
+                { label: "Pit", icon: "🔥" },
+                { label: "Drone", icon: "🛸" }
             ],
-            radius: 1.5,
-            holeRadius: 0.4,
-            mode: 0,
-            renderer: renderer,
-            onSelect: (menu, index, item) => {
-                console.log(`Camera angle: ${item.label}`);
+            onSelect: (m, idx, item) => {
+                vHost.updatePanelText(`SWITCHING_ANGLE: ${item.label.toUpperCase()}`);
             }
         });
+        camMenu.group.rotation.y = 0.4;
+        env.add(camMenu.group);
+        env.updatables.push(camMenu);
 
-        // Animation loop
-        function animate() {
-            requestAnimationFrame(animate);
 
-            volumeSlider.update();
-            bassSlider.update();
-            trebleSlider.update();
-            strobeToggle.update();
-            laserToggle.update();
-            stage1.update();
-            stage2.update();
-            cameraMenu.update();
+        // 5. START
+        env.start();
 
-            // Animate stage lights
-            const time = Date.now() * 0.001;
-            magentaLight.intensity = 3 + Math.sin(time * 2) * 1;
-            cyanLight.intensity = 3 + Math.cos(time * 2) * 1;
-            yellowLight.intensity = 2 + Math.sin(time * 3) * 0.5;
-
-            magentaLight.position.x = -5 + Math.sin(time) * 3;
-            cyanLight.position.x = 5 + Math.cos(time) * 3;
-
-            scene3D.render();
-        }
-
-        animate();
     </script>
 </body>
 

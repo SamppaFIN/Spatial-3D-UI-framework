@@ -32,7 +32,7 @@ export class SemanticGhost extends THREE.Group {
         this.currentPersona = this.personas.aurora;
 
         // State
-        this.state = 'FOLLOWING'; // FOLLOWING, SCANNING, ENGAGED
+        this.state = 'FOLLOWING'; // FOLLOWING, SCANNING, ENGAGED, GUIDING
         this.targetObject = null;
         this.scanTimer = 0;
 
@@ -110,6 +110,35 @@ export class SemanticGhost extends THREE.Group {
         } else {
             this.state = 'FOLLOWING';
         }
+    }
+
+    /**
+     * Actively guide the user to a specific object.
+     * @param {THREE.Object3D} targetObject - The object to highlight.
+     * @param {string} text - The explanation text to show.
+     */
+    guideTo(targetObject, text) {
+        console.log("SemanticGhost: guideTo called for target", targetObject);
+        this.state = 'GUIDING';
+        this.targetObject = targetObject;
+        this.scanTimer = 0;
+
+        // Immediate visual feedback
+        this.updatePanelText(text);
+
+        // Ensure visible
+        this.setVisible(true);
+        this.holoPanel.visible = true;
+    }
+
+    /**
+     * Stop guiding and return to passive following mode.
+     */
+    stopGuiding() {
+        console.log("SemanticGhost: stopGuiding called");
+        this.state = 'FOLLOWING';
+        this.targetObject = null;
+        this.holoPanel.scale.set(0, 0, 0); // Hide panel smoothly via update loop
     }
 
     initHoloPanel() {
@@ -231,54 +260,60 @@ export class SemanticGhost extends THREE.Group {
     }
 
     update(delta, time) {
+        // Debug once per ~100 frames to avoid spam
+        // if (Math.random() < 0.01) console.log("SemanticGhost update. State:", this.state);
+
         // 1. Raycasting (Vision)
-        this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
-        const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+        // Only scan if not actively guiding
+        if (this.state !== 'GUIDING') {
+            this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
+            const intersects = this.raycaster.intersectObjects(this.scene.children, true);
 
-        let visibleTarget = null;
-        for (let hit of intersects) {
-            let obj = hit.object;
-            // Traverse up to find userData
-            while (obj) {
-                if (obj.userData && obj.userData.helpText) {
-                    visibleTarget = obj;
-                    break;
+            let visibleTarget = null;
+            for (let hit of intersects) {
+                let obj = hit.object;
+                // Traverse up to find userData
+                while (obj) {
+                    if (obj.userData && obj.userData.helpText) {
+                        visibleTarget = obj;
+                        break;
+                    }
+                    obj = obj.parent;
+                    if (obj && obj.type === 'Scene') break;
                 }
-                obj = obj.parent;
-                if (obj && obj.type === 'Scene') break;
+                if (visibleTarget) break;
             }
-            if (visibleTarget) break;
-        }
 
-        // 2. Logic & State Machine
-        if (visibleTarget) {
-            if (this.targetObject !== visibleTarget) {
-                // New target found
-                this.targetObject = visibleTarget;
-                this.scanTimer = 0;
-                this.state = 'SCANNING';
+            // 2. Logic & State Machine
+            if (visibleTarget) {
+                if (this.targetObject !== visibleTarget) {
+                    // New target found
+                    this.targetObject = visibleTarget;
+                    this.scanTimer = 0;
+                    this.state = 'SCANNING';
+                } else {
+                    // Sustained focus
+                    this.scanTimer += delta;
+                    if (this.scanTimer > 0.6 && this.state !== 'ENGAGED') {
+                        // Lock on!
+                        this.state = 'ENGAGED';
+                        this.updatePanelText(this.targetObject.userData.helpText);
+                    }
+                }
             } else {
-                // Sustained focus
-                this.scanTimer += delta;
-                if (this.scanTimer > 0.6 && this.state !== 'ENGAGED') {
-                    // Lock on!
-                    this.state = 'ENGAGED';
-                    this.updatePanelText(this.targetObject.userData.helpText);
+                // Lost target
+                if (this.state !== 'FOLLOWING') {
+                    this.targetObject = null;
+                    this.state = 'FOLLOWING';
+                    this.scanTimer = 0;
                 }
-            }
-        } else {
-            // Lost target
-            if (this.state !== 'FOLLOWING') {
-                this.targetObject = null;
-                this.state = 'FOLLOWING';
-                this.scanTimer = 0;
             }
         }
 
         // 3. Movement Logic
         const targetPos = new THREE.Vector3();
 
-        if (this.state === 'ENGAGED' && this.targetObject) {
+        if ((this.state === 'ENGAGED' || this.state === 'GUIDING') && this.targetObject) {
             // Fly to object
             this.targetObject.getWorldPosition(targetPos);
             // Hover slightly above/right of it
@@ -330,7 +365,8 @@ export class SemanticGhost extends THREE.Group {
         }
 
         // Holo Panel Scale
-        const targetScale = (this.state === 'ENGAGED') ? 1 : 0;
+        const targetScale = (this.state === 'ENGAGED' || this.state === 'GUIDING') ? 1 : 0;
         this.holoPanel.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), delta * 4);
     }
 }
+// End

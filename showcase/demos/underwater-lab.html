@@ -4,453 +4,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Underwater Research Lab - Spatial UI 3D Demo</title>
+    <title>Neptune Deep: Underwater Research Station</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Consolas', monospace;
-            background: #001a33;
-            color: #00d4ff;
+            margin: 0;
             overflow: hidden;
+            background: #000c1a;
+            font-family: 'Consolas', monospace;
         }
 
-        #canvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-        }
-
-        .lab-info {
-            position: fixed;
+        #hud {
+            position: absolute;
             top: 20px;
             left: 20px;
-            background: rgba(0, 26, 51, 0.95);
-            border: 2px solid #00d4ff;
-            padding: 20px;
-            max-width: 400px;
-            z-index: 100;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
-        }
-
-        .lab-title {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #00d4ff;
-            text-shadow: 0 0 10px #00d4ff;
-        }
-
-        .lab-text {
-            color: #66e0ff;
-            line-height: 1.6;
-            font-size: 13px;
-        }
-
-        .depth-monitor {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(0, 26, 51, 0.95);
-            border: 2px solid #0080ff;
-            padding: 15px;
-            z-index: 100;
-            min-width: 250px;
-        }
-
-        .depth-title {
-            color: #00d4ff;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .depth-item {
-            display: flex;
-            justify-content: space-between;
-            margin: 5px 0;
-            font-size: 12px;
-        }
-
-        .depth-label {
-            color: #66e0ff;
-        }
-
-        .depth-value {
-            color: #fff;
-            font-weight: bold;
-        }
-
-        .species-log {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0, 26, 51, 0.95);
-            border: 2px solid #00ff88;
-            padding: 15px;
-            z-index: 100;
-            max-width: 350px;
-        }
-
-        .species-title {
-            color: #00ff88;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .species-item {
-            color: #66ffaa;
-            margin: 5px 0;
-            font-size: 12px;
-            padding-left: 15px;
-        }
-
-        .pressure-warning {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0, 26, 51, 0.95);
-            border: 2px solid #ff8800;
-            padding: 15px;
-            z-index: 100;
-            max-width: 300px;
-        }
-
-        .warning-title {
-            color: #ff8800;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .warning-text {
-            color: #ffaa66;
-            font-size: 12px;
-            line-height: 1.5;
-        }
-
-        .bubble {
-            position: fixed;
-            width: 10px;
-            height: 10px;
-            background: radial-gradient(circle, rgba(0, 212, 255, 0.6), transparent);
-            border-radius: 50%;
             pointer-events: none;
-            animation: rise 4s infinite;
+            color: #00d4ff;
+            text-shadow: 0 0 8px rgba(0, 212, 255, 0.6);
         }
 
-        @keyframes rise {
-            0% {
-                transform: translateY(100vh);
-                opacity: 0;
-            }
+        h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            letter-spacing: 2px;
+        }
 
-            10% {
-                opacity: 0.8;
-            }
+        .sub {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
 
-            90% {
-                opacity: 0.8;
-            }
-
-            100% {
-                transform: translateY(-100px);
-                opacity: 0;
-            }
+        /* Abyssal vignette */
+        #abyss {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, transparent 40%, rgba(0, 10, 20, 0.9) 100%);
+            pointer-events: none;
+            z-index: 5;
         }
     </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
 </head>
 
 <body>
-    <canvas id="canvas"></canvas>
-
-    <!-- Bubbles -->
-    <div class="bubble" style="left: 10%; animation-delay: 0s;"></div>
-    <div class="bubble" style="left: 30%; animation-delay: 1s;"></div>
-    <div class="bubble" style="left: 50%; animation-delay: 2s;"></div>
-    <div class="bubble" style="left: 70%; animation-delay: 1.5s;"></div>
-    <div class="bubble" style="left: 90%; animation-delay: 0.5s;"></div>
-
-    <!-- Lab Info -->
-    <div class="lab-info">
-        <div class="lab-title">🌊 NEPTUNE DEEP RESEARCH STATION</div>
-        <div class="lab-text">
-            <strong>MISSION LOG - DAY 89</strong><br><br>
-            You are stationed at Neptune Deep, an underwater research facility
-            3,200 meters below the Pacific Ocean surface. Your mission: study
-            deep-sea ecosystems, monitor oceanic conditions, and discover new
-            marine species.<br><br>
-            <strong>CURRENT RESEARCH:</strong><br>
-            Bioluminescent organisms detected in the abyssal zone. Collecting
-            data for analysis.
-        </div>
+    <div id="abyss"></div>
+    <div id="hud">
+        <h1>NEPTUNE DEEP STATION</h1>
+        <div class="sub">3,200m Below Surface • Hull Intact</div>
     </div>
-
-    <!-- Depth Monitor -->
-    <div class="depth-monitor">
-        <div class="depth-title">📊 STATION STATUS</div>
-        <div class="depth-item">
-            <span class="depth-label">Depth:</span>
-            <span class="depth-value" id="depth">3,200m</span>
-        </div>
-        <div class="depth-item">
-            <span class="depth-label">Pressure:</span>
-            <span class="depth-value" id="pressure">320 bar</span>
-        </div>
-        <div class="depth-item">
-            <span class="depth-label">Temperature:</span>
-            <span class="depth-value" id="temperature">2.1°C</span>
-        </div>
-        <div class="depth-item">
-            <span class="depth-label">Oxygen:</span>
-            <span class="depth-value" id="oxygen">98%</span>
-        </div>
-        <div class="depth-item">
-            <span class="depth-label">Hull Integrity:</span>
-            <span class="depth-value" id="hull">100%</span>
-        </div>
-    </div>
-
-    <!-- Species Log -->
-    <div class="species-log">
-        <div class="species-title">🐟 SPECIES DISCOVERED TODAY</div>
-        <div class="species-item">🦑 Giant Squid (Architeuthis dux)</div>
-        <div class="species-item">✨ Bioluminescent Jellyfish (Unknown sp.)</div>
-        <div class="species-item">🐠 Anglerfish (Melanocetus johnsonii)</div>
-        <div class="species-item">🦐 Deep-sea Shrimp (Acanthephyra sp.)</div>
-        <div class="species-item">🐙 Dumbo Octopus (Grimpoteuthis sp.)</div>
-        <div class="species-item">⭐ Starfish (Brisingida order)</div>
-    </div>
-
-    <!-- Pressure Warning -->
-    <div class="pressure-warning">
-        <div class="warning-title">⚠️ SYSTEM ALERT</div>
-        <div class="warning-text">
-            External pressure increasing. Maintain hull integrity monitoring.
-            All systems nominal. Continue research operations.
-        </div>
-    </div>
-
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-        }
-    }
-    </script>
 
     <script type="module">
-        import { Scene3D } from '../../src/core/Scene3D.js';
-        import { Chart3D } from '../../src/controls/Chart3D.js';
+        import * as THREE from 'three';
+        import { SpatialEnvironment } from '../../src/environments/SpatialEnvironment.js';
+        import { SemanticGhost } from '../../src/ai/SemanticGhost.js';
+        import { EchoInteraction3D } from '../../src/controls/EchoInteraction3D.js';
+
+        // Components
+        import { VolumetricCard3D } from '../../src/controls/VolumetricCard3D.js';
+        import { MagneticCard3D } from '../../src/controls/MagneticCard3D.js';
         import { Slider3D } from '../../src/controls/Slider3D.js';
         import { Toggle3D } from '../../src/controls/Toggle3D.js';
-        import { Accordion3D } from '../../src/controls/Accordion3D.js';
-        import * as THREE from 'three';
 
-        const canvas = document.getElementById('canvas');
-        const scene3D = new Scene3D(canvas);
-        const scene = scene3D.getScene();
-        const camera = scene3D.getCamera();
-        const renderer = scene3D.getRenderer();
+        // 1. Setup
+        const env = new SpatialEnvironment(document.body, { cameraPos: [0, 1.5, 5] });
+        env.init();
+        env.scene.background = new THREE.Color(0x000c1a);
+        env.scene.fog = new THREE.FogExp2(0x000c1a, 0.08);
 
-        // Underwater environment
-        scene.background = new THREE.Color(0x001a33);
-        scene.fog = new THREE.FogExp2(0x001a33, 0.05);
+        // Undersea Lights
+        const amb = new THREE.AmbientLight(0x004466, 0.5);
+        env.scene.add(amb);
 
-        // Underwater lighting
-        const ambientLight = new THREE.AmbientLight(0x004466, 0.5);
-        scene.add(ambientLight);
+        const spot = new THREE.SpotLight(0x00d4ff, 2, 20, 0.6, 1);
+        spot.position.set(2, 5, 2);
+        env.scene.add(spot);
 
-        const underwaterLight = new THREE.PointLight(0x00d4ff, 1, 50);
-        underwaterLight.position.set(0, 5, 0);
-        scene.add(underwaterLight);
-
-        camera.position.set(0, 2, 12);
-
-        // Temperature Monitor Chart
-        const tempChart = new Chart3D(scene, camera, [-6, 2, 0], {
-            chartType: 'line',
-            data: {
-                labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
-                datasets: [{
-                    label: 'Temperature (°C)',
-                    data: [2.3, 2.1, 2.0, 2.1, 2.2, 2.1, 2.1],
-                    borderColor: '#00d4ff',
-                    backgroundColor: 'rgba(0, 212, 255, 0.1)',
-                    tension: 0.4
-                }]
-            },
-            width: 4.5,
-            height: 3.5,
-            mode: 0,
-            renderer: renderer
-        });
-
-        // Marine Life Activity Chart
-        const activityChart = new Chart3D(scene, camera, [6, 2, 0], {
-            chartType: 'bar',
-            data: {
-                labels: ['Fish', 'Squid', 'Jellyfish', 'Crustaceans', 'Other'],
-                datasets: [{
-                    label: 'Species Count',
-                    data: [45, 12, 28, 67, 23],
-                    backgroundColor: [
-                        'rgba(0, 212, 255, 0.8)',
-                        'rgba(0, 255, 136, 0.8)',
-                        'rgba(255, 136, 0, 0.8)',
-                        'rgba(255, 0, 136, 0.8)',
-                        'rgba(136, 0, 255, 0.8)'
-                    ]
-                }]
-            },
-            width: 4.5,
-            height: 3.5,
-            mode: 0,
-            renderer: renderer
-        });
-
-        // Sonar Range Slider
-        const sonarSlider = new Slider3D(scene, camera, [-6, -1, 0], {
-            label: '📡 SONAR RANGE',
-            width: 4,
-            height: 0.3,
-            min: 100,
-            max: 5000,
-            value: 2500,
-            mode: 0,
-            renderer: renderer,
-            onChange: (slider, value) => {
-                console.log(`Sonar range: ${value}m`);
-            }
-        });
-
-        // Light Intensity Slider
-        const lightSlider = new Slider3D(scene, camera, [-6, -2, 0], {
-            label: '💡 EXTERNAL LIGHTS',
-            width: 4,
-            height: 0.3,
-            min: 0,
-            max: 100,
-            value: 75,
-            mode: 0,
-            renderer: renderer,
-            onChange: (slider, value) => {
-                underwaterLight.intensity = value / 50;
-            }
-        });
-
-        // Research Systems Toggles
-        const sonarToggle = new Toggle3D(scene, camera, [6, -1, 0], {
-            label: '📡 SONAR',
-            width: 2,
-            height: 0.7,
-            isOn: true,
-            onColor: 0x00d4ff,
-            offColor: 0x666666,
-            mode: 0,
-            renderer: renderer
-        });
-
-        const cameraToggle = new Toggle3D(scene, camera, [6, -2.2, 0], {
-            label: '📹 CAMERAS',
-            width: 2,
-            height: 0.7,
-            isOn: true,
-            onColor: 0x00ff88,
-            offColor: 0x666666,
-            mode: 0,
-            renderer: renderer
-        });
-
-        // Research Data Accordion
-        const researchAccordion = new Accordion3D(scene, camera, [0, -1.5, 0], {
-            width: 5,
-            itemHeight: 0.7,
-            itemSpacing: 0.15,
-            mode: 0,
-            renderer: renderer,
-            items: [
-                {
-                    title: '🦑 Deep Sea Cephalopods',
-                    contentHeight: 3,
-                    content: `# Giant Squid Research
-
-## Recent Findings
-- **Size**: Up to 13 meters in length
-- **Depth**: 300-1000 meters
-- **Behavior**: Nocturnal hunters
-- **Diet**: Fish and smaller squid
-
-## Observations
-Bioluminescent communication patterns detected. 
-Possible social behavior in hunting groups.`
-                },
-                {
-                    title: '✨ Bioluminescence Study',
-                    contentHeight: 3,
-                    content: `# Bioluminescent Organisms
-
-## Light Production
-- **Chemical**: Luciferin + Luciferase
-- **Purpose**: Communication, hunting, defense
-- **Colors**: Blue, green (most common)
-
-## Species Studied
-- Jellyfish (Aequorea victoria)
-- Anglerfish (Melanocetus)
-- Deep-sea shrimp`
-                },
-                {
-                    title: '🌡️ Thermal Vents',
-                    contentHeight: 3,
-                    content: `# Hydrothermal Vent Ecosystems
-
-## Temperature Range
-- **Vent**: 60-400°C
-- **Ambient**: 2-4°C
-- **Gradient**: Extreme
-
-## Unique Life Forms
-Chemosynthetic bacteria form the base 
-of these unique ecosystems.`
-                }
-            ],
-            openItems: [0]
-        });
-
-        // Simulate dynamic depth changes
-        let time = 0;
-        setInterval(() => {
-            time++;
-            const depthVariation = Math.sin(time * 0.1) * 50;
-            const newDepth = 3200 + depthVariation;
-            document.getElementById('depth').textContent = Math.round(newDepth) + 'm';
-            document.getElementById('pressure').textContent = Math.round(newDepth / 10) + ' bar';
-        }, 1000);
-
-        // Animation loop
-        function animate() {
-            requestAnimationFrame(animate);
-
-            tempChart.update();
-            activityChart.update();
-            sonarSlider.update();
-            lightSlider.update();
-            sonarToggle.update();
-            cameraToggle.update();
-            researchAccordion.update();
-
-            // Animate underwater light
-            underwaterLight.position.x = Math.sin(Date.now() * 0.001) * 3;
-            underwaterLight.position.z = Math.cos(Date.now() * 0.001) * 3;
-
-            scene3D.render();
+        // 2. Bubble Particles
+        const bubbleGeo = new THREE.BufferGeometry();
+        const bubbleCount = 200;
+        const bubblePos = new Float32Array(bubbleCount * 3);
+        const bubbleSpeeds = new Float32Array(bubbleCount);
+        for (let i = 0; i < bubbleCount; i++) {
+            bubblePos[i * 3] = (Math.random() - 0.5) * 20;
+            bubblePos[i * 3 + 1] = Math.random() * 10;
+            bubblePos[i * 3 + 2] = (Math.random() - 0.5) * 20;
+            bubbleSpeeds[i] = 0.01 + Math.random() * 0.03;
         }
+        bubbleGeo.setAttribute('position', new THREE.BufferAttribute(bubblePos, 3));
+        const bubbleMat = new THREE.PointsMaterial({ size: 0.1, color: 0x88ccff, transparent: true, opacity: 0.4 });
+        const bubbles = new THREE.Points(bubbleGeo, bubbleMat);
+        env.scene.add(bubbles);
 
-        animate();
+        env.updatables.push({
+            update: (d) => {
+                const pos = bubbleGeo.attributes.position.array;
+                for (let i = 0; i < bubbleCount; i++) {
+                    pos[i * 3 + 1] += bubbleSpeeds[i];
+                    if (pos[i * 3 + 1] > 5) pos[i * 3 + 1] = -5;
+                }
+                bubbleGeo.attributes.position.needsUpdate = true;
+            }
+        });
+
+
+        // 3. AI & Sonar
+        const ghost = new SemanticGhost(env.camera, env.scene, env.renderer);
+        env.add(ghost);
+        env.updatables.push(ghost);
+
+        const sonar = new EchoInteraction3D(env.scene, env.camera, {
+            pulseSpeed: 12, maxRadius: 40, glowColor: 0x00ff88
+        });
+        env.updatables.push({ update: () => sonar.update() });
+
+
+        // 4. SPECIMENS (Hidden until Ping)
+
+        // Specimen 1: Giant Squid
+        const specimen1 = new VolumetricCard3D(env.scene, env.camera, [-3, 1.2, -3], {
+            width: 2.5, height: 1.5, baseColor: 0x112233,
+            title: "Architeuthis dux", popHeight: 0.8
+        });
+        sonar.registerObject(specimen1.baseMesh, {
+            onReveal: () => {
+                ghost.updatePanelText("ANALYSIS: CEPHALOPOD DETECTED");
+                ghost.guideTo(specimen1.group, "Giant Squid Specimen");
+            }
+        });
+        env.add(specimen1.group);
+        env.updatables.push(specimen1);
+
+        // Specimen 2: Bioluminescent Species
+        const specimen2 = new VolumetricCard3D(env.scene, env.camera, [3, 1.2, -3], {
+            width: 2.5, height: 1.5, baseColor: 0x113322,
+            title: "Abyssal Flare", popHeight: 0.8
+        });
+        sonar.registerObject(specimen2.baseMesh, {
+            onReveal: () => {
+                ghost.updatePanelText("ANALYSIS: PHOSPHORESCENCE DETECTED");
+                ghost.guideTo(specimen2.group, "Unnamed Abyssal Organism");
+            }
+        });
+        env.add(specimen2.group);
+        env.updatables.push(specimen2);
+
+
+        // 5. CMD CONTROLS
+
+        const diveLog = new MagneticCard3D(env.scene, env.camera, [0, 0.8, -2], {
+            width: 2, height: 1.2, color: 0x001a33,
+            title: "DIVE LOG: DAY 89", description: "All systems nominal. Sonar active."
+        });
+        env.add(diveLog.group);
+        env.updatables.push(diveLog);
+
+        const lightSlider = new Slider3D(env.scene, env.camera, [0, -0.2, -2], {
+            label: "SONAR FREQUENCY", width: 2, color: 0x00ff88,
+            onChange: (c, v) => {
+                sonar.pulseSpeed = 5 + (v * 20);
+            }
+        });
+        env.add(lightSlider.group);
+        env.updatables.push(lightSlider);
+
+
+        // 6. START
+        env.start();
+
+        setTimeout(() => {
+            ghost.updatePanelText("DIVE SYSTEM READY");
+            ghost.guideTo(diveLog.group, "Initial Briefing");
+            // Initial Ping
+            sonar.triggerPulse(new THREE.Vector3(0, 0, 0));
+        }, 1500);
+
     </script>
 </body>
 

@@ -38,6 +38,9 @@
             border-radius: 10px;
             box-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
             max-width: 350px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            scrollbar-width: thin;
         }
 
         .panel-title {
@@ -168,6 +171,94 @@
             font-size: 12px;
             color: #ccc;
         }
+
+        /* Inspector Panel */
+        .inspector-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            /* Moved Info to left or adjust layout? Actually let's put it below limits or adjust existing panels */
+            /* Let's put it on the right, and move component info down or make it collapsible */
+            width: 300px;
+            background: rgba(10, 10, 26, 0.98);
+            border: 2px solid #00d4ff;
+            padding: 15px;
+            z-index: 110;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+            max-height: 80vh;
+            overflow-y: auto;
+            scrollbar-width: thin;
+        }
+
+        /* Adjust Component Info to not overlap if needed, or we just position Inspector differently */
+        .component-info {
+            right: 340px;
+            /* Shift info panel to the left of inspector */
+        }
+
+        .inspector-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #00d4ff;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .group-label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .control-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .control-row label {
+            color: #ccc;
+        }
+
+        .control-input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #444;
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            width: 120px;
+            font-size: 12px;
+        }
+
+        .control-input[type="color"] {
+            width: 40px;
+            padding: 0;
+            height: 24px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .control-input[type="checkbox"] {
+            width: auto;
+        }
+
+        input[type="range"] {
+            width: 120px;
+            accent-color: #00d4ff;
+        }
     </style>
 </head>
 
@@ -179,7 +270,7 @@
         <div class="panel-title">🎮 Component Playground</div>
         <div class="section-tabs">
             <div class="tab active" data-section="basic">Basic (6)</div>
-            <div class="tab" data-section="cards">Cards (7)</div>
+            <div class="tab" data-section="cards">Cards (8)</div>
             <div class="tab" data-section="data">Data (2)</div>
             <div class="tab" data-section="advanced">Advanced (3)</div>
         </div>
@@ -197,6 +288,15 @@
             Each component is interactive and demonstrates its functionality.
         </div>
         <div class="component-count">18+ Controls</div>
+    </div>
+
+    <!-- Inspector Panel (Hidden by default until a component is selected? Or just show for Slider3D for now) -->
+    <div class="inspector-panel" id="inspector">
+        <div class="inspector-title">
+            <span>🎚️ Slider3D Inspector</span>
+            <span style="font-size: 10px; opacity: 0.7;">LIVE</span>
+        </div>
+        <div id="inspector-content"></div>
     </div>
 
     <!-- Navigation -->
@@ -223,7 +323,8 @@
     {
         "imports": {
             "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+            "troika-three-text": "https://esm.sh/troika-three-text@0.47.1?external=three"
         }
     }
     </script>
@@ -259,6 +360,7 @@
         import { LiquidStateContainer3D } from '../../src/controls/LiquidStateContainer3D.js';
         import { SpatialScrubber3D } from '../../src/controls/SpatialScrubber3D.js';
         import { TimeRibbon3D } from '../../src/controls/TimeRibbon3D.js';
+        import { AIChatBot3D } from '../../src/controls/AIChatBot3D.js';
         import { SemanticGhost } from '../../src/ai/SemanticGhost.js';
 
 
@@ -393,6 +495,13 @@
             new AIPortal3D(scene, camera, [-3, 0, 0], {
                 width: 2, height: 2.5,
                 title: '🤖 AI Portal',
+                mode: 0, renderer: renderer
+            })
+        );
+
+        components.cards.push(
+            new AIChatBot3D(scene, camera, [-5, 0, 0], {
+                apiKey: '', // UI will prompt or mock
                 mode: 0, renderer: renderer
             })
         );
@@ -641,7 +750,162 @@
             scene3D.render();
         }
 
-        animate();
+        // ===== INSPECTOR LOGIC =====
+        function initInspector() {
+            // Find the Slider3D instance
+            const slider = components.basic.find(c => c instanceof Slider3D);
+            if (!slider) return;
+
+            const content = document.getElementById('inspector-content');
+
+            // Helper to create controls
+            const addControl = (label, type, key, options = {}) => {
+                const row = document.createElement('div');
+                row.className = 'control-row';
+
+                const labelEl = document.createElement('label');
+                labelEl.textContent = label;
+                row.appendChild(labelEl);
+
+                let input;
+
+                if (type === 'color') {
+                    input = document.createElement('input');
+                    input.type = 'color';
+                    input.className = 'control-input';
+                    // Convert hex number to hex string #RRGGBB
+                    let val = slider.get(key);
+                    if (typeof val === 'number') val = '#' + val.toString(16).padStart(6, '0');
+                    input.value = val || '#ffffff';
+
+                    input.addEventListener('input', (e) => {
+                        slider.set(key, parseInt(e.target.value.replace('#', ''), 16));
+                    });
+                }
+                else if (type === 'number') {
+                    input = document.createElement('input');
+                    input.type = 'range';
+                    input.min = options.min || 0;
+                    input.max = options.max || 10;
+                    input.step = options.step || 0.1;
+                    input.value = slider.get(key);
+
+                    const valDisplay = document.createElement('span');
+                    valDisplay.style.cssText = 'font-size: 11px; width: 30px; text-align: right; color: #888;';
+                    valDisplay.textContent = input.value;
+
+                    input.addEventListener('input', (e) => {
+                        const val = parseFloat(e.target.value);
+                        slider.set(key, val);
+                        valDisplay.textContent = val.toFixed(1);
+                    });
+
+                    row.appendChild(valDisplay);
+                }
+                else if (type === 'select') {
+                    input = document.createElement('select');
+                    input.className = 'control-input';
+                    options.values.forEach(v => {
+                        const opt = document.createElement('option');
+                        opt.value = v;
+                        opt.textContent = v;
+                        if (slider.get(key) === v) opt.selected = true;
+                        input.appendChild(opt);
+                    });
+
+                    input.addEventListener('change', (e) => {
+                        slider.set(key, e.target.value);
+                    });
+                }
+                else if (type === 'boolean') {
+                    input = document.createElement('input');
+                    input.type = 'checkbox';
+                    input.className = 'control-input';
+                    input.checked = slider.get(key);
+
+                    input.addEventListener('change', (e) => {
+                        slider.set(key, e.target.checked);
+                    });
+                }
+
+                row.appendChild(input);
+                content.appendChild(row);
+            };
+
+            const addGroup = (title) => {
+                const div = document.createElement('div');
+                div.className = 'group-label';
+                div.textContent = title;
+                div.style.marginTop = '15px';
+                div.style.borderTop = '1px solid rgba(255,255,255,0.1)';
+                div.style.paddingTop = '5px';
+                content.appendChild(div);
+            };
+
+            // Defines groups and controls
+            addGroup('Colors');
+            addControl('Track Color', 'color', 'trackColor');
+            addControl('Fill Color', 'color', 'fillColor');
+            addControl('Handle Color', 'color', 'handleColor');
+            addControl('Glow Color', 'color', 'glowColor');
+
+            addGroup('Dimensions');
+            addControl('Width', 'number', 'width', { min: 1, max: 8, step: 0.1 });
+            addControl('Height', 'number', 'height', { min: 0.1, max: 2, step: 0.05 });
+            addControl('Depth', 'number', 'depth', { min: 0.05, max: 1, step: 0.05 });
+            addControl('Handle Size', 'number', 'handleSize', { min: 0.1, max: 1.5, step: 0.05 });
+
+            addGroup('Value & Range');
+            addControl('Orientation', 'select', 'orientation', { values: ['horizontal', 'vertical'] });
+            addControl('Min', 'number', 'min', { min: -100, max: 100, step: 1 });
+            addControl('Max', 'number', 'max', { min: 0, max: 200, step: 1 });
+            addControl('Step', 'number', 'step', { min: 0.1, max: 10, step: 0.1 });
+
+            addGroup('Style');
+            addControl('Track Shape', 'select', 'trackShape', { values: ['pill', 'box', 'cylinder'] });
+            addControl('Handle Shape', 'select', 'handleShape', { values: ['sphere', 'box', 'cylinder'] });
+            addControl('Material', 'select', 'trackMaterialType', { values: ['glass', 'metal', 'plastic', 'standard'] });
+
+            addGroup('Visibility');
+            addControl('Track Opacity', 'number', 'trackOpacity', { min: 0, max: 1, step: 0.05 });
+            addControl('Fill Opacity', 'number', 'fillOpacity', { min: 0, max: 1, step: 0.05 });
+            addControl('Show Value', 'boolean', 'showValue');
+            addControl('Tick Marks', 'boolean', 'tickMarks');
+            addControl('Glow Intensity', 'number', 'glowIntensity', { min: 0, max: 5, step: 0.1 });
+
+            // Preset Buttons
+            addGroup('Presets');
+            const presets = ['cyber', 'minimal', 'industrial', 'glass'];
+            const presetRow = document.createElement('div');
+            presetRow.className = 'control-row';
+            presetRow.style.justifyContent = 'flex-start';
+            presetRow.style.gap = '5px';
+            presetRow.style.flexWrap = 'wrap';
+
+            presets.forEach(p => {
+                const btn = document.createElement('button');
+                btn.textContent = p;
+                btn.style.cssText = `
+                    background: rgba(102, 126, 234, 0.2); border: 1px solid #667eea; 
+                    color: #fff; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;
+                `;
+                btn.onmouseover = () => btn.style.background = 'rgba(102, 126, 234, 0.5)';
+                btn.onmouseout = () => btn.style.background = 'rgba(102, 126, 234, 0.2)';
+                btn.onclick = () => {
+                    slider.applyPreset(p);
+                    // Refresh controls (naive way: just re-init inspector or manually update inputs if we tracked them)
+                    // For now, let's just accept that inputs might drift from visual state until interacted with,
+                    // or we could clear and rebuild inspector. Rebuilding is safer.
+                    content.innerHTML = '';
+                    initInspector();
+                };
+                presetRow.appendChild(btn);
+            });
+            content.appendChild(presetRow);
+        }
+
+        // Initialize Inspector
+        setTimeout(initInspector, 500); // Small delay to ensure initialization
     </script>
 </body>
 

@@ -8,137 +8,124 @@ export class Slider3D extends BaseControl3D {
     constructor(scene, camera, position = [0, 0, 0], config = {}) {
         super(scene, camera, position, {
             ...config,
-            renderer: config.renderer || null,
-            onClick: config.onClick || null
+            width: config.width || 4.0,
+            height: config.height || 0.35,
+            depth: config.depth || 0.2,
+            orientation: config.orientation || 'horizontal',
+            trackShape: config.trackShape || 'pill',
+            handleShape: config.handleShape || 'sphere',
+            trackMaterialType: config.trackMaterialType || 'glass',
+            handleMaterialType: config.handleMaterialType || 'metal',
+            trackColor: config.trackColor || 0x444444,
+            fillColor: config.fillColor || 0x00d4ff,
+            handleColor: config.handleColor || 0xffffff,
+            min: config.min !== undefined ? config.min : 0,
+            max: config.max !== undefined ? config.max : 100,
+            step: config.step !== undefined ? config.step : 1,
+            value: config.value !== undefined ? config.value : (config.min || 0),
+            values: config.values || null, // Array of discrete values
+            valueIndex: config.valueIndex || 0,
+            showValue: config.showValue !== false,
+            tickMarks: config.tickMarks || false,
+            tickInterval: config.tickInterval || 20,
+            handleSize: config.handleSize || 0.5,
+            zOffsetOnGrab: config.zOffsetOnGrab || 0.15,
+            lookAtCamera: config.lookAtCamera !== false,
+            magneticGrab: config.magneticGrab !== false,
+            // Styling
+            trackOpacity: config.trackOpacity || 0.35,
+            fillOpacity: config.fillOpacity || 1.0,
+            handleOpacity: config.handleOpacity || 1.0,
+            glowColor: config.glowColor || null,
+            glowIntensity: config.glowIntensity || 1.0,
+            preset: config.preset || 'default'
         });
 
-        // Slider-specific properties
-        this.label = config.label || 'Slider';
-        this.width = config.width || 4.0;
-        this.height = config.height || 0.3;
-        this.depth = config.depth || 0.2;
-        this.orientation = config.orientation || 'horizontal'; // horizontal, vertical
-
-        // Visual properties
-        this.trackShape = config.trackShape || 'box';
-        this.handleShape = config.handleShape || 'sphere';
-        this.trackMaterialType = config.trackMaterialType || 'standard';
-        this.handleMaterialType = config.handleMaterialType || 'standard';
-
-        // Slider value properties
-        // Support either values array OR min/max/step
-        this.values = config.values || null; // Array of values (numbers or strings)
-        this.min = config.min !== undefined ? config.min : 0;
-        this.max = config.max !== undefined ? config.max : 100;
-        this.step = config.step !== undefined ? config.step : 1;
-
-        if (this.values && Array.isArray(this.values) && this.values.length > 0) {
-            // Use values array mode
-            this.valueIndex = config.valueIndex !== undefined ? config.valueIndex : 0;
-            this.valueIndex = Math.max(0, Math.min(this.values.length - 1, this.valueIndex));
-            this.value = this.values[this.valueIndex];
-        } else {
-            // Use min/max/step mode
-            this.value = config.value !== undefined ? config.value : this.min;
-            this.value = Math.max(this.min, Math.min(this.max, this.value));
-            this.valueIndex = null;
-        }
-
-        // Colors
-        this.trackColor = config.trackColor || 0x444444;
-        this.fillColor = config.fillColor || 0x3366ff;
-        this.handleColor = config.handleColor || 0x6bb6ff;
-
-        // NEW: Dual-handle range slider
-        this.dualHandle = config.dualHandle || false;
-        this.minValue = config.minValue !== undefined ? config.minValue : this.min;
-        this.maxValue = config.maxValue !== undefined ? config.maxValue : this.max;
-
-        // NEW: Tick marks
-        this.tickMarks = config.tickMarks || false;
-        this.tickInterval = config.tickInterval || 10;
-        this.tickMeshes = [];
-
-        // NEW: Gradient track
-        this.gradientTrack = config.gradientTrack || false;
-        this.gradientColors = config.gradientColors || [0xff0000, 0xffff00, 0x00ff00];
-
-        // NEW: Snap points
-        this.snapPoints = config.snapPoints || null; // Array of values to snap to
-        this.snapThreshold = config.snapThreshold || 0.05; // Snap within 5% of range
-
-        // NEW: Keyboard controls
-        this.keyboardStep = config.keyboardStep || this.step;
-        this.keyboardEnabled = config.keyboardEnabled !== false;
-
-        // Handle properties
-        this.handleSize = config.handleSize || 0.4;
-        this.handleDepth = config.handleDepth || 0.3;
-
-        // Animation properties
-        this.animationSpeed = 0.15;
-        this.targetScale = 1.0;
-        this.currentScale = 1.0;
-        this.hoverScale = 1.05;
-
-        // Drag state
+        // Local animation state
+        this.currentHandlePos = 0;
+        this.targetHandlePos = 0;
+        this.velocity = 0;
+        this.tension = config.tension || 0.15;
+        this.friction = config.friction || 0.8;
         this.isDragging = false;
-        this.isDraggingMin = false; // For dual-handle
-        this.isDraggingMax = false; // For dual-handle
-        this.dragStartX = 0;
-        this.dragStartValue = 0;
+        this.zOffsetCurrent = 0;
+        this.glowPulse = 0;
+        this.currentScale = 1.0;
 
-        // Callbacks
-        this.onChangeCallback = config.onChange || null;
-        this.onChangeEndCallback = config.onChangeEnd || null;
+        // Initialize bound handlers for BaseControl3D compatibility
+        this.boundOnMouseMove = this._onMouseMove;
+        this.boundOnMouseUp = this._onMouseUp;
 
-        // Value display properties
-        this.showValue = config.showValue !== false; // Show by default
-        this.valueTextSize = config.valueTextSize || 32;
-        this.valueTextColor = config.valueTextColor || '#ffffff';
-        this.valueMesh = null;
-        this.valueTexture = null;
-        this.minValueMesh = null; // For dual-handle
-        this.maxValueMesh = null; // For dual-handle
+        this.syncValue();
+        if (config.preset) this.applyPreset(config.preset, true);
+        this.create();
+    }
 
-        // Calculate handle position from value
-        if (this.dualHandle) {
-            this.minHandlePosition = this.valueToPosition(this.minValue);
-            this.maxHandlePosition = this.valueToPosition(this.maxValue);
-            this.targetMinHandlePosition = this.minHandlePosition;
-            this.targetMaxHandlePosition = this.maxHandlePosition;
-        } else {
-            if (this.values && Array.isArray(this.values)) {
-                this.handlePosition = this.valueToPosition(this.valueIndex);
-            } else {
-                this.handlePosition = this.valueToPosition(this.value);
+    applyPreset(name, silent = false) {
+        const presets = {
+            cyber: {
+                trackColor: 0x110022, trackMaterialType: 'standard', trackOpacity: 0.8,
+                fillColor: 0xff00ff, handleColor: 0x00d4ff, handleShape: 'box',
+                glowColor: 0xff00ff, glowIntensity: 2.0, trackShape: 'box'
+            },
+            minimal: {
+                trackColor: 0x444444, trackMaterialType: 'matte', trackOpacity: 0.2,
+                fillColor: 0x888888, handleColor: 0xffffff, handleShape: 'sphere',
+                handleSize: 0.3, width: 3.5, height: 0.15, tickMarks: false
+            },
+            industrial: {
+                trackColor: 0x222222, trackMaterialType: 'metal', trackOpacity: 1.0,
+                fillColor: 0xffaa00, handleColor: 0x777777, handleShape: 'cylinder',
+                handleMaterialType: 'metal', trackShape: 'box'
+            },
+            glass: {
+                trackMaterialType: 'glass', trackOpacity: 0.3,
+                fillColor: 0x00d4ff, handleColor: 0xffffff, handleMaterialType: 'glass',
+                handleShape: 'sphere', trackShape: 'pill'
             }
-            this.targetHandlePosition = this.handlePosition;
-        }
+        };
 
-        // Bind event handlers for document-level listeners
-        this.boundOnMouseMove = this.onMouseMove.bind(this);
-        this.boundOnMouseUp = this.onMouseUp.bind(this);
-
-        if (this.group) {
-            while (this.group.children.length > 0) {
-                this.group.remove(this.group.children[0]);
-            }
-            this.create();
+        const settings = presets[name];
+        if (settings) {
+            Object.entries(settings).forEach(([k, v]) => this.set(k, v, { silent: true }));
+            if (!silent) this.create();
         }
     }
 
-    create() {
-        if (!this.trackShape) return; // Guard: Wait for full initialization
+    syncValue() {
+        const values = this.get('values');
+        if (values && Array.isArray(values)) {
+            let idx = this.get('valueIndex');
+            idx = Math.max(0, Math.min(values.length - 1, idx));
+            this.set('valueIndex', idx, { silent: true });
+            this.set('value', values[idx], { silent: true });
+            this.targetHandlePos = this.valueToPosition(idx, 0, values.length - 1);
+        } else {
+            let val = this.get('value');
+            val = Math.max(this.get('min'), Math.min(this.get('max'), val));
+            this.set('value', val, { silent: true });
+            this.targetHandlePos = this.valueToPosition(val, this.get('min'), this.get('max'));
+        }
+        this.currentHandlePos = this.targetHandlePos;
+    }
 
-        this.createGradientTexture();
+    create() {
+        // Clear group
+        while (this.group.children.length > 0) {
+            const child = this.group.children[0];
+            this.group.remove(child);
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) {
+                if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+                else child.material.dispose();
+            }
+        }
+
         this.createTrack();
         this.createFill();
         this.createHandle();
-        this.createIcon();
-        this.createLabel();
-        this.createGlow();
         this.createTickMarks();
+        this.createGlow();
         this.createValueDisplay();
         this.updateVisualState();
     }
@@ -243,36 +230,36 @@ export class Slider3D extends BaseControl3D {
     }
 
     createTickMarks() {
-        if (!this.tickMarks) return;
+        if (!this.get('tickMarks')) return;
 
-        // Remove existing
-        this.tickMeshes.forEach(m => {
-            if (m.parent) m.parent.remove(m);
-            m.geometry.dispose();
-            m.material.dispose();
-        });
-        this.tickMeshes = [];
+        const min = this.get('min');
+        const max = this.get('max');
+        const interval = this.get('tickInterval');
+        const isVert = this.get('orientation') === 'vertical';
+        const length = this.get('width');
+        const height = this.get('height');
 
-        const count = Math.floor((this.max - this.min) / this.tickInterval);
-        const geo = new THREE.BoxGeometry(0.05, 0.2, 0.05);
-        const mat = new THREE.MeshBasicMaterial({ color: 0x888888 });
+        const values = this.get('values');
+        const count = values ? values.length : Math.floor((max - min) / interval) + 1;
 
-        for (let i = 0; i <= count; i++) {
-            const val = this.min + i * this.tickInterval;
-            const pos = this.valueToPosition(val);
+        for (let i = 0; i < count; i++) {
+            const geo = new THREE.BoxGeometry(0.04, 0.15, 0.05);
+            const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 });
             const mesh = new THREE.Mesh(geo, mat);
 
-            if (this.orientation === 'vertical') {
+            const val = values ? i : min + i * interval;
+            const pos = values ? this.valueToPosition(i, 0, values.length - 1) : this.valueToPosition(val, min, max);
+
+            if (isVert) {
                 mesh.position.y = pos;
-                mesh.position.x = this.width / 2 + 0.1;
+                mesh.position.x = height / 2 + 0.1;
                 mesh.rotation.z = Math.PI / 2;
             } else {
                 mesh.position.x = pos;
-                mesh.position.y = -this.height / 2 - 0.15;
+                mesh.position.y = -height / 2 - 0.15;
             }
 
             this.group.add(mesh);
-            this.tickMeshes.push(mesh);
         }
     }
 
@@ -302,40 +289,47 @@ export class Slider3D extends BaseControl3D {
     }
 
     createTrack() {
-        if (this.trackMesh) {
-            this.group.remove(this.trackMesh);
-            this.trackMesh.geometry.dispose();
-            this.trackMesh.material.dispose();
-        }
+        const shape = this.get('trackShape');
+        const matType = this.get('trackMaterialType');
+        const isVert = this.get('orientation') === 'vertical';
+        const w = isVert ? this.get('height') : this.get('width');
+        const h = isVert ? this.get('width') : this.get('height');
 
-        // Adjust dimensions based on orientation
-        let w = this.width;
-        let h = this.height;
-        if (this.orientation === 'vertical') {
-            w = this.height;
-            h = this.width; // Swap for vertical
-        }
+        const geoOptions = {
+            width: w,
+            height: h,
+            depth: this.get('depth'),
+            radius: Math.min(w, h) / 2
+        };
+        const geometry = GeometryFactory.create(shape, geoOptions);
 
-        let geoOptions = { width: w, height: h, depth: this.depth, radius: Math.min(w, h) / 2 };
-        const geometry = GeometryFactory.create(this.trackShape, geoOptions);
-
-        const material = MaterialFactory.create(this.trackMaterialType, {
-            map: this.gradientTexture,
-            color: this.trackColor, // Base color
-            emissive: this.trackColor,
-            emissiveIntensity: 0.1,
-            roughness: 0.4,
-            metalness: 0.3
+        const material = MaterialFactory.create(matType, {
+            color: this.get('trackColor'),
+            opacity: this.get('trackOpacity'),
+            roughness: 0.4, // Increased roughness to catch more light
+            metalness: 0.3, // Reduced metalness to stop reflecting the black void
+            // Add emissive for visibility in dark scenes
+            emissive: this.get('trackColor'),
+            emissiveIntensity: 0.6 * (this.get('trackOpacity') || 1.0),
+            transparent: this.get('trackOpacity') < 1.0
         });
 
         this.trackMesh = new THREE.Mesh(geometry, material);
         this.trackMesh.castShadow = true;
         this.trackMesh.receiveShadow = true;
-        this.trackMesh.userData.isTrack = true;
         this.trackMesh.userData.isInteractive = true;
         this.trackMesh.userData.control = this;
 
         this.group.add(this.trackMesh);
+
+        // Add a dedicated light to the slider so it's always visible
+        if (!this.light) {
+            this.light = new THREE.PointLight(this.get('fillColor'), 0.8, 5);
+            this.light.position.set(0, 0.5, 1);
+            this.group.add(this.light);
+        } else {
+            this.light.color.setHex(this.get('fillColor'));
+        }
     }
 
     createFill() {
@@ -345,48 +339,46 @@ export class Slider3D extends BaseControl3D {
             this.fillMesh.material.dispose();
         }
 
-        const isVert = this.orientation === 'vertical';
-        const w = isVert ? this.height * 0.9 : this.width;
-        const h = isVert ? this.width : this.height * 0.9;
+        const isVert = this.get('orientation') === 'vertical';
+        const w = isVert ? this.get('height') * 0.95 : this.get('width');
+        const h = isVert ? this.get('width') : this.get('height') * 0.95;
 
-        // Initial full geometry, scaled later
-        const geometry = new THREE.BoxGeometry(w, h, this.depth * 0.9);
+        const geometry = new THREE.BoxGeometry(w, h, this.get('depth') * 0.8);
         const material = new THREE.MeshStandardMaterial({
-            color: this.fillColor,
-            metalness: 0.5,
-            roughness: 0.3,
-            emissive: this.fillColor,
-            emissiveIntensity: 0.3
+            color: this.get('fillColor'),
+            metalness: 0.6,
+            roughness: 0.2,
+            emissive: this.get('fillColor'),
+            emissiveIntensity: 0.8 // Increased from 0.4
         });
 
         this.fillMesh = new THREE.Mesh(geometry, material);
-        this.fillMesh.castShadow = true;
-        this.fillMesh.receiveShadow = true;
         this.group.add(this.fillMesh);
-
         this.updateFillState();
     }
 
     updateFillState() {
         if (!this.fillMesh) return;
 
-        const fillRatio = (this.value - this.min) / (this.max - this.min);
-        const isVert = this.orientation === 'vertical';
+        const val = this.get('value');
+        const min = this.get('min');
+        const max = this.get('max');
+        const values = this.get('values');
+
+        const ratio = values ? (this.get('valueIndex') / (values.length - 1)) : ((val - min) / (max - min));
+        const isVert = this.get('orientation') === 'vertical';
 
         if (isVert) {
-            // Scale Y from bottom
-            this.fillMesh.scale.y = Math.max(0.001, fillRatio);
+            this.fillMesh.scale.y = Math.max(0.001, ratio);
             this.fillMesh.scale.x = 1.0;
-            // Center is 0. Bottom is -height/2.
-            const fullHeight = this.width; // width property is length
-            this.fillMesh.position.y = -fullHeight / 2 + (fullHeight * fillRatio) / 2;
+            const fullLen = this.get('width');
+            this.fillMesh.position.y = -fullLen / 2 + (fullLen * ratio) / 2;
             this.fillMesh.position.x = 0;
         } else {
-            // Scale X from left
-            this.fillMesh.scale.x = Math.max(0.001, fillRatio);
+            this.fillMesh.scale.x = Math.max(0.001, ratio);
             this.fillMesh.scale.y = 1.0;
-            const fullWidth = this.width;
-            this.fillMesh.position.x = -fullWidth / 2 + (fullWidth * fillRatio) / 2;
+            const fullLen = this.get('width');
+            this.fillMesh.position.x = -fullLen / 2 + (fullLen * ratio) / 2;
             this.fillMesh.position.y = 0;
         }
     }
@@ -398,24 +390,22 @@ export class Slider3D extends BaseControl3D {
             this.handleMesh.material.dispose();
         }
 
-        const size = this.handleSize;
-        let geoOptions = { width: size, height: size, depth: size, radius: size / 2 };
-        const geometry = GeometryFactory.create(this.handleShape, geoOptions);
+        const size = this.get('handleSize');
+        const shape = this.get('handleShape');
+        const matType = this.get('handleMaterialType');
 
-        const material = MaterialFactory.create(this.handleMaterialType, {
-            color: this.handleColor,
-            emissive: this.handleColor,
-            emissiveIntensity: 0.4
+        const geoOptions = { width: size, height: size, depth: size, radius: size / 2 };
+        const geometry = GeometryFactory.create(shape, geoOptions);
+
+        const material = MaterialFactory.create(matType, {
+            color: this.get('handleColor'),
+            emissive: this.get('handleColor'), // Use handle color for emissive
+            emissiveIntensity: 0.5, // Brighter handle
+            roughness: 0.1,
+            metalness: 0.9
         });
 
         this.handleMesh = new THREE.Mesh(geometry, material);
-
-        if (this.orientation === 'vertical') {
-            this.handleMesh.position.set(0, this.handlePosition, this.depth / 2 + this.handleDepth / 2);
-        } else {
-            this.handleMesh.position.set(this.handlePosition, 0, this.depth / 2 + this.handleDepth / 2);
-        }
-
         this.handleMesh.castShadow = true;
         this.handleMesh.receiveShadow = true;
         this.handleMesh.userData.isHandle = true;
@@ -425,10 +415,6 @@ export class Slider3D extends BaseControl3D {
         this.group.add(this.handleMesh);
     }
 
-    createLabel() {
-        // Label is handled by HTML overlay system via BaseControl3D
-    }
-
     createGlow() {
         if (this.glowMesh) {
             this.group.remove(this.glowMesh);
@@ -436,36 +422,27 @@ export class Slider3D extends BaseControl3D {
             this.glowMesh.material.dispose();
         }
 
-        const glowGeometry = new THREE.SphereGeometry(this.handleSize / 2 + 0.1, 16, 16);
-        const glowMaterial = new THREE.MeshBasicMaterial({
-            color: this.handleColor,
+        const size = this.get('handleSize') * 1.5;
+        const geometry = new THREE.SphereGeometry(size / 2, 16, 16);
+        const material = new THREE.MeshBasicMaterial({
+            color: this.get('glowColor') || this.get('fillColor'),
             transparent: true,
-            opacity: 0.2,
+            opacity: 0.15 * this.get('glowIntensity'),
             side: THREE.DoubleSide
         });
 
-        this.glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
-        this.glowMesh.position.copy(this.handleMesh.position);
-        this.glowMesh.position.z -= 0.05;
-        this.glowMesh.visible = false;
-
+        this.glowMesh = new THREE.Mesh(geometry, material);
         this.group.add(this.glowMesh);
     }
 
     createValueDisplay() {
-        if (!this.showValue) return;
+        if (!this.get('showValue')) return;
 
-        // Create canvas for text rendering
         const canvas = document.createElement('canvas');
         canvas.width = 128;
         canvas.height = 64;
-
-        // Create texture from canvas
         this.valueTexture = new THREE.CanvasTexture(canvas);
-        this.valueTexture.minFilter = THREE.LinearFilter;
-        this.valueTexture.magFilter = THREE.LinearFilter;
 
-        // Create plane geometry for value display
         const geometry = new THREE.PlaneGeometry(0.8, 0.4);
         const material = new THREE.MeshBasicMaterial({
             map: this.valueTexture,
@@ -474,170 +451,98 @@ export class Slider3D extends BaseControl3D {
         });
 
         this.valueMesh = new THREE.Mesh(geometry, material);
-        this.valueMesh.position.x = this.handlePosition;
-        this.valueMesh.position.y = this.handleSize / 2 + 0.3; // Above handle
-        this.valueMesh.position.z = this.depth / 2 + this.handleDepth / 2;
-
-        // Disable raycasting on value display to prevent it from being draggable
-        this.valueMesh.raycast = () => { };
-
+        this.valueMesh.raycast = () => { }; // Non-interactive
         this.group.add(this.valueMesh);
-
-        // Initial render
         this.updateValueDisplay();
     }
 
     updateValueDisplay() {
-        if (!this.showValue || !this.valueTexture) return;
+        if (!this.valueTexture || !this.get('showValue')) return;
 
         const canvas = this.valueTexture.image;
         const ctx = canvas.getContext('2d');
-
-        // Clear canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Draw background with rounded corners
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
         ctx.beginPath();
-        ctx.roundRect(4, 4, canvas.width - 8, canvas.height - 8, 8);
+        ctx.roundRect(4, 4, canvas.width - 8, canvas.height - 8, 10);
         ctx.fill();
 
-        // Draw text
-        ctx.font = `bold ${this.valueTextSize}px Arial`;
-        ctx.fillStyle = this.valueTextColor;
+        ctx.font = 'bold 28px Arial';
+        ctx.fillStyle = '#00d4ff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
-        // Format value for display
-        const displayValue = typeof this.value === 'number'
-            ? this.value.toFixed(0)
-            : this.value.toString();
+        const val = this.get('value');
+        const text = typeof val === 'number' ? val.toFixed(1) : val.toString();
+        ctx.fillText(text, canvas.width / 2, canvas.height / 2);
 
-        ctx.fillText(displayValue, canvas.width / 2, canvas.height / 2);
-
-        // Update texture
         this.valueTexture.needsUpdate = true;
     }
 
-
-    valueToPosition(value) {
-        let normalized = (value - this.min) / (this.max - this.min);
-        const length = this.width; // In vertical mode, 'width' is still the length property
+    valueToPosition(value, min, max) {
+        const range = max - min;
+        const normalized = range === 0 ? 0 : (value - min) / range;
+        const length = this.get('width');
         return -length / 2 + normalized * length;
     }
 
     positionToValue(position) {
-        const length = this.width;
+        const length = this.get('width');
+        const normalized = Math.max(0, Math.min(1, (position + length / 2) / length));
 
-        // Position is typically local X (horizontal) or local Y (vertical)
-        const normalized = (position + length / 2) / length;
-
-        let value = this.min + normalized * (this.max - this.min);
-
-        // Apply step
-        if (this.step > 0) {
-            value = Math.round(value / this.step) * this.step;
+        const values = this.get('values');
+        if (values && Array.isArray(values)) {
+            return Math.round(normalized * (values.length - 1));
         }
 
-        // Clamp to min/max
-        return Math.max(this.min, Math.min(this.max, value));
+        const min = this.get('min');
+        const max = this.get('max');
+        const step = this.get('step');
+        let val = min + normalized * (max - min);
+        if (step > 0) val = Math.round(val / step) * step;
+        return Math.max(min, Math.min(max, val));
     }
 
-    positionToIndex(position) {
-        // Convert position to array index (for values array mode)
-        if (!this.values || !Array.isArray(this.values)) return null;
-        const normalized = (position + this.width / 2) / this.width;
-        const index = Math.round(normalized * (this.values.length - 1));
-        return Math.max(0, Math.min(this.values.length - 1, index));
-    }
-
-    setValue(newValue, triggerCallback = true) {
-        let changed = false;
-
-        if (this.values && Array.isArray(this.values)) {
-            // Use values array mode
-            const newIndex = typeof newValue === 'number' && newValue >= 0 && newValue < this.values.length
-                ? newValue
-                : this.values.indexOf(newValue);
-
-            if (newIndex >= 0 && newIndex < this.values.length && newIndex !== this.valueIndex) {
-                this.valueIndex = newIndex;
-                this.value = this.values[this.valueIndex];
-                changed = true;
-            }
+    setValue(newValue) {
+        const values = this.get('values');
+        if (values && Array.isArray(values)) {
+            this.set('valueIndex', newValue);
         } else {
-            // Use min/max/step mode
-            const clampedValue = Math.max(this.min, Math.min(this.max, newValue));
-
-            // Apply step
-            let steppedValue = clampedValue;
-            if (this.step > 0) {
-                steppedValue = Math.round(clampedValue / this.step) * this.step;
-            }
-
-            if (steppedValue !== this.value) {
-                this.value = steppedValue;
-                changed = true;
-            }
-        }
-
-        if (changed) {
-            this.targetHandlePosition = this.valueToPosition(this.value);
-            this.updateFillState();
-
-            // Update value display
-            this.updateValueDisplay();
-
-            if (triggerCallback && this.onChangeCallback) {
-                this.onChangeCallback(this, this.value, this.valueIndex);
-            }
+            this.set('value', newValue);
         }
     }
 
-    onMouseDown(event) {
-        if (!this.isEnabled || !this.camera) return;
-
-
-
-        const intersect = this.checkIntersection(this.camera, event);
-
-
-
-        if (intersect) {
-            // Check if handle or track was clicked
-            if (intersect.object.userData.isHandle || intersect.object.userData.isInteractive) {
-                this.isPressed = true;
-                this.isDragging = true;
-
-                // Disable OrbitControls during drag to prevent camera rotation
-                const orbitControls = ControlRegistry.orbitControls;
-                if (orbitControls) {
-                    orbitControls.enabled = false;
-                }
-
-                // Add global event listeners for drag (ensures drag works even if mouse leaves canvas)
-                document.addEventListener('mousemove', this.boundOnMouseMove, false);
-                document.addEventListener('mouseup', this.boundOnMouseUp, false);
-
-
-
-                // Get mouse position in world space
-                const canvas = event.target?.closest('canvas') || document.querySelector('canvas');
-                if (canvas) {
-                    const rect = canvas.getBoundingClientRect();
-                    const mousePos = this.getMousePosition(event, canvas);
-                    this.dragStartX = mousePos.x;
-                    this.dragStartValue = this.value;
-                }
-
-                // If track was clicked (not handle), jump handle to that position immediately
-                if (intersect.object.userData.isTrack && !intersect.object.userData.isHandle) {
-                    this.updateValueFromMouse(event);
-                }
-
-                this.onPress();
+    onStateChange(key, value, oldValue) {
+        if (key === 'value' || key === 'valueIndex') {
+            const values = this.get('values');
+            if (values && Array.isArray(values)) {
+                const idx = this.get('valueIndex');
+                this.set('value', values[idx], { silent: true });
+                this.targetHandlePos = this.valueToPosition(idx, 0, values.length - 1);
+            } else {
+                this.targetHandlePos = this.valueToPosition(value, this.get('min'), this.get('max'));
             }
+            this.updateFillState();
+            this.updateValueDisplay();
+            this.emit('change', { key, value });
         }
+
+        const criticalKeys = [
+            'width', 'height', 'depth', 'trackShape', 'handleShape',
+            'trackMaterialType', 'handleMaterialType', 'tickMarks',
+            'values', 'min', 'max', 'trackColor', 'fillColor',
+            'handleColor', 'trackOpacity', 'glowColor', 'glowIntensity'
+        ];
+        if (criticalKeys.includes(key)) {
+            this.create();
+        }
+
+        if (key === 'preset') {
+            this.applyPreset(value);
+        }
+
+        super.onStateChange(key, value, oldValue);
     }
 
     updateValueFromMouse(event) {
@@ -650,195 +555,197 @@ export class Slider3D extends BaseControl3D {
             -((event.clientY - rect.top) / rect.height) * 2 + 1
         );
 
-        const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(mouse, this.camera);
+        this.raycaster.setFromCamera(mouse, this.camera);
 
-        // Define plane in world space
         const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(this.group.getWorldQuaternion(new THREE.Quaternion()));
         const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(normal, this.group.getWorldPosition(new THREE.Vector3()));
 
         const intersection = new THREE.Vector3();
-        const hasIntersection = raycaster.ray.intersectPlane(plane, intersection);
-
-        if (hasIntersection) {
+        if (this.raycaster.ray.intersectPlane(plane, intersection)) {
             this.group.worldToLocal(intersection);
-
-            // Depends on orientation
-            let pos = this.orientation === 'vertical' ? intersection.y : intersection.x;
-
+            const pos = this.get('orientation') === 'vertical' ? intersection.y : intersection.x;
             const newValue = this.positionToValue(pos);
-            this.setValue(newValue, true);
+            this.setValue(newValue);
         }
     }
 
+    onMouseDown(event) {
+        if (!this.isEnabled || !this.camera) return;
+        const intersect = this.checkIntersection(this.camera, event);
+
+        if (intersect) {
+            this.isPressed = true;
+            this.isDragging = true;
+
+            const orbitControls = ControlRegistry.orbitControls;
+            if (orbitControls) orbitControls.enabled = false;
+
+            document.addEventListener('mousemove', this.boundOnMouseMove);
+            document.addEventListener('mouseup', this.boundOnMouseUp);
+
+            this.updateValueFromMouse(event);
+        }
+    }
 
     onMouseMove(event) {
         if (!this.isEnabled || !this.camera) return;
-
         if (this.isDragging) {
-            // Update value based on mouse movement
-            const canvas = event.target?.closest('canvas') || document.querySelector('canvas');
-            if (canvas) {
-                const mousePos = this.getMousePosition(event, canvas);
-                const mouse = new THREE.Vector2(mousePos.x, mousePos.y);
-                this.raycaster.setFromCamera(mouse, this.camera);
-
-                // Define plane in world space that matches the slider's local XY plane
-                const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(this.group.getWorldQuaternion(new THREE.Quaternion()));
-                const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(normal, this.group.getWorldPosition(new THREE.Vector3()));
-
-                const intersection = new THREE.Vector3();
-                const hasIntersection = this.raycaster.ray.intersectPlane(plane, intersection);
-
-                if (hasIntersection) {
-                    this.group.worldToLocal(intersection);
-
-                    // Depends on orientation
-                    let pos = this.orientation === 'vertical' ? intersection.y : intersection.x;
-
-                    const newValue = this.positionToValue(pos);
-                    this.setValue(newValue, true);
-                }
-            }
+            this.updateValueFromMouse(event);
         } else {
-            // Normal hover detection
             super.onMouseMove(event);
         }
     }
 
     onMouseUp(event) {
-        if (this.isPressed || this.isDragging) {
-            this.isPressed = false;
+        if (this.isDragging) {
             this.isDragging = false;
+            this.isPressed = false;
 
-            // Remove global event listeners
-            document.removeEventListener('mousemove', this.boundOnMouseMove, false);
-            document.removeEventListener('mouseup', this.boundOnMouseUp, false);
+            document.removeEventListener('mousemove', this.boundOnMouseMove);
+            document.removeEventListener('mouseup', this.boundOnMouseUp);
 
-            // Re-enable OrbitControls after drag
             const orbitControls = ControlRegistry.orbitControls;
-            if (orbitControls) {
-                orbitControls.enabled = true;
-            }
-
-            if (this.onChangeEndCallback) {
-                this.onChangeEndCallback(this, this.value, this.valueIndex);
-            }
-
-            this.onRelease();
-        }
-    }
-
-    onPress() {
-        this.targetScale = 0.95;
-        if (this.glowMesh) {
-            this.glowMesh.visible = true;
-        }
-    }
-
-    onRelease() {
-        this.targetScale = 1.0;
-        if (this.glowMesh) {
-            this.glowMesh.visible = false;
-        }
-    }
-
-    onHover() {
-        super.onHover();
-        this.targetScale = this.hoverScale;
-        if (this.glowMesh) {
-            this.glowMesh.visible = true;
-        }
-    }
-
-    onHoverLeave() {
-        super.onHoverLeave();
-        if (!this.isDragging) {
-            this.targetScale = 1.0;
-            if (this.glowMesh) {
-                this.glowMesh.visible = false;
-            }
-        }
-    }
-
-    onClick() {
-        super.onClick();
-        // Focus camera on slider when clicked (but not when dragging)
-        if (!this.isDragging) {
-            this.focusCamera();
+            if (orbitControls) orbitControls.enabled = true;
         }
     }
 
     updateVisualState() {
-        // Update handle position with animation
-        if (this.handleMesh) {
-            this.handlePosition += (this.targetHandlePosition - this.handlePosition) * this.animationSpeed;
+        if (!this.handleMesh) return;
+        const isVert = this.get('orientation') === 'vertical';
 
-            if (this.orientation === 'vertical') {
-                this.handleMesh.position.y = this.handlePosition;
-                this.handleMesh.position.x = 0;
+        if (isVert) {
+            this.handleMesh.position.y = this.currentHandlePos;
+            this.handleMesh.position.x = 0;
+        } else {
+            this.handleMesh.position.x = this.currentHandlePos;
+            this.handleMesh.position.y = 0;
+        }
+
+        this.handleMesh.position.z = (this.get('depth') / 2 + this.get('handleSize') / 4) + (this.zOffsetCurrent || 0);
+
+        if (this.glowMesh) {
+            this.glowMesh.position.copy(this.handleMesh.position);
+            this.glowMesh.position.z -= 0.05;
+            this.glowMesh.visible = this.isHovered || this.isDragging;
+        }
+
+        if (this.valueMesh) {
+            this.valueMesh.position.copy(this.handleMesh.position);
+            if (isVert) {
+                this.valueMesh.position.x += (this.get('handleSize') + 0.2);
             } else {
-                this.handleMesh.position.x = this.handlePosition;
-                this.handleMesh.position.y = 0;
+                this.valueMesh.position.y += (this.get('handleSize') + 0.2);
             }
 
-            // Update glow position
-            if (this.glowMesh) {
-                if (this.orientation === 'vertical') {
-                    this.glowMesh.position.y = this.handlePosition;
-                    this.glowMesh.position.x = 0;
-                } else {
-                    this.glowMesh.position.x = this.handlePosition;
-                    this.glowMesh.position.y = 0;
-                }
-            }
-
-            // Update value display position to follow handle
-            if (this.valueMesh) {
-                if (this.orientation === 'vertical') {
-                    this.valueMesh.position.y = this.handlePosition;
-                    this.valueMesh.position.x = this.handleSize / 2 + 0.4;
-                } else {
-                    this.valueMesh.position.x = this.handlePosition;
-                    this.valueMesh.position.y = this.handleSize / 2 + 0.3;
-                }
+            if (this.get('lookAtCamera') && this.camera) {
+                this.valueMesh.lookAt(this.camera.position);
             }
         }
 
-        // Update scale
-        this.currentScale += (this.targetScale - this.currentScale) * this.animationSpeed;
-        if (this.group) {
-            this.group.scale.set(this.currentScale, this.currentScale, this.currentScale);
-        }
+        this.updateFillState();
     }
 
     update() {
+        // Safe check for initialized state
+        if (this.currentScale === undefined) this.currentScale = 1.0;
+        if (this.currentHandlePos === undefined) this.currentHandlePos = 0;
+
+        // Spring physics for handle movement
+        const displacement = (this.targetHandlePos || 0) - this.currentHandlePos;
+        const force = displacement * this.tension;
+        this.velocity += force;
+        this.velocity *= this.friction;
+        this.currentHandlePos += this.velocity;
+
+        // Depth feedback (Z-offset on grab)
+        const targetZ = this.isDragging ? this.get('zOffsetOnGrab') : 0;
+        this.zOffsetCurrent += (targetZ - this.zOffsetCurrent) * 0.15;
+
+        // Glow pulse logic
+        this.glowPulse += 0.05;
+        if (this.glowMesh) {
+            const baseGlow = (this.isHovered || this.isDragging) ? 0.3 : 0.1;
+            const pulse = Math.sin(this.glowPulse) * 0.05;
+            this.glowMesh.material.opacity = baseGlow + pulse;
+            this.glowMesh.scale.setScalar(1 + pulse);
+        }
+
+        // Visual smoothing/kick on interaction
+        let targetScale = this.isHovered ? 1.05 : 1.0;
+        if (this.isPressed) targetScale = 0.92;
+
+        this.currentScale += (targetScale - this.currentScale) * 0.2;
+        this.group.scale.setScalar(this.currentScale);
+
         this.updateVisualState();
     }
 
-    getValue() {
-        return this.value;
-    }
-
-    getValueIndex() {
-        // Return current index if using values array, null otherwise
-        return this.valueIndex;
-    }
-
     getNormalizedValue() {
-        if (this.values && Array.isArray(this.values)) {
-            return this.valueIndex / (this.values.length - 1);
+        const values = this.get('values');
+        if (values && Array.isArray(values)) {
+            return this.get('valueIndex') / (values.length - 1);
         } else {
-            return (this.value - this.min) / (this.max - this.min);
+            const min = this.get('min');
+            const max = this.get('max');
+            return (this.get('value') - min) / (max - min);
         }
     }
 
-    dispose() {
-        // Remove any lingering event listeners
-        document.removeEventListener('mousemove', this.boundOnMouseMove, false);
-        document.removeEventListener('mouseup', this.boundOnMouseUp, false);
+    get2DContent() {
+        const container = super.get2DContent();
+        const isDiscrete = Array.isArray(this.get('values'));
 
-        // Call parent cleanup
+        const preview = document.createElement('div');
+        preview.style.cssText = `
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+        `;
+
+        const val = this.get('value');
+        const valueDisplay = document.createElement('div');
+        valueDisplay.style.cssText = 'text-align: center; font-size: 1.8em; font-weight: bold; color: #00d4ff; font-family: monospace;';
+        valueDisplay.innerText = typeof val === 'number' ? val.toFixed(1) : val;
+
+        const rangeInput = document.createElement('input');
+        rangeInput.type = 'range';
+
+        if (isDiscrete) {
+            rangeInput.min = 0;
+            rangeInput.max = this.get('values').length - 1;
+            rangeInput.step = 1;
+            rangeInput.value = this.get('valueIndex');
+        } else {
+            rangeInput.min = this.get('min');
+            rangeInput.max = this.get('max');
+            rangeInput.step = this.get('step') || 0.1;
+            rangeInput.value = val;
+        }
+
+        rangeInput.style.cssText = 'width: 100%; height: 6px; cursor: pointer; accent-color: #00d4ff;';
+
+        rangeInput.oninput = (e) => {
+            const numVal = parseFloat(e.target.value);
+            this.setValue(numVal);
+            const currentVal = this.get('value');
+            valueDisplay.innerText = typeof currentVal === 'number' ? currentVal.toFixed(1) : currentVal;
+        };
+
+        preview.appendChild(valueDisplay);
+        preview.appendChild(rangeInput);
+        container.appendChild(preview);
+
+        return container;
+    }
+
+    dispose() {
+        document.removeEventListener('mousemove', this.boundOnMouseMove);
+        document.removeEventListener('mouseup', this.boundOnMouseUp);
         super.dispose();
     }
 }

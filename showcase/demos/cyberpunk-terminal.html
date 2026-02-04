@@ -4,497 +4,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyberpunk Hacker Terminal - Spatial UI 3D Demo</title>
+    <title>Ghost Protocol: Cybernetic Terminal</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Courier New', monospace;
-            background: #0a0a0a;
-            color: #0f0;
+            margin: 0;
             overflow: hidden;
+            background: #050505;
+            font-family: 'Courier New', monospace;
         }
 
-        #canvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-        }
-
-        .terminal-header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0, 0, 0, 0.9);
-            border-bottom: 2px solid #0f0;
-            padding: 10px 20px;
-            z-index: 100;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .terminal-title {
-            color: #0f0;
-            font-size: 16px;
-            text-shadow: 0 0 10px #0f0;
-        }
-
-        .terminal-time {
-            color: #f0f;
-            font-size: 14px;
-        }
-
-        .hack-info {
-            position: fixed;
-            top: 60px;
+        #deck-hud {
+            position: absolute;
+            top: 20px;
             left: 20px;
-            background: rgba(0, 0, 0, 0.95);
-            border: 2px solid #f0f;
-            padding: 20px;
-            max-width: 400px;
-            z-index: 100;
-            box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+            pointer-events: none;
+            color: #00ff88;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.6);
         }
 
-        .hack-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #f0f;
-            text-shadow: 0 0 10px #f0f;
+        h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            letter-spacing: 4px;
         }
 
-        .hack-text {
-            color: #0f0;
-            line-height: 1.6;
-            font-size: 12px;
-        }
-
-        .system-status {
-            position: fixed;
-            top: 60px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.95);
-            border: 2px solid #0ff;
-            padding: 15px;
-            z-index: 100;
-            min-width: 280px;
-        }
-
-        .status-title {
-            color: #0ff;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .status-item {
-            display: flex;
-            justify-content: space-between;
-            margin: 5px 0;
-            font-size: 11px;
-        }
-
-        .status-label {
-            color: #0ff;
-        }
-
-        .status-value {
-            color: #0f0;
-            font-weight: bold;
-        }
-
-        .hack-log {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.95);
-            border: 2px solid #0f0;
-            padding: 15px;
-            z-index: 100;
-            max-width: 500px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .log-title {
-            color: #0f0;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .log-entry {
-            color: #0f0;
-            margin: 3px 0;
-            font-size: 11px;
+        .sub {
+            font-size: 0.8rem;
+            color: #ff00ff;
             opacity: 0.8;
         }
 
-        .glitch {
-            animation: glitch 0.3s infinite;
-        }
-
-        @keyframes glitch {
-            0% {
-                transform: translate(0);
-            }
-
-            20% {
-                transform: translate(-2px, 2px);
-            }
-
-            40% {
-                transform: translate(-2px, -2px);
-            }
-
-            60% {
-                transform: translate(2px, 2px);
-            }
-
-            80% {
-                transform: translate(2px, -2px);
-            }
-
-            100% {
-                transform: translate(0);
-            }
-        }
-
-        .scan-line {
-            position: fixed;
+        /* Glitch scanlines */
+        #scanlines {
+            position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(to bottom, transparent, #0f0, transparent);
-            animation: scan 3s linear infinite;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 3px 100%;
             pointer-events: none;
-            z-index: 200;
-        }
-
-        @keyframes scan {
-            0% {
-                top: 0;
-            }
-
-            100% {
-                top: 100vh;
-            }
+            z-index: 5;
         }
     </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
 </head>
 
 <body>
-    <canvas id="canvas"></canvas>
-    <div class="scan-line"></div>
-
-    <!-- Terminal Header -->
-    <div class="terminal-header">
-        <div class="terminal-title">⚡ GHOST_PROTOCOL v3.14 // NEURAL_LINK_ACTIVE</div>
-        <div class="terminal-time" id="time">23:47:12</div>
+    <div id="scanlines"></div>
+    <div id="deck-hud">
+        <h1>GHOST_PROTOCOL_V4</h1>
+        <div class="sub">ICE Level: Critical • Trace: 0%</div>
     </div>
-
-    <!-- Hack Info -->
-    <div class="hack-info">
-        <div class="hack-title">🔓 MISSION: GHOST PROTOCOL</div>
-        <div class="hack-text">
-            <strong>TARGET:</strong> MegaCorp DataVault<br>
-            <strong>OBJECTIVE:</strong> Extract classified files<br>
-            <strong>STATUS:</strong> <span style="color: #f0f;">INFILTRATING...</span><br><br>
-
-            You are "Ghost", an elite netrunner in Neo-Tokyo 2077.
-            Your neural implants allow direct interface with the digital realm.
-            Breach the firewall, decrypt the data, and extract before ICE detects you.<br><br>
-
-            <strong>⚠️ WARNING:</strong> Black ICE detected. Proceed with caution.
-        </div>
-    </div>
-
-    <!-- System Status -->
-    <div class="system-status">
-        <div class="status-title">🖥️ SYSTEM STATUS</div>
-        <div class="status-item">
-            <span class="status-label">Neural Link:</span>
-            <span class="status-value" id="neural">STABLE</span>
-        </div>
-        <div class="status-item">
-            <span class="status-label">Firewall Breach:</span>
-            <span class="status-value" id="breach">67%</span>
-        </div>
-        <div class="status-item">
-            <span class="status-label">Encryption:</span>
-            <span class="status-value" id="encryption">AES-512</span>
-        </div>
-        <div class="status-item">
-            <span class="status-label">ICE Detection:</span>
-            <span class="status-value" id="ice">LOW</span>
-        </div>
-        <div class="status-item">
-            <span class="status-label">Data Extracted:</span>
-            <span class="status-value" id="data">2.3 TB</span>
-        </div>
-        <div class="status-item">
-            <span class="status-label">Trace Level:</span>
-            <span class="status-value" id="trace">12%</span>
-        </div>
-    </div>
-
-    <!-- Hack Log -->
-    <div class="hack-log">
-        <div class="log-title">📜 ACTIVITY LOG</div>
-        <div id="log-container">
-            <div class="log-entry">[23:45:01] > Initiating neural handshake...</div>
-            <div class="log-entry">[23:45:12] > Connection established</div>
-            <div class="log-entry">[23:45:34] > Scanning network topology...</div>
-            <div class="log-entry">[23:46:02] > Firewall detected: Type-7 Quantum</div>
-            <div class="log-entry">[23:46:15] > Deploying decryption algorithms...</div>
-            <div class="log-entry">[23:46:47] > Breach progress: 67%</div>
-            <div class="log-entry">[23:47:12] > <span style="color: #f0f;">WARNING: ICE patrol detected</span></div>
-        </div>
-    </div>
-
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-        }
-    }
-    </script>
 
     <script type="module">
-        import { Scene3D } from '../../src/core/Scene3D.js';
-        import { TextInput3D } from '../../src/controls/TextInput3D.js';
+        import * as THREE from 'three';
+        import { SpatialEnvironment } from '../../src/environments/SpatialEnvironment.js';
+        import { SemanticGhost } from '../../src/ai/SemanticGhost.js';
+
+        // Components
+        import { MagneticCard3D } from '../../src/controls/MagneticCard3D.js';
         import { Button3D } from '../../src/controls/Button3D.js';
         import { Chart3D } from '../../src/controls/Chart3D.js';
-        import { Modal3D } from '../../src/controls/Modal3D.js';
-        import * as THREE from 'three';
+        import { VolumetricCard3D } from '../../src/controls/VolumetricCard3D.js';
+        import { HaloCard3D } from '../../src/controls/HaloCard3D.js';
 
-        const canvas = document.getElementById('canvas');
-        const scene3D = new Scene3D(canvas);
-        const scene = scene3D.getScene();
-        const camera = scene3D.getCamera();
-        const renderer = scene3D.getRenderer();
+        // 1. Setup
+        const env = new SpatialEnvironment(document.body, { cameraPos: [0, 1.6, 4] });
+        env.init();
+        env.scene.background = new THREE.Color(0x050505);
 
-        // Cyberpunk environment
-        scene.background = new THREE.Color(0x0a0a0a);
-        scene.fog = new THREE.Fog(0x0a0a0a, 10, 50);
+        // Neon Matrix Ambience
+        const grid = new THREE.GridHelper(20, 20, 0xff00ff, 0x00ff88);
+        grid.position.y = -2;
+        env.scene.add(grid);
 
-        // Neon lighting
-        const neonGreen = new THREE.PointLight(0x00ff00, 2, 20);
-        neonGreen.position.set(-5, 3, 5);
-        scene.add(neonGreen);
+        // 2. Hacker AI (Ghost)
+        const deckAI = new SemanticGhost(env.camera, env.scene, env.renderer);
+        env.add(deckAI);
+        env.updatables.push(deckAI);
 
-        const neonPink = new THREE.PointLight(0xff00ff, 2, 20);
-        neonPink.position.set(5, 3, 5);
-        scene.add(neonPink);
+        setTimeout(() => {
+            deckAI.updatePanelText("DECK_LINK_ESTABLISHED: WELCOME GHOST");
+            deckAI.guideTo(mainLog.group, "Accessing Mission Log");
+        }, 1500);
 
-        const neonCyan = new THREE.PointLight(0x00ffff, 1.5, 15);
-        neonCyan.position.set(0, 5, 0);
-        scene.add(neonCyan);
 
-        camera.position.set(0, 2, 12);
+        // 3. NET DECK TOOLS
 
-        // Command Input
-        const commandInput = new TextInput3D(scene, camera, [-6, 3, 0], {
-            placeholder: '> Enter command...',
-            value: '',
-            width: 5,
-            height: 0.8,
-            mode: 0,
-            renderer: renderer,
-            onSubmit: (input, value) => {
-                addLogEntry(`> ${value}`);
-                addLogEntry(`< Command executed`);
-            }
+        // Main Hacking Log
+        const mainLog = new MagneticCard3D(env.scene, env.camera, [0, 1.2, -2], {
+            width: 3.5, height: 2, color: 0x0a0a0a,
+            title: "SYS_LOG", description: "> Scanning firewall...\n> Exploit detected in sector 4\n> Bypassing ICE..."
         });
+        env.add(mainLog.group);
+        env.updatables.push(mainLog);
 
-        // Hack Buttons
-        const breachButton = new Button3D(scene, camera, [-6, 1.5, 0], {
-            label: '🔓 BREACH FIREWALL',
-            width: 3,
-            height: 0.8,
-            mode: 0,
-            renderer: renderer,
-            onClick: () => {
-                addLogEntry('[BREACH] Initiating firewall breach...');
-                updateBreach();
-            }
-        });
-
-        const decryptButton = new Button3D(scene, camera, [-6, 0.3, 0], {
-            label: '🔐 DECRYPT DATA',
-            width: 3,
-            height: 0.8,
-            mode: 0,
-            renderer: renderer,
-            onClick: () => {
-                addLogEntry('[DECRYPT] Running decryption algorithms...');
-            }
-        });
-
-        const extractButton = new Button3D(scene, camera, [-6, -0.9, 0], {
-            label: '💾 EXTRACT FILES',
-            width: 3,
-            height: 0.8,
-            mode: 0,
-            renderer: renderer,
-            onClick: () => {
-                addLogEntry('[EXTRACT] Downloading files...');
-                extractModal.open();
-            }
-        });
-
-        const jackOutButton = new Button3D(scene, camera, [-6, -2.1, 0], {
-            label: '⚡ JACK OUT',
-            width: 3,
-            height: 0.8,
-            mode: 0,
-            renderer: renderer,
-            onClick: () => {
-                addLogEntry('[DISCONNECT] Neural link terminated');
-            }
-        });
-
-        // Network Traffic Chart
-        const trafficChart = new Chart3D(scene, camera, [3, 2, 0], {
-            chartType: 'line',
+        // Traffic Monitor
+        const traffic = new Chart3D(env.scene, env.camera, [-3.5, 2.0, -2.5], {
+            width: 3, height: 2, chartType: 'line',
             data: {
-                labels: ['T-60s', 'T-50s', 'T-40s', 'T-30s', 'T-20s', 'T-10s', 'NOW'],
+                labels: ['T1', 'T2', 'T3', 'T4', 'T5'],
                 datasets: [{
-                    label: 'Network Traffic (Gb/s)',
-                    data: [12, 19, 15, 25, 22, 30, 28],
-                    borderColor: '#0f0',
-                    backgroundColor: 'rgba(0, 255, 0, 0.1)',
-                    tension: 0.4
-                }, {
-                    label: 'ICE Activity',
-                    data: [5, 7, 6, 12, 15, 18, 20],
-                    borderColor: '#f0f',
-                    backgroundColor: 'rgba(255, 0, 255, 0.1)',
-                    tension: 0.4
+                    label: 'Bandwidth',
+                    data: [40, 60, 45, 80, 70],
+                    borderColor: '#00ff88',
+                    backgroundColor: 'rgba(0, 255, 136, 0.1)'
                 }]
-            },
-            width: 5,
-            height: 4,
-            mode: 0,
-            renderer: renderer
-        });
-
-        // System Resources Chart
-        const resourceChart = new Chart3D(scene, camera, [3, -2.5, 0], {
-            chartType: 'bar',
-            data: {
-                labels: ['CPU', 'RAM', 'Neural', 'Bandwidth'],
-                datasets: [{
-                    label: 'Usage %',
-                    data: [78, 92, 67, 85],
-                    backgroundColor: [
-                        'rgba(0, 255, 0, 0.8)',
-                        'rgba(0, 255, 255, 0.8)',
-                        'rgba(255, 0, 255, 0.8)',
-                        'rgba(255, 255, 0, 0.8)'
-                    ]
-                }]
-            },
-            width: 5,
-            height: 3.5,
-            mode: 0,
-            renderer: renderer
-        });
-
-        // Extract Modal
-        const extractModal = new Modal3D(scene, camera, [0, 0, 2], {
-            title: '💾 DATA EXTRACTION',
-            width: 6,
-            height: 4,
-            mode: 0,
-            isOpen: false,
-            renderer: renderer
-        });
-
-        if (extractModal.contentElement) {
-            extractModal.contentElement.innerHTML = `
-                <div style="color: #0f0; padding: 20px; font-family: 'Courier New', monospace;">
-                    <h3 style="color: #0ff; margin-bottom: 15px;">📂 EXTRACTED FILES</h3>
-                    <p style="margin: 5px 0;">✓ project_blackout.dat (1.2 GB)</p>
-                    <p style="margin: 5px 0;">✓ neural_implant_specs.enc (450 MB)</p>
-                    <p style="margin: 5px 0;">✓ financial_records_2077.db (890 MB)</p>
-                    <p style="margin: 5px 0;">✓ classified_research.zip (2.1 GB)</p>
-                    <br>
-                    <p style="color: #f0f;">⚠️ WARNING: Trace detected at 45%</p>
-                    <p style="color: #0ff;">Recommend immediate disconnect</p>
-                </div>
-            `;
-        }
-
-        // Helper functions
-        function addLogEntry(text) {
-            const logContainer = document.getElementById('log-container');
-            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
-            const entry = document.createElement('div');
-            entry.className = 'log-entry';
-            entry.textContent = `[${time}] ${text}`;
-            logContainer.appendChild(entry);
-            logContainer.scrollTop = logContainer.scrollHeight;
-        }
-
-        function updateBreach() {
-            const current = parseInt(document.getElementById('breach').textContent);
-            const newValue = Math.min(100, current + Math.random() * 10);
-            document.getElementById('breach').textContent = Math.round(newValue) + '%';
-        }
-
-        // Update time
-        setInterval(() => {
-            const now = new Date();
-            document.getElementById('time').textContent = now.toLocaleTimeString('en-US', { hour12: false });
-        }, 1000);
-
-        // Simulate dynamic updates
-        let time = 0;
-        setInterval(() => {
-            time++;
-            // Simulate trace level increase
-            const trace = Math.min(100, 12 + time * 0.5);
-            document.getElementById('trace').textContent = Math.round(trace) + '%';
-
-            // Update ICE detection
-            if (trace > 50) {
-                document.getElementById('ice').textContent = 'HIGH';
-                document.getElementById('ice').style.color = '#f00';
-            } else if (trace > 25) {
-                document.getElementById('ice').textContent = 'MODERATE';
-                document.getElementById('ice').style.color = '#fa0';
             }
-        }, 2000);
+        });
+        traffic.group.rotation.y = 0.4;
+        env.add(traffic.group);
+        env.updatables.push(traffic);
 
-        // Animation loop
-        function animate() {
-            requestAnimationFrame(animate);
+        // Hacking Actions
+        const breachBtn = new Button3D(env.scene, env.camera, [-3.5, 0.8, -2.5], {
+            label: "BREACH_ICE", width: 2.5, color: 0xff00ff,
+            onClick: () => {
+                deckAI.updatePanelText("WARNING: BLACK_ICE_ACTIVE");
+                grid.material.color.setHex(0xff0000);
+                setTimeout(() => grid.material.color.setHex(0xff00ff), 1000);
+            }
+        });
+        breachBtn.group.rotation.y = 0.4;
+        env.add(breachBtn.group);
+        env.updatables.push(breachBtn);
 
-            commandInput.update();
-            breachButton.update();
-            decryptButton.update();
-            extractButton.update();
-            jackOutButton.update();
-            trafficChart.update();
-            resourceChart.update();
-            extractModal.update();
 
-            // Animate neon lights
-            neonGreen.intensity = 2 + Math.sin(Date.now() * 0.003) * 0.5;
-            neonPink.intensity = 2 + Math.cos(Date.now() * 0.003) * 0.5;
+        // 4. DATA NODES (Specimens)
+        const node1 = new VolumetricCard3D(env.scene, env.camera, [3.5, 1.5, -2.5], {
+            width: 2, height: 3, baseColor: 0x00ff88, title: "DATA_CORE_01", popScale: 0.5
+        });
+        node1.group.rotation.y = -0.4;
+        env.add(node1.group);
+        env.updatables.push(node1);
 
-            scene3D.render();
-        }
+        const nodeInfo = new HaloCard3D(env.scene, env.camera, [0, 0, 0], {
+            title: "ENCRYPTION: AES-2048", width: 1.5, height: 0.4,
+            offset: [0, 1.2, 0], anchorObject: node1.group, color: 0x00ff88
+        });
+        env.add(nodeInfo.group);
+        env.updatables.push(nodeInfo);
 
-        animate();
+
+        // 5. START
+        env.start();
+
     </script>
 </body>
 

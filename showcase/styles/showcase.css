@@ -133,9 +133,26 @@ code {
    ============================================ */
 
 .container {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 0 var(--spacing-md);
+    width: 100%;
+}
+
+/* Custom scrollbar for demo controls */
+.demo-controls::-webkit-scrollbar {
+    width: 6px;
+}
+
+.demo-controls::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.demo-controls::-webkit-scrollbar-thumb {
+    background: var(--cosmic-cyan);
+    border-radius: 10px;
+    opacity: 0.5;
 }
 
 .container-wide {

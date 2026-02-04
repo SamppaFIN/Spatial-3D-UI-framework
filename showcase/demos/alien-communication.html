@@ -4,362 +4,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alien Communication Hub - Spatial UI 3D Demo</title>
+    <title>Andromeda Relay: First Contact</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Courier New', monospace;
-            background: #050510;
-            color: #00ff88;
+            margin: 0;
             overflow: hidden;
+            background: #050510;
+            font-family: 'Courier New', monospace;
         }
 
-        #canvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-        }
-
-        .hub-info {
-            position: fixed;
+        #relay-hud {
+            position: absolute;
             top: 20px;
             left: 20px;
-            background: rgba(5, 5, 16, 0.95);
-            border: 2px solid #00ff88;
-            padding: 20px;
-            max-width: 420px;
-            z-index: 100;
-            box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
-        }
-
-        .hub-title {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 10px;
+            pointer-events: none;
             color: #00ff88;
-            text-shadow: 0 0 10px #00ff88;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.6);
         }
 
-        .hub-text {
-            color: #66ffaa;
-            line-height: 1.6;
-            font-size: 13px;
+        h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            letter-spacing: 2px;
         }
 
-        .signal-monitor {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(5, 5, 16, 0.95);
-            border: 2px solid #ff00ff;
-            padding: 15px;
-            z-index: 100;
-            min-width: 300px;
+        .sub {
+            font-size: 0.8rem;
+            opacity: 0.8;
         }
 
-        .signal-title {
-            color: #ff00ff;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .signal-item {
-            display: flex;
-            justify-content: space-between;
-            margin: 5px 0;
-            font-size: 12px;
-        }
-
-        .signal-label {
-            color: #ff00ff;
-        }
-
-        .signal-value {
-            color: #fff;
-            font-weight: bold;
-        }
-
-        .species-log {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(5, 5, 16, 0.95);
-            border: 2px solid #00ffff;
-            padding: 15px;
-            z-index: 100;
-            max-width: 350px;
-        }
-
-        .species-title {
-            color: #00ffff;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .species-item {
-            color: #66ffff;
-            margin: 5px 0;
-            font-size: 12px;
-        }
-
-        .translation-box {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(5, 5, 16, 0.95);
-            border: 2px solid #ffaa00;
-            padding: 15px;
-            z-index: 100;
-            max-width: 350px;
-        }
-
-        .translation-title {
-            color: #ffaa00;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .translation-text {
-            color: #ffcc66;
-            font-size: 12px;
-            line-height: 1.5;
-            font-style: italic;
-        }
-
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.5;
-            }
+        /* Void vignette */
+        #void {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, transparent 40%, rgba(5, 5, 20, 0.8) 100%);
+            pointer-events: none;
+            z-index: 5;
         }
     </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
 </head>
 
 <body>
-    <canvas id="canvas"></canvas>
-
-    <div class="hub-info">
-        <div class="hub-title">👽 INTERGALACTIC COMMUNICATION HUB</div>
-        <div class="hub-text">
-            <strong>STATION:</strong> Andromeda Relay Alpha<br>
-            <strong>MISSION:</strong> First Contact Protocol<br><br>
-
-            You are the chief communications officer at humanity's first intergalactic
-            relay station. Your role: establish contact with alien civilizations,
-            translate their languages, and facilitate peaceful communication across
-            the cosmos.<br><br>
-
-            <strong>ACTIVE CHANNELS:</strong> 47<br>
-            <strong>SPECIES CONTACTED:</strong> 12<br>
-            <strong>TRANSLATION ACCURACY:</strong> <span class="pulse">94%</span>
-        </div>
+    <div id="void"></div>
+    <div id="relay-hud">
+        <h1>ANDROMEDA RELAY ALPHA</h1>
+        <div class="sub">Deep Space Sector 8 • Neutral Territory</div>
     </div>
-
-    <div class="signal-monitor">
-        <div class="signal-title">📡 SIGNAL ANALYSIS</div>
-        <div class="signal-item">
-            <span class="signal-label">Signal Strength:</span>
-            <span class="signal-value" id="signal">87 dB</span>
-        </div>
-        <div class="signal-item">
-            <span class="signal-label">Frequency:</span>
-            <span class="signal-value" id="frequency">3.14 GHz</span>
-        </div>
-        <div class="signal-item">
-            <span class="signal-label">Origin:</span>
-            <span class="signal-value" id="origin">Zeta Reticuli</span>
-        </div>
-        <div class="signal-item">
-            <span class="signal-label">Distance:</span>
-            <span class="signal-value" id="distance">39.5 LY</span>
-        </div>
-        <div class="signal-item">
-            <span class="signal-label">Encryption:</span>
-            <span class="signal-value" id="encryption">QUANTUM</span>
-        </div>
-    </div>
-
-    <div class="species-log">
-        <div class="species-title">🌌 KNOWN SPECIES</div>
-        <div class="species-item">👽 Zeta Reticulans - Peaceful traders</div>
-        <div class="species-item">🛸 Andromedans - Advanced scientists</div>
-        <div class="species-item">⭐ Pleiadians - Spiritual guides</div>
-        <div class="species-item">🌀 Arcturians - Energy beings</div>
-        <div class="species-item">💫 Sirians - Aquatic civilization</div>
-        <div class="species-item">🔮 Orions - Warrior culture</div>
-    </div>
-
-    <div class="translation-box">
-        <div class="translation-title">🗣️ LATEST TRANSMISSION</div>
-        <div class="translation-text">
-            "Greetings, beings of Sol-3. We come in peace from the Zeta Reticuli system.
-            Your species has reached the threshold of interstellar consciousness.
-            We wish to share knowledge and establish diplomatic relations."
-            <br><br>- Ambassador Xel'nara
-        </div>
-    </div>
-
-    <script type="importmap">
-    { "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-    }}
-    </script>
 
     <script type="module">
-        import { Scene3D } from '../../src/core/Scene3D.js';
+        import * as THREE from 'three';
+        import { SpatialEnvironment } from '../../src/environments/SpatialEnvironment.js';
+        import { SemanticGhost } from '../../src/ai/SemanticGhost.js';
+
+        // Components
         import { AIPortal3D } from '../../src/controls/AIPortal3D.js';
         import { HaloCard3D } from '../../src/controls/HaloCard3D.js';
+        import { MagneticCard3D } from '../../src/controls/MagneticCard3D.js';
         import { Toggle3D } from '../../src/controls/Toggle3D.js';
-        import { Chart3D } from '../../src/controls/Chart3D.js';
-        import * as THREE from 'three';
 
-        const canvas = document.getElementById('canvas');
-        const scene3D = new Scene3D(canvas);
-        const scene = scene3D.getScene();
-        const camera = scene3D.getCamera();
-        const renderer = scene3D.getRenderer();
+        // 1. Setup
+        const env = new SpatialEnvironment(document.body, { cameraPos: [0, 1.8, 5] });
+        env.init();
+        env.scene.background = new THREE.Color(0x050510);
+        env.scene.fog = new THREE.FogExp2(0x050510, 0.05);
 
-        scene.background = new THREE.Color(0x050510);
-        scene.fog = new THREE.Fog(0x050510, 10, 50);
+        // Pulsar Lighting
+        const amb = new THREE.AmbientLight(0x00ff88, 0.3);
+        env.scene.add(amb);
 
-        const greenLight = new THREE.PointLight(0x00ff88, 2, 20);
-        greenLight.position.set(-5, 5, 5);
-        scene.add(greenLight);
+        const beacon = new THREE.PointLight(0xff00ff, 2, 15);
+        beacon.position.set(0, 5, -2);
+        env.scene.add(beacon);
 
-        const purpleLight = new THREE.PointLight(0xff00ff, 2, 20);
-        purpleLight.position.set(5, 5, 5);
-        scene.add(purpleLight);
+        // 2. Xenon AI (Ghost)
+        const ambassador = new SemanticGhost(env.camera, env.scene, env.renderer);
+        env.add(ambassador);
+        env.updatables.push(ambassador);
 
-        camera.position.set(0, 2, 12);
+        setTimeout(() => {
+            ambassador.updatePanelText("DECODING_XENO_LINK...");
+            ambassador.guideTo(portal1.group, "Established Link: Zeta Reticuli");
+        }, 1500);
 
-        // Communication Portals
-        const zetaPortal = new AIPortal3D(scene, camera, [-6, 2, 0], {
-            width: 2.5,
-            height: 3,
-            title: '👽 Zeta Reticuli',
-            mode: 0,
-            renderer: renderer
+
+        // 3. RELAY PORTALS
+
+        const portal1 = new AIPortal3D(env.scene, env.camera, [-3, 1.8, -3], {
+            width: 2.2, height: 3.2, label: "ZETA_LINK", theme: 'cosmic'
         });
+        env.add(portal1.group);
+        env.updatables.push(portal1);
 
-        const andromedaPortal = new AIPortal3D(scene, camera, [-2, 2, 0], {
-            width: 2.5,
-            height: 3,
-            title: '🛸 Andromeda',
-            mode: 0,
-            renderer: renderer
+        const info1 = new HaloCard3D(env.scene, env.camera, [0, 0, 0], {
+            title: "Zeta Reticulans: Friendly", width: 2, height: 0.4,
+            offset: [0, -2, 0], anchorObject: portal1.group, color: 0x00ff88
         });
+        env.add(info1.group);
+        env.updatables.push(info1);
 
-        const pleiadesPortal = new AIPortal3D(scene, camera, [2, 2, 0], {
-            width: 2.5,
-            height: 3,
-            title: '⭐ Pleiades',
-            mode: 0,
-            renderer: renderer
+        const portal2 = new AIPortal3D(env.scene, env.camera, [3, 1.8, -3], {
+            width: 2.2, height: 3.2, label: "ORION_LINK", theme: 'energy'
         });
+        env.add(portal2.group);
+        env.updatables.push(portal2);
 
-        const arcturusPortal = new AIPortal3D(scene, camera, [6, 2, 0], {
-            width: 2.5,
-            height: 3,
-            title: '🌀 Arcturus',
-            mode: 0,
-            renderer: renderer
+        const info2 = new HaloCard3D(env.scene, env.camera, [0, 0, 0], {
+            title: "Orions: Caution Advised", width: 2.5, height: 0.4,
+            offset: [0, -2, 0], anchorObject: portal2.group, color: 0xff00ff
         });
+        env.add(info2.group);
+        env.updatables.push(info2);
 
-        // Species Info Cards
-        const zetaCard = new HaloCard3D(scene, camera, [-6, -1, 0], {
-            width: 2.5,
-            height: 1.5,
-            content: 'Species: Zeta Reticulans<br>Type: Humanoid<br>Tech Level: IX',
-            mode: 0,
-            renderer: renderer
+
+        // 4. CMD CONSOLE
+
+        const transmission = new MagneticCard3D(env.scene, env.camera, [0, 0.8, -1.8], {
+            width: 2, height: 1.2, color: 0x0a0a20,
+            title: "TRANSLATION_FEED", description: "\"Greetings Sol-3. Threshold reached.\""
         });
+        env.add(transmission.group);
+        env.updatables.push(transmission);
 
-        const andromedaCard = new HaloCard3D(scene, camera, [6, -1, 0], {
-            width: 2.5,
-            height: 1.5,
-            content: 'Species: Andromedans<br>Type: Energy Beings<br>Tech Level: XII',
-            mode: 0,
-            renderer: renderer
+        const relayToggle = new Toggle3D(env.scene, env.camera, [0, -0.2, -1.8], {
+            label: "QUANTUM_LINK", width: 2, isOn: true, onColor: 0x00ff88
         });
+        env.add(relayToggle.group);
+        env.updatables.push(relayToggle);
 
-        // Communication Toggles
-        const universalToggle = new Toggle3D(scene, camera, [0, -1, 0], {
-            label: '🌐 UNIVERSAL TRANSLATOR',
-            width: 3,
-            height: 0.8,
-            isOn: true,
-            onColor: 0x00ff88,
-            offColor: 0x666666,
-            mode: 0,
-            renderer: renderer
-        });
 
-        const quantumToggle = new Toggle3D(scene, camera, [0, -2.2, 0], {
-            label: '⚛️ QUANTUM LINK',
-            width: 3,
-            height: 0.8,
-            isOn: true,
-            onColor: 0xff00ff,
-            offColor: 0x666666,
-            mode: 0,
-            renderer: renderer
-        });
+        // 5. START
+        env.start();
 
-        // Signal Frequency Chart
-        const signalChart = new Chart3D(scene, camera, [0, 2, 0], {
-            chartType: 'line',
-            data: {
-                labels: ['0ms', '100ms', '200ms', '300ms', '400ms', '500ms'],
-                datasets: [{
-                    label: 'Signal Amplitude',
-                    data: [45, 67, 52, 78, 65, 72],
-                    borderColor: '#00ff88',
-                    backgroundColor: 'rgba(0, 255, 136, 0.1)',
-                    tension: 0.4
-                }]
-            },
-            width: 4,
-            height: 3,
-            mode: 0,
-            renderer: renderer
-        });
-
-        // Animation loop
-        function animate() {
-            requestAnimationFrame(animate);
-
-            zetaPortal.update();
-            andromedaPortal.update();
-            pleiadesPortal.update();
-            arcturusPortal.update();
-            zetaCard.update();
-            andromedaCard.update();
-            universalToggle.update();
-            quantumToggle.update();
-            signalChart.update();
-
-            greenLight.intensity = 2 + Math.sin(Date.now() * 0.002) * 0.5;
-            purpleLight.intensity = 2 + Math.cos(Date.now() * 0.002) * 0.5;
-
-            scene3D.render();
-        }
-
-        animate();
     </script>
 </body>
 

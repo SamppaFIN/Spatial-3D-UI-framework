@@ -206,4 +206,44 @@ export class VolumetricCard3D extends BaseControl3D {
             }
         }
     }
+
+    get2DContent() {
+        const container = super.get2DContent();
+
+        const preview = document.createElement('div');
+        preview.style.cssText = `
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        `;
+
+        const title = (this.config.title || "");
+        const desc = (this.config.description || "");
+
+        const createField = (label, value, onChange) => {
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'display: flex; flex-direction: column; gap: 5px;';
+            wrap.innerHTML = `<label style="font-size: 0.8em; color: #00d4ff; font-weight: bold;">${label}</label>`;
+            const input = document.createElement('input');
+            input.value = value;
+            input.style.cssText = 'background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 8px; border-radius: 6px;';
+            input.oninput = (e) => onChange(e.target.value);
+            wrap.appendChild(input);
+            return wrap;
+        };
+
+        preview.appendChild(createField('CARD TITLE', title, (v) => {
+            this.config.title = v;
+            this.setTextContent(v, this.config.description || "");
+        }));
+
+        preview.appendChild(createField('CARD DESCRIPTION', desc, (v) => {
+            this.config.description = v;
+            this.setTextContent(this.config.title || "", v);
+        }));
+
+        container.appendChild(preview);
+        return container;
+    }
 }

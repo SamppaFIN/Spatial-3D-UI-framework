@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semantic Ghost: Guide Mode</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Intro Overlay */
+        #intro-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+            transition: opacity 0.5s;
+        }
+
+        #intro-content {
+            text-align: center;
+            color: white;
+            max-width: 600px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #d8b4fe, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p {
+            font-size: 1.2rem;
+            color: #cbd5e1;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        /* Wizard UI Bar */
+        #wizard-ui {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 800px;
+            background: rgba(20, 20, 30, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 20px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transform: translate(-50%, 20px);
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        #wizard-ui.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translate(-50%, 0);
+        }
+
+        #wizard-text {
+            flex: 1;
+            color: #e2e8f0;
+            font-size: 1.1rem;
+            margin-right: 20px;
+        }
+
+        #wizard-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #d8b4fe, #818cf8);
+            margin-right: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            box-shadow: 0 0 15px rgba(216, 180, 254, 0.4);
+        }
+
+        /* Buttons */
+        .btn {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: none;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+
+<body>
+
+    <!-- Intro Screen -->
+    <div id="intro-overlay">
+        <div id="intro-content">
+            <h1>Semantic Ghost Guide</h1>
+            <p>Welcome, User. I am your Semantic Ghost.<br>I can guide you through this spatial environment and explain
+                the interactive elements.</p>
+            <button class="btn" onclick="window.startTour()">Start Guided Tour</button>
+        </div>
+    </div>
+
+    <!-- Wizard Interface -->
+    <div id="wizard-ui">
+        <div id="wizard-avatar">👻</div>
+        <div id="wizard-text">Initializing parameters...</div>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-secondary" onclick="window.stopTour()">Exit</button>
+            <button class="btn" onclick="window.nextStep()">Next &rarr;</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { SpatialEnvironment } from '../../src/environments/SpatialEnvironment.js';
+        import { SemanticGhost } from '../../src/ai/SemanticGhost.js';
+
+        // Components
+        import { MagneticCard3D } from '../../src/controls/MagneticCard3D.js';
+        import { Slider3D } from '../../src/controls/Slider3D.js';
+        import { Button3D } from '../../src/controls/Button3D.js';
+
+        // --- Logic ---
+        const env = new SpatialEnvironment();
+        env.init();
+        env.scene.background = new THREE.Color(0x050510);
+
+        // Add some ambiance
+        const distFog = new THREE.FogExp2(0x050510, 0.05);
+        env.scene.fog = distFog;
+
+        // Ghost
+        const ghost = new SemanticGhost(env.camera, env.scene, env.renderer);
+        env.add(ghost);
+        env.updatables.push(ghost);
+
+        // --- Hidden Object to Reveal ---
+        const objGeo = new THREE.IcosahedronGeometry(0.5, 1);
+        const objMat = new THREE.MeshNormalMaterial({ wireframe: true });
+        const hiddenObj = new THREE.Mesh(objGeo, objMat);
+        hiddenObj.position.set(2.5, 2.5, -3);
+        hiddenObj.visible = false;
+        env.scene.add(hiddenObj);
+
+        // Rotate loop
+        const rotateObj = {
+            update: (d, t) => {
+                hiddenObj.rotation.y += d;
+                hiddenObj.rotation.x += d * 0.5;
+            }
+        };
+        env.updatables.push(rotateObj);
+
+
+        // Scene Objects
+        const objects = [];
+
+        // 1. Card (Holographic Node)
+        const card = new MagneticCard3D(env.scene, env.camera, [-2.5, 1.2, -3], {
+            width: 2, height: 1.4, color: 0x101020, // Darker base
+            cornerRadius: 0.1
+        });
+        card.group.userData.helpText = "Step 2: Magnetic Storage";
+
+        // --- Holographic Content ---
+        const holoCanvas = document.createElement('canvas');
+        holoCanvas.width = 256;
+        holoCanvas.height = 256;
+        const holoCtx = holoCanvas.getContext('2d');
+        const holoTex = new THREE.CanvasTexture(holoCanvas);
+
+        // Matrix Rain / Data Stream
+        const columns = Array(20).fill(0);
+        const drawHolo = () => {
+            holoCtx.fillStyle = 'rgba(0, 0, 0, 0.1)'; // Fade effect
+            holoCtx.fillRect(0, 0, 256, 256);
+            holoCtx.fillStyle = '#00ffcc';
+            holoCtx.font = '15px monospace';
+
+            columns.forEach((y, i) => {
+                const text = String.fromCharCode(0x30A0 + Math.random() * 96);
+                const x = i * 14;
+                holoCtx.fillText(text, x, y);
+                if (y > 256 + Math.random() * 10000) columns[i] = 0;
+                else columns[i] = y + 14;
+            });
+            holoTex.needsUpdate = true;
+        };
+
+        const holoMat = new THREE.MeshBasicMaterial({
+            map: holoTex, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending
+        });
+        const holoGeo = new THREE.PlaneGeometry(1.8, 1.2);
+        const holoMesh = new THREE.Mesh(holoGeo, holoMat);
+        holoMesh.position.z = 0.05; // Lift off card
+        card.addContent(holoMesh);
+
+        // Add 3D Object inside
+        const globeGeo = new THREE.IcosahedronGeometry(0.4, 1);
+        const globeMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, wireframe: true, transparent: true, opacity: 0.3 });
+        const globe = new THREE.Mesh(globeGeo, globeMat);
+        globe.position.set(0.6, 0, 0.2);
+        card.addContent(globe);
+
+        // Animation Loop Registration
+        env.updatables.push({
+            update: (d, t) => {
+                drawHolo();
+                globe.rotation.y += d * 0.5;
+                globe.rotation.x += d * 0.2;
+            }
+        });
+
+        env.add(card.group);
+        env.updatables.push(card);
+        objects.push(card);
+
+        // 2. Button (Now Interactive!)
+        const btn = new Button3D(env.scene, env.camera, [2.5, 1.2, -3], {
+            width: 0.8, label: "Reveal", color: 0x4444ff,
+            onClick: () => {
+                console.log("Button Clicked!");
+                hiddenObj.visible = !hiddenObj.visible;
+                // Feedback
+                if (hiddenObj.visible) {
+                    btn.set('label', 'Hide');
+                    ghost.updatePanelText("OBJECT DETECTED");
+                } else {
+                    btn.set('label', 'Reveal');
+                    ghost.updatePanelText("OBJECT CLEARED");
+                }
+            }
+        });
+        btn.group.userData.helpText = "Step 3: Activation";
+        env.add(btn.group);
+        env.updatables.push(btn);
+        objects.push(btn);
+
+        // 3. Slider (Now Interactive!)
+        const slider = new Slider3D(env.scene, env.camera, [0, 1.2, -3], {
+            width: 2.2, label: "Scale Factor", color: 0x44ff44,
+            min: 0, max: 1, value: 0.5,
+            onChange: (control, val) => {
+                // Map 0-1 to 0.5-2.0
+                const scale = 0.5 + (val * 1.5);
+                hiddenObj.scale.setScalar(scale);
+            }
+        });
+
+        slider.group.userData.helpText = "Step 4: Flux Control";
+        env.add(slider.group);
+        env.updatables.push(slider);
+        objects.push(slider);
+
+
+        // Start Loop
+        env.start();
+
+
+        // --- Tour Logic ---
+        let stepIndex = -1;
+        const tourSteps = [
+            {
+                target: null, // Self / Shoulder Mode
+                text: "Greetings! I am your **Semantic Ghost**. I exist to bridge the gap between you and this digital realm."
+            },
+            {
+                target: card.group,
+                text: "Step 1: **Magnetic Hologram**. This card processes live data. Observe the **Matrix stream** and floating artifact."
+            },
+            {
+                target: btn.group,
+                text: "Step 2: **Interactive Button**. Please click the button to **Reveal** the hidden artifact."
+            },
+            {
+                target: slider.group,
+                text: "Step 3: **Spatial Slider**. Use the slider to **Resize** the floating artifact."
+            }
+        ];
+
+        const ui = document.getElementById('wizard-ui');
+        const uiText = document.getElementById('wizard-text');
+        const intro = document.getElementById('intro-overlay');
+
+        // Functions exposed to window
+        window.startTour = () => {
+            intro.style.opacity = 0;
+            setTimeout(() => {
+                intro.style.display = 'none';
+                ui.classList.add('active');
+                window.nextStep();
+            }, 500);
+        };
+
+        window.nextStep = () => {
+            stepIndex++;
+            if (stepIndex >= tourSteps.length) {
+                uiText.innerHTML = "Tour complete! You effectively utilized the Spatial UI controls.";
+                ghost.stopGuiding();
+                setTimeout(() => {
+                    // Reset for loop?
+                    stepIndex = -1;
+                    uiText.innerHTML = "Click Next to restart tour.";
+                }, 4000);
+                return;
+            }
+
+            const step = tourSteps[stepIndex];
+
+            // UI Update
+            const formatted = step.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            uiText.innerHTML = formatted;
+
+            // Ghost Action
+            if (step.target) {
+                ghost.guideTo(step.target, "ANALYZING...");
+                // Light Camera Zoom
+                if (env.controls && env.controls.focusOn) {
+                    env.controls.focusOn(step.target);
+                }
+            } else {
+                // Self Mode
+                ghost.stopGuiding(); // Return to shoulder
+                ghost.updatePanelText("SYSTEM ONLINE");
+                // Reset Camera (Optional, maybe specific LookAt?)
+            }
+        };
+
+        window.stopTour = () => {
+            location.reload(); // Simple reset
+        };
+
+    </script>
+</body>
+
+</html>

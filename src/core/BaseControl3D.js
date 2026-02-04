@@ -59,7 +59,7 @@ export class BaseControl3D {
 
         // Double-click detection
         this.lastClickTime = 0;
-        this.doubleClickDelay = 300; // milliseconds
+        this.doubleClickDelay = 500; // Increased to 500ms for better reliability
         this.onDoubleClickCallback = config.onDoubleClick || null;
 
         // Tooltip and label configuration
@@ -88,8 +88,10 @@ export class BaseControl3D {
 
         // Setup tooltip and label overlays
         this.setupTooltipAndLabel();
-        // Setup tooltip and label overlays
-        this.setupTooltipAndLabel();
+    }
+
+    update() {
+        this.updateVisualState();
     }
 
     // --- 1. Standard Data Interface ---
@@ -98,12 +100,15 @@ export class BaseControl3D {
      * Set a property and trigger updates.
      * @param {string} key - Property name
      * @param {any} value - New value
+     * @param {Object} options - { silent: boolean }
      */
-    set(key, value) {
+    set(key, value, options = {}) {
         if (this.state[key] === value) return; // No change
 
         const oldValue = this.state[key];
         this.state[key] = value;
+
+        if (options.silent) return;
 
         // Notify internal handler
         this.onStateChange(key, value, oldValue);
@@ -127,7 +132,27 @@ export class BaseControl3D {
      * Virtual method: Handle state changes. Override in subclasses.
      */
     onStateChange(key, value, oldValue) {
-        // e.g. if (key === 'width') resizeMesh();
+        if (key === 'label' || key === 'content') {
+            if (this.labelConfig) {
+                this.labelConfig.content = value;
+                const htmlOverlay = getHTMLOverlay();
+                htmlOverlay.updateContent(this.labelOverlayId, MarkdownRenderer.render(value));
+            }
+        }
+
+        if (key === 'labelConfig') {
+            this.labelConfig = value;
+            const htmlOverlay = getHTMLOverlay();
+            htmlOverlay.removeOverlay(this.labelOverlayId);
+            this.createLabel();
+        }
+
+        if (key === 'tooltipConfig') {
+            this.tooltipConfig = value;
+            const htmlOverlay = getHTMLOverlay();
+            htmlOverlay.removeOverlay(this.tooltipOverlayId);
+            this.createTooltip();
+        }
     }
 
 
@@ -188,15 +213,27 @@ export class BaseControl3D {
     }
 
     setupEventListeners() {
-        // Mouse events
-        window.addEventListener('mousemove', (e) => this.onMouseMove(e));
-        window.addEventListener('click', (e) => this.onMouseClick(e));
-        window.addEventListener('mousedown', (e) => this.onMouseDown(e));
-        window.addEventListener('mouseup', (e) => this.onMouseUp(e));
+        // Store bound handlers for proper removal
+        this._onMouseMove = this.onMouseMove.bind(this);
+        this._onMouseClick = this.onMouseClick.bind(this);
+        this._onMouseDown = this.onMouseDown.bind(this);
+        this._onMouseUp = this.onMouseUp.bind(this);
+        this._onTouchStart = this.onTouchStart.bind(this);
+        this._onTouchEnd = this.onTouchEnd.bind(this);
 
-        // Touch events for mobile
-        window.addEventListener('touchstart', (e) => this.onTouchStart(e));
-        window.addEventListener('touchend', (e) => this.onTouchEnd(e));
+        // Mouse move for hover effects
+        window.addEventListener('mousemove', this._onMouseMove);
+
+        // Click for selection and interactions
+        window.addEventListener('click', this._onMouseClick);
+
+        // Standard mouse events
+        window.addEventListener('mousedown', this._onMouseDown);
+        window.addEventListener('mouseup', this._onMouseUp);
+
+        // Touch events
+        window.addEventListener('touchstart', this._onTouchStart);
+        window.addEventListener('touchend', this._onTouchEnd);
     }
 
     getMousePosition(event, canvas) {
@@ -260,7 +297,7 @@ export class BaseControl3D {
                     clearTimeout(this.clickTimeout);
                     this.clickTimeout = null;
                 }
-                this.handleDoubleClick();
+                this.handleDoubleClick(intersect);
                 this.lastClickTime = 0; // Reset to prevent triple-click
             } else {
                 // Schedule single click with delay to allow double-click detection
@@ -269,23 +306,27 @@ export class BaseControl3D {
                     clearTimeout(this.clickTimeout);
                 }
                 this.clickTimeout = setTimeout(() => {
-                    this.handleClick();
+                    this.handleClick(intersect);
                     this.clickTimeout = null;
                 }, this.doubleClickDelay);
             }
         }
     }
 
-    handleDoubleClick() {
-        this.emit('dblclick', { type: 'dblclick' });
-        this.onDoubleClick();
+    handleDoubleClick(intersect) {
+        this.emit('dblclick', { type: 'dblclick', intersect });
+        this.onDoubleClick(intersect);
     }
 
-    onDoubleClick() {
-        // Default: Focus camera on double-click
+    onDoubleClick(intersect) {
+        // Default: Focus camera and open 2D overlay
         if (this.scene && this.camera) {
             this.focusCamera();
+            this.open2DOverlay();
         }
+    }
+    handleClick(intersect) {
+        this.emit('click', { type: 'click', intersect });
     }
 
     /**
@@ -297,22 +338,27 @@ export class BaseControl3D {
         // Create container
         const container = document.createElement('div');
         container.className = 'spatial-2d-overlay';
-        container.style.position = 'fixed';
-        container.style.top = '50%';
-        container.style.left = '50%';
-        container.style.transform = 'translate(-50%, -50%)';
-        container.style.backgroundColor = 'rgba(10, 10, 26, 0.95)';
-        container.style.border = '2px solid #4ecdc4';
-        container.style.borderRadius = '12px';
-        container.style.padding = '20px';
-        container.style.zIndex = '1000';
-        container.style.boxShadow = '0 0 30px rgba(78, 205, 196, 0.3)';
-        container.style.minWidth = '300px';
-        container.style.maxWidth = '80vw';
-        container.style.maxHeight = '80vh';
-        container.style.overflow = 'auto';
-        container.style.fontFamily = "'Inter', sans-serif";
-        container.style.color = 'white';
+        container.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(10, 10, 26, 0.98);
+            border: 2px solid #00d4ff;
+            border-radius: 16px;
+            padding: 30px;
+            z-index: 1000;
+            box-shadow: 0 0 50px rgba(0, 212, 255, 0.2), inset 0 0 20px rgba(0, 212, 255, 0.1);
+            width: 90%;
+            max-width: 600px;
+            max-height: 85vh;
+            overflow-y: auto;
+            font-family: 'Inter', sans-serif;
+            color: white;
+            scrollbar-width: thin;
+            scrollbar-color: #00d4ff rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        `;
 
         // Add close button
         const closeBtn = document.createElement('button');
@@ -378,18 +424,131 @@ export class BaseControl3D {
     }
 
     get2DContent() {
-        // Default content: JSON Inspector
-        return `
-            <h2 style="color: #4ecdc4; margin-bottom: 15px; font-size: 1.2em; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-                ${this.constructor.name}
-            </h2>
-            <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 6px; font-family: monospace; font-size: 0.9em; max-height: 300px; overflow: auto;">
-                <pre style="margin: 0;">${JSON.stringify(this.state, null, 2)}</pre>
-            </div>
-            <div style="margin-top: 15px; font-size: 0.8em; color: #888;">
-                Override <code>get2DContent()</code> in your class to customize this view.
-            </div>
+        const container = document.createElement('div');
+        container.style.cssText = `
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            font-family: 'Inter', sans-serif;
+            color: white;
         `;
+
+        // Title Area
+        const header = document.createElement('div');
+        header.style.cssText = `
+            border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        `;
+        header.innerHTML = `
+            <h2 style="margin:0; color:#00d4ff; font-size: 1.4em; display:flex; align-items:center; gap:10px;">
+                <span>🧊</span> ${this.constructor.name}
+            </h2>
+            <small style="color:rgba(255,255,255,0.5)">ID: ${this.controlId}</small>
+        `;
+        container.appendChild(header);
+
+        // Properties Grid
+        const grid = document.createElement('div');
+        grid.style.cssText = `
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 12px;
+            align-items: center;
+        `;
+
+        const addRow = (label, element) => {
+            const lbl = document.createElement('label');
+            lbl.innerText = label;
+            lbl.style.cssText = 'font-size: 0.85em; color: rgba(255,255,255,0.7); font-weight: 500;';
+            grid.appendChild(lbl);
+            grid.appendChild(element);
+        };
+
+        const createInput = (value, onChange) => {
+            const input = document.createElement('input');
+            input.value = value;
+            input.style.cssText = `
+                background: rgba(0,0,0,0.4);
+                border: 1px solid rgba(255,255,255,0.1);
+                color: white;
+                padding: 6px 10px;
+                border-radius: 6px;
+                font-size: 0.9em;
+                outline: none;
+                width: 100%;
+                box-sizing: border-box;
+            `;
+            input.onchange = (e) => onChange(e.target.value);
+            input.onfocus = () => input.style.border = '1px solid #00d4ff';
+            input.onblur = () => input.style.border = '1px solid rgba(255,255,255,0.1)';
+            return input;
+        };
+
+        // Basic Info
+        addRow('Label/Name', createInput(this.state.label || this.state.title || 'unnamed', (val) => {
+            this.set('label', val);
+            if (this.setLabel) this.setLabel(val);
+        }));
+
+        addRow('Scale', createInput(this.group.scale.x, (val) => {
+            const s = parseFloat(val);
+            if (!isNaN(s)) this.group.scale.set(s, s, s);
+        }));
+
+        // Status Indicators
+        const statusRow = document.createElement('div');
+        statusRow.style.cssText = 'grid-column: span 2; display: flex; gap: 10px; margin-top: 10px;';
+
+        const createBadge = (text, active) => {
+            const badge = document.createElement('span');
+            badge.innerText = text;
+            badge.style.cssText = `
+                font-size: 0.7em;
+                padding: 4px 8px;
+                border-radius: 4px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                background: ${active ? 'rgba(78, 205, 196, 0.2)' : 'rgba(255,255,255,0.05)'};
+                color: ${active ? '#4ecdc4' : '#666'};
+                border: 1px solid ${active ? '#4ecdc4' : 'transparent'};
+            `;
+            return badge;
+        };
+
+        statusRow.appendChild(createBadge('Interactive', this.isEnabled));
+        statusRow.appendChild(createBadge('Visible', this.state.visible));
+        statusRow.appendChild(createBadge('3D Primed', true));
+
+        grid.appendChild(statusRow);
+        container.appendChild(grid);
+
+        // Footer Actions
+        const footer = document.createElement('div');
+        footer.style.cssText = 'margin-top: 20px; display: flex; gap: 10px;';
+
+        const btn = document.createElement('button');
+        btn.innerText = 'Reset Transform';
+        btn.style.cssText = `
+            flex: 1;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8em;
+        `;
+        btn.onclick = () => {
+            this.group.position.set(...this.position);
+            this.group.rotation.set(0, 0, 0);
+            this.group.scale.set(1, 1, 1);
+        };
+        footer.appendChild(btn);
+
+        container.appendChild(footer);
+
+        return container;
     }
 
     /**
@@ -787,32 +946,6 @@ export class BaseControl3D {
         }
     }
 
-    dispose() {
-        // Remove from scene
-        if (this.group.parent) {
-            this.scene.remove(this.group);
-        }
-
-        // Dispose geometries and materials
-        this.group.traverse((child) => {
-            if (child instanceof THREE.Mesh) {
-                child.geometry?.dispose();
-                if (Array.isArray(child.material)) {
-                    child.material.forEach(mat => mat.dispose());
-                } else {
-                    child.material?.dispose();
-                }
-            }
-        });
-
-        // Remove event listeners
-        window.removeEventListener('mousemove', this.onMouseMove);
-        window.removeEventListener('click', this.onMouseClick);
-        window.removeEventListener('mousedown', this.onMouseDown);
-        window.removeEventListener('mouseup', this.onMouseUp);
-        window.removeEventListener('touchstart', this.onTouchStart);
-        window.removeEventListener('touchend', this.onTouchEnd);
-    }
 
     getGroup() {
         return this.group;
@@ -964,11 +1097,11 @@ export class BaseControl3D {
         }
 
         // Remove event listeners
-        window.removeEventListener('mousemove', this.onMouseMove);
-        window.removeEventListener('click', this.onMouseClick);
-        window.removeEventListener('mousedown', this.onMouseDown);
-        window.removeEventListener('mouseup', this.onMouseUp);
-        window.removeEventListener('touchstart', this.onTouchStart);
-        window.removeEventListener('touchend', this.onTouchEnd);
+        window.removeEventListener('mousemove', this._onMouseMove);
+        window.removeEventListener('click', this._onMouseClick);
+        window.removeEventListener('mousedown', this._onMouseDown);
+        window.removeEventListener('mouseup', this._onMouseUp);
+        window.removeEventListener('touchstart', this._onTouchStart);
+        window.removeEventListener('touchend', this._onTouchEnd);
     }
 }

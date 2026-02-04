@@ -22,7 +22,12 @@ export class HTMLOverlay {
 
         // Create CSS3DRenderer
         this.renderer = new CSS3DRenderer();
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
+
+        // Match container size if possible
+        const width = container ? container.clientWidth : window.innerWidth;
+        const height = container ? container.clientHeight : window.innerHeight;
+
+        this.renderer.setSize(width, height);
         this.renderer.domElement.style.position = 'absolute';
         this.renderer.domElement.style.top = '0';
         this.renderer.domElement.style.left = '0';
@@ -31,6 +36,10 @@ export class HTMLOverlay {
 
         // Append to container
         if (container) {
+            // Ensure container is relative for absolute child
+            if (getComputedStyle(container).position === 'static') {
+                container.style.position = 'relative';
+            }
             container.appendChild(this.renderer.domElement);
         } else {
             document.body.appendChild(this.renderer.domElement);

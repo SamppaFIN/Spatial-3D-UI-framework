@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gömböc - Spatial UI 3D</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystem Font, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f0a1a 0%, #1a1a2e 50%, #0f0a1a 100%);
+            color: #ffffff;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        #ui-overlay {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .info-panel {
+            background: rgba(15, 15, 25, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 400px;
+            pointer-events: all;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #aaa;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+        }
+
+        .value-display {
+            font-size: 13px;
+            color: #ffd700;
+            font-weight: 600;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            background: rgba(255, 215, 0, 0.1);
+            color: #ffd700;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .btn:hover {
+            background: rgba(255, 215, 0, 0.2);
+            border-color: rgba(255, 215, 0, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn.active {
+            background: rgba(255, 215, 0, 0.3);
+            border-color: #ffd700;
+            color: #fff;
+        }
+
+        .btn-action {
+            grid-column: span 2;
+            background: rgba(255, 215, 0, 0.2);
+            border: 2px solid #ffd700;
+            color: #ffd700;
+            font-weight: 700;
+            font-size: 14px;
+            padding: 14px;
+        }
+
+        .btn-action:hover {
+            background: rgba(255, 215, 0, 0.3);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+        }
+
+        .color-picker-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        input[type="color"] {
+            width: 60px;
+            height: 36px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 8px;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border-radius: 6px;
+            border: none;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #ffd700;
+        }
+
+        .info-box {
+            margin-top: 20px;
+            padding: 16px;
+            background: rgba(255, 215, 0, 0.1);
+            border-left: 3px solid #ffd700;
+            border-radius: 8px;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .info-box strong {
+            color: #ffd700;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 1000;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 215, 0, 0.2);
+            border-top-color: #ffd700;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+
+<body>
+    <div id="loading">
+        <div class="spinner"></div>
+        <p style="margin-top: 16px; color: #ffd700;">Loading Gömböc...</p>
+    </div>
+
+    <div id="ui-overlay">
+        <div class="info-panel">
+            <h1>🥚 Gömböc</h1>
+            <p class="subtitle">
+                The world's first self-righting mono-monostatic body! Discovered in 2006 - only ONE stable and ONE
+                unstable equilibrium point.
+            </p>
+
+            <div class="control-group">
+                <button class="btn btn-action" id="selfRightBtn">🎯 Trigger Self-Righting!</button>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">Radius</label>
+                <div class="slider-container">
+                    <input type="range" id="radiusSlider" min="0.5" max="2.5" step="0.1" value="1.0">
+                    <span class="value-display" id="radiusValue">1.0</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">Beta (Shape Parameter)</label>
+                <div class="slider-container">
+                    <input type="range" id="betaSlider" min="0" max="0.15" step="0.01" value="0.12">
+                    <span class="value-display" id="betaValue">0.12</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">Segments (Quality)</label>
+                <div class="slider-container">
+                    <input type="range" id="segmentsSlider" min="16" max="128" step="4" value="64">
+                    <span class="value-display" id="segmentsValue">64</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">Rotation Speed</label>
+                <div class="slider-container">
+                    <input type="range" id="speedSlider" min="0" max="0.02" step="0.001" value="0.003">
+                    <span class="value-display" id="speedValue">0.003</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">Color</label>
+                <div class="color-picker-container">
+                    <input type="color" id="colorPicker" value="#ffd700">
+                    <span class="value-display" id="colorValue">#ffd700</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">Material Type</label>
+                <div class="button-group">
+                    <button class="btn" data-material="standard">Standard</button>
+                    <button class="btn active" data-material="metal">Metal</button>
+                    <button class="btn" data-material="glass">Glass</button>
+                    <button class="btn" data-material="neon">Neon</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">Options</label>
+                <div class="checkbox-container">
+                    <input type="checkbox" id="wireframeCheck">
+                    <label for="wireframeCheck">Show Wireframe</label>
+                </div>
+                <div class="checkbox-container" style="margin-top: 8px;">
+                    <input type="checkbox" id="equilibriumCheck">
+                    <label for="equilibriumCheck">Show Equilibrium Points</label>
+                </div>
+                <div class="checkbox-container" style="margin-top: 8px;">
+                    <input type="checkbox" id="autoRotateCheck" checked>
+                    <label for="autoRotateCheck">Auto Rotate</label>
+                </div>
+                <div class="checkbox-container" style="margin-top: 8px;">
+                    <input type="checkbox" id="selfRightingCheck" checked>
+                    <label for="selfRightingCheck">Self-Righting Mode</label>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <strong>🔬 Discovery</strong>
+                Created by Hungarian mathematicians Gábor Domokos and Péter Várkonyi in 2006. Uses Sloan's analytic
+                equation for precise geometry: r⁴ = 1 + 4β·sin(φ)·cos(θ - 5φ)
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // Inline BaseControl3D (simplified)
+        class BaseControl3D {
+            constructor(scene, camera, position, config) {
+                this.scene = scene;
+                this.camera = camera;
+                this.config = config || {};
+                this.group = new THREE.Group();
+                this.group.position.set(position[0], position[1], position[2]);
+                this.isHovered = false;
+            }
+            set(key, value) { this.config[key] = value; this.onStateChange(key, value); }
+            get(key) { return this.config[key]; }
+            onStateChange(key, value, oldValue) { }
+            handleClick(intersect) { }
+            onHoverChange(isHovered) { this.isHovered = isHovered; }
+            update() { }
+        }
+
+        // Inline Gomboc3D (full implementation from component file)
+        class Gomboc3D extends BaseControl3D {
+            constructor(scene, camera, position = [0, 0, 0], config = {}) {
+                super(scene, camera, position, {
+                    ...config,
+                    radius: config.radius || 1.0,
+                    beta: config.beta || 0.12,
+                    segments: config.segments || 64,
+                    color: config.color || 0xffd700,
+                    materialType: config.materialType || 'metal',
+                    autoRotate: config.autoRotate !== false,
+                    rotationSpeed: config.rotationSpeed || 0.003,
+                    wireframe: config.wireframe || false,
+                    showEquilibrium: config.showEquilibrium || false,
+                    selfRighting: config.selfRighting || false,
+                    onClick: config.onClick || null
+                });
+
+                this.radius = this.get('radius');
+                this.beta = this.get('beta');
+                this.segments = this.get('segments');
+                this.autoRotate = this.get('autoRotate');
+                this.rotationSpeed = this.get('rotationSpeed');
+                this.wireframe = this.get('wireframe');
+                this.showEquilibrium = this.get('showEquilibrium');
+                this.selfRighting = this.get('selfRighting');
+
+                this.rotationAngle = 0;
+                this.currentScale = 1.0;
+                this.scaleVelocity = 0;
+
+                this.rightingAngle = 0;
+                this.rightingVelocity = 0;
+                this.isRighting = false;
+
+                this.create();
+            }
+
+            create() {
+                while (this.group.children.length > 0) {
+                    const child = this.group.children[0];
+                    this.group.remove(child);
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) {
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach(m => m.dispose());
+                        } else {
+                            child.material.dispose();
+                        }
+                    }
+                }
+
+                const geometry = this.createGombocGeometry();
+                const material = this.createMaterial();
+
+                this.mesh = new THREE.Mesh(geometry, material);
+                this.mesh.castShadow = true;
+                this.mesh.receiveShadow = true;
+                this.mesh.userData.isInteractive = true;
+                this.mesh.userData.control = this;
+
+                this.group.add(this.mesh);
+
+                if (this.wireframe) {
+                    this.createWireframe(geometry);
+                }
+
+                if (this.showEquilibrium) {
+                    this.createEquilibriumMarkers();
+                }
+
+                this.createGlow();
+            }
+
+            createGombocGeometry() {
+                const vertices = [];
+                const indices = [];
+                const normals = [];
+                const uvs = [];
+
+                const beta = this.beta;
+                const baseRadius = this.radius;
+                const segments = this.segments;
+
+                for (let i = 0; i <= segments; i++) {
+                    const phi = (i / segments) * Math.PI;
+                    const sinPhi = Math.sin(phi);
+                    const cosPhi = Math.cos(phi);
+
+                    for (let j = 0; j <= segments; j++) {
+                        const theta = (j / segments) * Math.PI * 2;
+
+                        const rPow4 = 1 + 4 * beta * Math.sin(phi) * Math.cos(theta - 5 * phi);
+                        const r = baseRadius * Math.pow(Math.max(0.1, rPow4), 0.25);
+
+                        const x = r * sinPhi * Math.cos(theta);
+                        const y = r * cosPhi;
+                        const z = r * sinPhi * Math.sin(theta);
+
+                        vertices.push(x, y, z);
+
+                        const length = Math.sqrt(x * x + y * y + z * z);
+                        normals.push(x / length, y / length, z / length);
+
+                        uvs.push(j / segments, i / segments);
+                    }
+                }
+
+                for (let i = 0; i < segments; i++) {
+                    for (let j = 0; j < segments; j++) {
+                        const a = i * (segments + 1) + j;
+                        const b = a + segments + 1;
+
+                        indices.push(a, b, a + 1);
+                        indices.push(b, b + 1, a + 1);
+                    }
+                }
+
+                const geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+                geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+                geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+                geometry.setIndex(indices);
+                geometry.computeVertexNormals();
+
+                return geometry;
+            }
+
+            createMaterial() {
+                const color = this.get('color');
+                const materialType = this.get('materialType');
+
+                switch (materialType) {
+                    case 'glass':
+                        return new THREE.MeshPhysicalMaterial({
+                            color, metalness: 0.0, roughness: 0.1, transparent: true,
+                            opacity: 0.7, transmission: 0.9, thickness: 0.5, clearcoat: 1.0, clearcoatRoughness: 0.1
+                        });
+                    case 'metal':
+                        return new THREE.MeshStandardMaterial({
+                            color, metalness: 0.95, roughness: 0.15, emissive: color, emissiveIntensity: 0.15
+                        });
+                    case 'neon':
+                        return new THREE.MeshStandardMaterial({
+                            color, metalness: 0.3, roughness: 0.4, emissive: color,
+                            emissiveIntensity: 0.8, transparent: true, opacity: 0.9
+                        });
+                    default:
+                        return new THREE.MeshStandardMaterial({ color, metalness: 0.5, roughness: 0.5 });
+                }
+            }
+
+            createWireframe(geometry) {
+                if (this.wireframeMesh) {
+                    this.group.remove(this.wireframeMesh);
+                    this.wireframeMesh.geometry.dispose();
+                    this.wireframeMesh.material.dispose();
+                }
+
+                const wireframeGeo = new THREE.WireframeGeometry(geometry);
+                const wireframeMat = new THREE.LineBasicMaterial({
+                    color: 0xffffff, transparent: true, opacity: 0.3, linewidth: 1
+                });
+
+                this.wireframeMesh = new THREE.LineSegments(wireframeGeo, wireframeMat);
+                this.group.add(this.wireframeMesh);
+            }
+
+            createEquilibriumMarkers() {
+                if (this.equilibriumMarkers) {
+                    this.equilibriumMarkers.forEach(marker => {
+                        this.group.remove(marker);
+                        if (marker.geometry) marker.geometry.dispose();
+                        if (marker.material) marker.material.dispose();
+                    });
+                }
+
+                this.equilibriumMarkers = [];
+
+                const stableMarker = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.05, 16, 16),
+                    new THREE.MeshBasicMaterial({ color: 0x00ff00 })
+                );
+                stableMarker.position.set(0, -this.radius * 1.1, 0);
+                this.equilibriumMarkers.push(stableMarker);
+                this.group.add(stableMarker);
+
+                const unstableMarker = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.05, 16, 16),
+                    new THREE.MeshBasicMaterial({ color: 0xff0000 })
+                );
+                unstableMarker.position.set(0, this.radius * 1.1, 0);
+                this.equilibriumMarkers.push(unstableMarker);
+                this.group.add(unstableMarker);
+            }
+
+            createGlow() {
+                const glowGeometry = this.createGombocGeometry();
+                glowGeometry.scale(1.05, 1.05, 1.05);
+
+                const glowMaterial = new THREE.MeshBasicMaterial({
+                    color: this.get('color'), transparent: true, opacity: 0.15, side: THREE.BackSide
+                });
+
+                this.glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
+                this.glowMesh.visible = false;
+                this.group.add(this.glowMesh);
+            }
+
+            toggleWireframe() {
+                this.wireframe = !this.wireframe;
+                this.set('wireframe', this.wireframe);
+
+                if (this.wireframe && !this.wireframeMesh) {
+                    this.createWireframe(this.mesh.geometry);
+                } else if (this.wireframeMesh) {
+                    this.wireframeMesh.visible = this.wireframe;
+                }
+            }
+
+            triggerSelfRighting() {
+                if (!this.isRighting) {
+                    this.isRighting = true;
+                    this.rightingAngle = Math.random() * Math.PI * 2;
+                }
+            }
+
+            handleClick(intersect) {
+                super.handleClick(intersect);
+
+                if (this.selfRighting) {
+                    this.triggerSelfRighting();
+                } else {
+                    this.toggleWireframe();
+                }
+
+                const onClick = this.get('onClick');
+                if (onClick && typeof onClick === 'function') {
+                    onClick(this);
+                }
+            }
+
+            onHoverChange(isHovered) {
+                super.onHoverChange(isHovered);
+                if (this.glowMesh) {
+                    this.glowMesh.visible = isHovered;
+                }
+                this.scaleVelocity = isHovered ? 0.05 : -0.05;
+            }
+
+            update() {
+                if (this.autoRotate && !this.isRighting) {
+                    this.rotationAngle += this.rotationSpeed;
+                    this.group.rotation.y = this.rotationAngle;
+                }
+
+                if (this.isRighting) {
+                    const targetAngle = 0;
+                    const angleDiff = targetAngle - this.rightingAngle;
+
+                    const springForce = angleDiff * 0.05;
+                    const damping = -this.rightingVelocity * 0.1;
+                    this.rightingVelocity += springForce + damping;
+                    this.rightingAngle += this.rightingVelocity;
+
+                    this.group.rotation.x = Math.sin(this.rightingAngle) * 0.5;
+                    this.group.rotation.z = Math.cos(this.rightingAngle) * 0.5;
+
+                    if (Math.abs(angleDiff) < 0.01 && Math.abs(this.rightingVelocity) < 0.01) {
+                        this.isRighting = false;
+                        this.group.rotation.x = 0;
+                        this.group.rotation.z = 0;
+                        this.rightingAngle = 0;
+                        this.rightingVelocity = 0;
+                    }
+                }
+
+                const targetScale = this.isHovered ? 1.1 : 1.0;
+                const scaleDiff = targetScale - this.currentScale;
+                this.scaleVelocity += scaleDiff * 0.1;
+                this.scaleVelocity *= 0.8;
+                this.currentScale += this.scaleVelocity;
+                this.group.scale.setScalar(this.currentScale);
+
+                super.update();
+            }
+
+            onStateChange(key, value, oldValue) {
+                const criticalKeys = ['radius', 'beta', 'segments', 'color', 'materialType', 'wireframe', 'showEquilibrium'];
+                if (criticalKeys.includes(key)) {
+                    this.create();
+                }
+
+                if (key === 'autoRotate') this.autoRotate = value;
+                if (key === 'rotationSpeed') this.rotationSpeed = value;
+                if (key === 'selfRighting') this.selfRighting = value;
+                if (key === 'beta') this.beta = value;
+
+                super.onStateChange(key, value, oldValue);
+            }
+        }
+
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0f0a1a);
+        scene.fog = new THREE.Fog(0x0f0a1a, 10, 50);
+
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(3, 2, 4);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.body.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 2;
+        controls.maxDistance = 20;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambientLight);
+
+        const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        mainLight.position.set(5, 5, 5);
+        mainLight.castShadow = true;
+        scene.add(mainLight);
+
+        const fillLight = new THREE.DirectionalLight(0xffd700, 0.3);
+        fillLight.position.set(-5, 3, -5);
+        scene.add(fillLight);
+
+        const rimLight = new THREE.DirectionalLight(0xffed4e, 0.5);
+        rimLight.position.set(0, -5, 5);
+        scene.add(rimLight);
+
+        // Create Gömböc
+        let gomboc = new Gomboc3D(scene, camera, [0, 0, 0], {
+            radius: 1.0,
+            beta: 0.12,
+            segments: 64,
+            color: 0xffd700,
+            materialType: 'metal',
+            autoRotate: true,
+            rotationSpeed: 0.003,
+            showEquilibrium: false,
+            wireframe: false,
+            selfRighting: true,
+            onClick: (ctrl) => console.log('Gömböc clicked!', ctrl)
+        });
+
+        scene.add(gomboc.group);
+
+        // Ground
+        const groundGeometry = new THREE.PlaneGeometry(50, 50);
+        const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x0a0a0f, roughness: 0.8, metalness: 0.2 });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -1.5;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        const gridHelper = new THREE.GridHelper(20, 20, 0xffd700, 0x1a1a2e);
+        gridHelper.position.y = -1.49;
+        scene.add(gridHelper);
+
+        // Raycaster
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(gomboc.mesh, true);
+
+            gomboc.onHoverChange(intersects.length > 0);
+        }
+
+        function onMouseClick(event) {
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(gomboc.mesh, true);
+            if (intersects.length > 0) {
+                gomboc.handleClick(intersects[0]);
+            }
+        }
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('click', onMouseClick);
+
+        // UI Controls
+        const radiusSlider = document.getElementById('radiusSlider');
+        const radiusValue = document.getElementById('radiusValue');
+        const betaSlider = document.getElementById('betaSlider');
+        const betaValue = document.getElementById('betaValue');
+        const segmentsSlider = document.getElementById('segmentsSlider');
+        const segmentsValue = document.getElementById('segmentsValue');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
+        const colorPicker = document.getElementById('colorPicker');
+        const colorValue = document.getElementById('colorValue');
+        const wireframeCheck = document.getElementById('wireframeCheck');
+        const equilibriumCheck = document.getElementById('equilibriumCheck');
+        const autoRotateCheck = document.getElementById('autoRotateCheck');
+        const selfRightingCheck = document.getElementById('selfRightingCheck');
+        const selfRightBtn = document.getElementById('selfRightBtn');
+        const materialButtons = document.querySelectorAll('.btn[data-material]');
+
+        radiusSlider.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            radiusValue.textContent = value.toFixed(1);
+            gomboc.set('radius', value);
+        });
+
+        betaSlider.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            betaValue.textContent = value.toFixed(2);
+            gomboc.set('beta', value);
+        });
+
+        segmentsSlider.addEventListener('input', (e) => {
+            const value = parseInt(e.target.value);
+            segmentsValue.textContent = value;
+            gomboc.set('segments', value);
+        });
+
+        speedSlider.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            speedValue.textContent = value.toFixed(3);
+            gomboc.set('rotationSpeed', value);
+        });
+
+        colorPicker.addEventListener('input', (e) => {
+            const color = e.target.value;
+            colorValue.textContent = color;
+            const hexColor = parseInt(color.replace('#', '0x'));
+            gomboc.set('color', hexColor);
+        });
+
+        wireframeCheck.addEventListener('change', (e) => {
+            gomboc.set('wireframe', e.target.checked);
+        });
+
+        equilibriumCheck.addEventListener('change', (e) => {
+            gomboc.set('showEquilibrium', e.target.checked);
+        });
+
+        autoRotateCheck.addEventListener('change', (e) => {
+            gomboc.set('autoRotate', e.target.checked);
+        });
+
+        selfRightingCheck.addEventListener('change', (e) => {
+            gomboc.set('selfRighting', e.target.checked);
+        });
+
+        selfRightBtn.addEventListener('click', () => {
+            gomboc.triggerSelfRighting();
+        });
+
+        materialButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                materialButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                gomboc.set('materialType', btn.dataset.material);
+            });
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            gomboc.update();
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        window.addEventListener('resize', onWindowResize);
+
+        document.getElementById('loading').style.display = 'none';
+        animate();
+    </script>
+</body>
+
+</html>

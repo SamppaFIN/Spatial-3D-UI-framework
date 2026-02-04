@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometric Paradoxes - A Journey</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background: #000;
+            font-family: 'Outfit', sans-serif;
+            color: #fff;
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #ui-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 4rem;
+            background: radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.8) 100%);
+        }
+
+        .story-container {
+            max-width: 600px;
+            pointer-events: auto;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .story-container.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 4rem;
+            line-height: 1.1;
+            margin-bottom: 2rem;
+            background: linear-gradient(135deg, #fff 0%, #aaa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .chapter-title {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: #ff6b9d;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .chapter-title::before {
+            content: '';
+            width: 40px;
+            height: 1px;
+            background: #ff6b9d;
+        }
+
+        p {
+            font-size: 1.25rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 2rem;
+            font-weight: 300;
+        }
+
+        .nav-controls {
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-end;
+            pointer-events: auto;
+        }
+
+        .btn-next {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 1.5rem 3rem;
+            border-radius: 50px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .btn-next:hover {
+            background: #fff;
+            color: #000;
+            padding-right: 4rem;
+        }
+
+        .btn-next::after {
+            content: '→';
+            font-size: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .btn-next:hover::after {
+            transform: translateX(10px);
+        }
+
+        .progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background: #ff6b9d;
+            width: 0%;
+            transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 100;
+            box-shadow: 0 0 20px #ff6b9d;
+        }
+
+        /* Ambient particles */
+        .particle {
+            position: absolute;
+            background: #fff;
+            border-radius: 50%;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        #loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            transition: opacity 1s ease;
+        }
+
+        .loader-text {
+            color: #ff6b9d;
+            letter-spacing: 5px;
+            margin-top: 1rem;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+
+<body>
+
+    <div id="loading">
+        <svg width="50" height="50" viewBox="0 0 50 50">
+            <circle cx="25" cy="25" r="20" fill="none" stroke="#ff6b9d" stroke-width="2">
+                <animate attributeName="stroke-dasharray" from="0 150" to="150 150" dur="2s" repeatCount="indefinite" />
+            </circle>
+        </svg>
+        <span class="loader-text">Loading Gallery</span>
+    </div>
+
+    <div class="progress-bar" id="progress"></div>
+
+    <div id="canvas-container"></div>
+
+    <div id="ui-layer">
+        <div class="story-container" id="story-box">
+            <div class="chapter-title" id="chapter-num">Chapter I</div>
+            <h1 id="chapter-title">The Paradox of Motion</h1>
+            <p id="chapter-text">
+                Welcome to the gallery of impossible shapes. Where wheels aren't round, and balance is inevitable. Let
+                us begin our journey.
+            </p>
+        </div>
+
+        <div class="nav-controls">
+            <button class="btn-next" id="btn-next">Begin Journey</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // Import our geometric stars
+        // We assume main.js exports them, or we import directly from files if easier here
+        // Since we are in showcase/demos, we go up to find src
+
+        // We'll define simple inline versions or try to import if the server allows relative imports from src
+        // Let's try importing from the relative path assuming standard structure
+        import { Sphericon3D } from '../../src/controls/Sphericon3D.js';
+        import { ReuleauxTriangle3D } from '../../src/controls/ReuleauxTriangle3D.js';
+        import { Gomboc3D } from '../../src/controls/Gomboc3D.js';
+        import { MeissnerBody3D } from '../../src/controls/MeissnerBody3D.js';
+
+        // Configuration
+        const CHAPTERS = [
+            {
+                id: 'intro',
+                title: "Geometric Paradoxes",
+                subtitle: "Exhibition",
+                text: "Mathematics is the art of giving the same name to different things. In this gallery, we explore shapes that challenge our intuition about rolling, width, and balance.",
+                camPos: { x: 0, y: 5, z: 15 },
+                lookAt: { x: 0, y: 0, z: 0 },
+                activeObj: null
+            },
+            {
+                id: 'sphericon',
+                title: "The Sphericon",
+                subtitle: "Chapter I",
+                text: "A continuous surface with only one side and two edges. When rolled, it wobbles in a unique serpentine path, yet its center of mass stays at a constant height.",
+                camPos: { x: -5, y: 3, z: 8 },
+                lookAt: { x: -10, y: 0, z: 0 },
+                activeObj: 'sphericon'
+            },
+            {
+                id: 'reuleaux',
+                title: "Reuleaux Triangle",
+                subtitle: "Chapter II",
+                text: "A shape of constant width, yet not a circle. It can roll smoothly between two parallel lines, making it perfect for square-hole drills and rotary engines.",
+                camPos: { x: 0, y: 4, z: 10 },
+                lookAt: { x: 0, y: 0, z: 0 },
+                activeObj: 'reuleaux'
+            },
+            {
+                id: 'gomboc',
+                title: "The Gömböc",
+                subtitle: "Chapter III",
+                text: "The first known homogeneous object with exactly one stable and one unstable equilibrium point. No matter how you place it, it will always right itself.",
+                camPos: { x: 5, y: 3, z: 8 },
+                lookAt: { x: 10, y: 0, z: 0 },
+                activeObj: 'gomboc'
+            },
+            {
+                id: 'meissner',
+                title: "Meissner Body",
+                subtitle: "Chapter IV",
+                text: "The three-dimensional evolution of the Reuleaux triangle. A solid of constant width made by smoothing the edges of a tetrahedron. A true geometric jewel.",
+                camPos: { x: 0, y: 6, z: 5 },
+                lookAt: { x: 0, y: 15, z: -10 }, // Look up at it high in the "sky"
+                activeObj: 'meissner'
+            }
+        ];
+
+        let currentChapter = 0;
+        let isTransitioning = false;
+
+        // Scene Setup
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x050510, 0.02);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0x222233, 2);
+        scene.add(ambientLight);
+
+        const spotlights = [];
+
+        function createSpotlight(x, y, z, color, target) {
+            const spot = new THREE.SpotLight(color, 20);
+            spot.position.set(x, y, z);
+            spot.angle = Math.PI / 6;
+            spot.penumbra = 0.5;
+            spot.decay = 1;
+            spot.distance = 50;
+            spot.castShadow = true;
+            if (target) spot.target = target;
+            scene.add(spot);
+            return spot;
+        }
+
+        // Actors (The Geometric Shapes)
+        const objects = {};
+
+        // 1. Sphericon (Left Stage)
+        const sphericonGroup = new THREE.Group();
+        sphericonGroup.position.set(-10, 0, 0);
+        const sphericon = new Sphericon3D(scene, camera, [0, 0, 0], {
+            radius: 1.5,
+            color: 0x00ffff,
+            wireframe: true,
+            autoRotate: true
+        });
+        sphericonGroup.add(sphericon.group);
+        // Important: detach from original parent if it auto-adds, but BaseControl3D usually keeps it in its own group
+        // We manually place the group
+        scene.add(sphericonGroup);
+        objects.sphericon = sphericon;
+
+        // 2. Reuleaux (Center Stage)
+        const reuleauxGroup = new THREE.Group();
+        reuleauxGroup.position.set(0, 0, 0);
+        const reuleaux = new ReuleauxTriangle3D(scene, camera, [0, 0, 0], {
+            radius: 1.5,
+            color: 0xff00ff,
+            materialType: 'glass',
+            showWidth: true,
+            autoRotate: true
+        });
+        reuleauxGroup.add(reuleaux.group);
+        scene.add(reuleauxGroup);
+        objects.reuleaux = reuleaux;
+
+        // 3. Gomboc (Right Stage)
+        const gombocGroup = new THREE.Group();
+        gombocGroup.position.set(10, 0, 0);
+        const gomboc = new Gomboc3D(scene, camera, [0, 0, 0], {
+            radius: 1.5,
+            color: 0xffd700,
+            materialType: 'metal',
+            autoRotate: false // We will trigger manual wobble
+        });
+        gombocGroup.add(gomboc.group);
+        scene.add(gombocGroup);
+        objects.gomboc = gomboc;
+
+        // 4. Meissner (Sky Stage)
+        const meissnerGroup = new THREE.Group();
+        meissnerGroup.position.set(0, 15, -10);
+        const meissner = new MeissnerBody3D(scene, camera, [0, 0, 0], {
+            radius: 2,
+            color: 0xff6b9d,
+            type: 'vertex',
+            materialType: 'neon',
+            showConstantWidth: true,
+            autoRotate: true
+        });
+        meissnerGroup.add(meissner.group);
+        scene.add(meissnerGroup);
+        objects.meissner = meissner;
+
+        // Floor
+        const floorGeo = new THREE.PlaneGeometry(100, 100);
+        const floorMat = new THREE.MeshStandardMaterial({
+            color: 0x050510,
+            roughness: 0.1,
+            metalness: 0.8
+        });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        // Dynamic Lighting
+        const spot1 = createSpotlight(-10, 10, 5, 0x00ffff, sphericonGroup);
+        const spot2 = createSpotlight(0, 10, 5, 0xff00ff, reuleauxGroup);
+        const spot3 = createSpotlight(10, 10, 5, 0xffd700, gombocGroup);
+        const spot4 = createSpotlight(0, 25, 0, 0xff6b9d, meissnerGroup);
+
+        scene.add(spot1.target);
+        scene.add(spot2.target);
+        scene.add(spot3.target);
+        scene.add(spot4.target);
+
+        // Initial Camera
+        camera.position.set(0, 5, 15);
+        camera.lookAt(0, 0, 0);
+
+        // Animation Vars
+        const clock = new THREE.Clock();
+
+        // Navigation Logic
+        function updateUI(index) {
+            const chap = CHAPTERS[index];
+            const box = document.getElementById('story-box');
+
+            // Fade out
+            box.classList.remove('visible');
+
+            setTimeout(() => {
+                document.getElementById('chapter-num').textContent = chap.subtitle;
+                document.getElementById('chapter-title').textContent = chap.title;
+                document.getElementById('chapter-text').textContent = chap.text;
+
+                const btn = document.getElementById('btn-next');
+                if (index === CHAPTERS.length - 1) {
+                    btn.textContent = "Replay Journey";
+                } else {
+                    btn.textContent = "Next Exhibition";
+                }
+
+                // Update Progress
+                const pct = ((index + 1) / CHAPTERS.length) * 100;
+                document.getElementById('progress').style.width = pct + '%';
+
+                // Fade in
+                box.classList.add('visible');
+            }, 600);
+        }
+
+        function triggerObjectAction(id) {
+            // Reset all
+            if (objects.gomboc) objects.gomboc.isRighting = false;
+
+            if (id === 'gomboc') {
+                // Trigger self-righting
+                setTimeout(() => {
+                    if (objects.gomboc) {
+                        objects.gomboc.group.rotation.x = Math.PI / 2 + 0.5; // Tip it over
+                        objects.gomboc.triggerSelfRighting();
+                    }
+                }, 1000);
+            }
+        }
+
+        // Simple Camera Tween (Lerp)
+        let targetCamPos = new THREE.Vector3().copy(CHAPTERS[0].camPos);
+        let targetLookAt = new THREE.Vector3().copy(CHAPTERS[0].lookAt);
+        let currentLookAt = new THREE.Vector3().copy(CHAPTERS[0].lookAt);
+
+        function goToChapter(index) {
+            isTransitioning = true;
+            const chap = CHAPTERS[index];
+
+            targetCamPos.set(chap.camPos.x, chap.camPos.y, chap.camPos.z);
+            targetLookAt.set(chap.lookAt.x, chap.lookAt.y, chap.lookAt.z);
+
+            updateUI(index);
+            triggerObjectAction(chap.activeObj);
+
+            // Highlight lights
+            spot1.intensity = chap.activeObj === 'sphericon' ? 200 : 20;
+            spot2.intensity = chap.activeObj === 'reuleaux' ? 200 : 20;
+            spot3.intensity = chap.activeObj === 'gomboc' ? 200 : 20;
+            spot4.intensity = chap.activeObj === 'meissner' ? 300 : 20;
+
+            if (index === 0) {
+                spot1.intensity = 100;
+                spot2.intensity = 100;
+                spot3.intensity = 100;
+                spot4.intensity = 100;
+            }
+        }
+
+        document.getElementById('btn-next').addEventListener('click', () => {
+            currentChapter = (currentChapter + 1) % CHAPTERS.length;
+            goToChapter(currentChapter);
+        });
+
+        // Initialize
+        updateUI(0);
+        document.getElementById('loading').style.opacity = 0;
+        setTimeout(() => document.getElementById('loading').style.display = 'none', 1000);
+
+
+        // Render Loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+
+            // Camera smoothing
+            camera.position.lerp(targetCamPos, 0.03);
+            currentLookAt.lerp(targetLookAt, 0.03);
+            camera.lookAt(currentLookAt);
+
+            // Update components
+            Object.values(objects).forEach(obj => {
+                if (obj && obj.update) obj.update();
+            });
+
+            // Specific animations
+            sphericonGroup.rotation.y += 0.005;
+            reuleauxGroup.rotation.y -= 0.005;
+            if (currentChapter !== 3) {
+                // Gentle rotation for gomboc when not active
+                gombocGroup.rotation.y += 0.002;
+            }
+            meissnerGroup.rotation.x += 0.005;
+            meissnerGroup.rotation.z += 0.005;
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+
+</html>

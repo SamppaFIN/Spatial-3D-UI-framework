@@ -4,455 +4,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Magic Spell Workshop - Spatial UI 3D Demo</title>
+    <title>Merlin's Workshop: Arcane Interface</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
+            margin: 0;
+            overflow: hidden;
+            background: #0a0515;
             font-family: 'Georgia', serif;
-            background: #1a0a2e;
-            color: #d4a5ff;
-            overflow: hidden;
         }
 
-        #canvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-        }
-
-        .workshop-info {
-            position: fixed;
+        #magic-hud {
+            position: absolute;
             top: 20px;
             left: 20px;
-            background: rgba(26, 10, 46, 0.95);
-            border: 3px solid #d4a5ff;
-            padding: 25px;
-            max-width: 420px;
-            z-index: 100;
-            box-shadow: 0 0 30px rgba(212, 165, 255, 0.6);
-            border-radius: 10px;
-        }
-
-        .workshop-title {
-            font-size: 22px;
-            font-weight: bold;
-            margin-bottom: 12px;
-            color: #ffd700;
-            text-shadow: 0 0 15px #ffd700;
-        }
-
-        .workshop-text {
-            color: #d4a5ff;
-            line-height: 1.8;
-            font-size: 14px;
-        }
-
-        .spell-book {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(26, 10, 46, 0.95);
-            border: 3px solid #ff69b4;
-            padding: 20px;
-            z-index: 100;
-            min-width: 320px;
-            border-radius: 10px;
-        }
-
-        .book-title {
-            color: #ffd700;
-            font-weight: bold;
-            margin-bottom: 15px;
-            font-size: 18px;
-            text-align: center;
-        }
-
-        .spell-item {
-            margin: 12px 0;
-            padding: 12px;
-            background: rgba(255, 105, 180, 0.2);
-            border-left: 4px solid #d4a5ff;
-            border-radius: 5px;
-        }
-
-        .spell-name {
-            color: #ffd700;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .spell-desc {
-            color: #d4a5ff;
-            font-size: 12px;
-            line-height: 1.4;
-        }
-
-        .mana-meter {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(26, 10, 46, 0.95);
-            border: 3px solid #00ffff;
-            padding: 15px;
-            z-index: 100;
-            min-width: 250px;
-            border-radius: 10px;
-        }
-
-        .mana-title {
-            color: #00ffff;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .mana-bar {
-            width: 100%;
-            height: 20px;
-            background: rgba(0, 255, 255, 0.2);
-            border-radius: 10px;
-            overflow: hidden;
-            margin: 5px 0;
-        }
-
-        .mana-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #00ffff, #d4a5ff);
-            width: 85%;
-            transition: width 0.3s;
-            box-shadow: 0 0 10px #00ffff;
-        }
-
-        .mana-text {
-            color: #00ffff;
-            font-size: 12px;
-            text-align: center;
-            margin-top: 5px;
-        }
-
-        .wizard-note {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(26, 10, 46, 0.95);
-            border: 3px solid #ffd700;
-            padding: 15px;
-            max-width: 350px;
-            z-index: 100;
-            border-radius: 10px;
-        }
-
-        .note-title {
-            color: #ffd700;
-            font-weight: bold;
-            margin-bottom: 10px;
-            font-style: italic;
-        }
-
-        .note-text {
-            color: #d4a5ff;
-            font-size: 13px;
-            line-height: 1.6;
-            font-style: italic;
-        }
-
-        .sparkle {
-            position: fixed;
-            width: 4px;
-            height: 4px;
-            background: #ffd700;
-            border-radius: 50%;
             pointer-events: none;
-            animation: sparkle 2s infinite;
-            box-shadow: 0 0 10px #ffd700;
+            color: #d4a5ff;
+            text-shadow: 0 0 12px rgba(212, 165, 255, 0.7);
         }
 
-        @keyframes sparkle {
+        h1 {
+            margin: 0;
+            font-size: 1.6rem;
+            letter-spacing: 3px;
+        }
 
-            0%,
-            100% {
-                opacity: 0;
-                transform: scale(0);
-            }
+        .sub {
+            font-size: 0.8rem;
+            font-style: italic;
+            opacity: 0.8;
+        }
 
-            50% {
-                opacity: 1;
-                transform: scale(1);
-            }
+        /* Aetheric fog */
+        #aether {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, transparent 30%, rgba(20, 0, 40, 0.8) 100%);
+            pointer-events: none;
+            z-index: 5;
         }
     </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
 </head>
 
 <body>
-    <canvas id="canvas"></canvas>
-
-    <!-- Sparkles -->
-    <div class="sparkle" style="left: 15%; top: 20%; animation-delay: 0s;"></div>
-    <div class="sparkle" style="left: 35%; top: 40%; animation-delay: 0.5s;"></div>
-    <div class="sparkle" style="left: 65%; top: 30%; animation-delay: 1s;"></div>
-    <div class="sparkle" style="left: 85%; top: 50%; animation-delay: 1.5s;"></div>
-    <div class="sparkle" style="left: 50%; top: 70%; animation-delay: 0.7s;"></div>
-
-    <!-- Workshop Info -->
-    <div class="workshop-info">
-        <div class="workshop-title">✨ MERLIN'S SPELL WORKSHOP</div>
-        <div class="workshop-text">
-            <strong>Welcome, Apprentice Mage!</strong><br><br>
-
-            You have entered the sacred workshop of Merlin the Wise. Here, ancient
-            spells are crafted, mystical energies are channeled, and the fabric of
-            reality bends to the will of those who master the arcane arts.<br><br>
-
-            <strong>YOUR QUEST:</strong><br>
-            Learn to craft powerful spells by combining elemental essences.
-            Channel your mana wisely, for each spell requires great concentration
-            and magical energy.
-        </div>
+    <div id="aether"></div>
+    <div id="magic-hud">
+        <h1>THE ARCANE WORKSHOP</h1>
+        <div class="sub">Level 7 Mana Chamber • Sanctum Active</div>
     </div>
-
-    <!-- Spell Book -->
-    <div class="spell-book">
-        <div class="book-title">📖 GRIMOIRE OF SPELLS</div>
-        <div class="spell-item">
-            <div class="spell-name">🔥 Fireball</div>
-            <div class="spell-desc">Conjure a sphere of flame (Cost: 30 Mana)</div>
-        </div>
-        <div class="spell-item">
-            <div class="spell-name">❄️ Ice Shield</div>
-            <div class="spell-desc">Create a protective barrier (Cost: 25 Mana)</div>
-        </div>
-        <div class="spell-item">
-            <div class="spell-name">⚡ Lightning Bolt</div>
-            <div class="spell-desc">Strike with electric fury (Cost: 40 Mana)</div>
-        </div>
-        <div class="spell-item">
-            <div class="spell-name">🌿 Nature's Blessing</div>
-            <div class="spell-desc">Heal and restore (Cost: 20 Mana)</div>
-        </div>
-        <div class="spell-item">
-            <div class="spell-name">🌀 Teleport</div>
-            <div class="spell-desc">Traverse dimensions (Cost: 50 Mana)</div>
-        </div>
-    </div>
-
-    <!-- Mana Meter -->
-    <div class="mana-meter">
-        <div class="mana-title">💎 MANA RESERVES</div>
-        <div class="mana-bar">
-            <div class="mana-fill" id="mana-fill"></div>
-        </div>
-        <div class="mana-text" id="mana-text">85 / 100 Mana</div>
-        <div style="color: #d4a5ff; font-size: 11px; margin-top: 10px;">
-            ✨ Regeneration: +5 per second<br>
-            🔮 Spell Power: High<br>
-            ⭐ Mastery Level: Adept
-        </div>
-    </div>
-
-    <!-- Wizard Note -->
-    <div class="wizard-note">
-        <div class="note-title">🧙 Merlin's Wisdom</div>
-        <div class="note-text">
-            "Magic is not merely the manipulation of energy, young apprentice.
-            It is the art of understanding the hidden connections between all things.
-            Master the elements, and you master reality itself."
-            <br><br>- Merlin the Wise
-        </div>
-    </div>
-
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-        }
-    }
-    </script>
 
     <script type="module">
-        import { Scene3D } from '../../src/core/Scene3D.js';
-        import { RadialMenu3D } from '../../src/controls/RadialMenu3D.js';
-        import { MagneticCard3D } from '../../src/controls/MagneticCard3D.js';
-        import { PortalCard3D } from '../../src/controls/PortalCard3D.js';
-        import { Toggle3D } from '../../src/controls/Toggle3D.js';
         import * as THREE from 'three';
+        import { SpatialEnvironment } from '../../src/environments/SpatialEnvironment.js';
+        import { SemanticGhost } from '../../src/ai/SemanticGhost.js';
 
-        const canvas = document.getElementById('canvas');
-        const scene3D = new Scene3D(canvas);
-        const scene = scene3D.getScene();
-        const camera = scene3D.getCamera();
-        const renderer = scene3D.getRenderer();
+        // Components
+        import { VolumetricCard3D } from '../../src/controls/VolumetricCard3D.js';
+        import { MagneticCard3D } from '../../src/controls/MagneticCard3D.js';
+        import { RadialMenu3D } from '../../src/controls/RadialMenu3D.js';
+        import { AIPortal3D } from '../../src/controls/AIPortal3D.js';
+        import { Toggle3D } from '../../src/controls/Toggle3D.js';
 
-        // Magical environment
-        scene.background = new THREE.Color(0x1a0a2e);
-        scene.fog = new THREE.Fog(0x1a0a2e, 10, 40);
+        // 1. Setup
+        const env = new SpatialEnvironment(document.body, { cameraPos: [0, 1.8, 5] });
+        env.init();
+        env.scene.background = new THREE.Color(0x0a0515);
+        env.scene.fog = new THREE.FogExp2(0x0a0515, 0.06);
 
-        // Magical lighting
-        const purpleLight = new THREE.PointLight(0xd4a5ff, 2, 20);
-        purpleLight.position.set(-5, 5, 5);
-        scene.add(purpleLight);
+        // Mystical Lights
+        const amb = new THREE.AmbientLight(0xd4a5ff, 0.3);
+        env.scene.add(amb);
 
-        const goldLight = new THREE.PointLight(0xffd700, 2, 20);
-        goldLight.position.set(5, 5, 5);
-        scene.add(goldLight);
+        const crystalLight = new THREE.PointLight(0x00ffff, 2, 10);
+        crystalLight.position.set(0, 4, -2);
+        env.scene.add(crystalLight);
 
-        const cyanLight = new THREE.PointLight(0x00ffff, 1.5, 15);
-        cyanLight.position.set(0, 7, 0);
-        scene.add(cyanLight);
+        // 2. AI Familiar (Ghost)
+        const familiar = new SemanticGhost(env.camera, env.scene, env.renderer);
+        env.add(familiar);
+        env.updatables.push(familiar);
 
-        camera.position.set(0, 3, 14);
+        setTimeout(() => {
+            familiar.updatePanelText("RECEPTACLE READY: CHOOSE ELEMENT");
+            familiar.guideTo(elementalMenu.group, "Select Arcane Path");
+        }, 1500);
 
-        // Spell Selection Radial Menu
-        const spellMenu = new RadialMenu3D(scene, camera, [0, 4, 0], {
+
+        // 3. ARCANE TOOLS
+
+        // Elemental Menu
+        const elementalMenu = new RadialMenu3D(env.scene, env.camera, [0, 1.5, -2], {
             items: [
-                { label: '🔥 Fire', icon: '🔥' },
-                { label: '❄️ Ice', icon: '❄️' },
-                { label: '⚡ Lightning', icon: '⚡' },
-                { label: '🌿 Nature', icon: '🌿' },
-                { label: '🌀 Arcane', icon: '🌀' },
-                { label: '✨ Light', icon: '✨' }
+                { label: "Fire", icon: "🔥" },
+                { label: "Ice", icon: "❄️" },
+                { label: "Aether", icon: "🌀" }
             ],
-            radius: 2.5,
-            holeRadius: 0.7,
-            mode: 0,
-            renderer: renderer,
-            onSelect: (menu, index, item) => {
-                console.log(`Selected element: ${item.label}`);
-                castSpell(item.label);
+            onSelect: (m, idx, item) => {
+                familiar.updatePanelText(`CHANNELING: ${item.label.toUpperCase()}`);
+                if (item.label === "Fire") portal.setTheme('fire');
+                if (item.label === "Ice") portal.setTheme('ice');
+                if (item.label === "Aether") portal.setTheme('cyber'); // Use cyber for aether look
             }
         });
+        env.add(elementalMenu.group);
+        env.updatables.push(elementalMenu);
 
-        // Elemental Essence Cards
-        const fireCard = new MagneticCard3D(scene, camera, [-6, 1, 0], {
-            width: 2.5,
-            height: 3.5,
-            title: '🔥 Fire Essence',
-            content: 'Power of Flame',
-            mode: 0,
-            renderer: renderer
+        // Dimensional Portal
+        const portal = new AIPortal3D(env.scene, env.camera, [3.5, 1.8, -3], {
+            width: 2.5, height: 3.5, label: "CONJURE REACH", theme: 'cosmic'
         });
+        env.add(portal.group);
+        env.updatables.push(portal);
 
-        const iceCard = new MagneticCard3D(scene, camera, [-2, 1, 0], {
-            width: 2.5,
-            height: 3.5,
-            title: '❄️ Ice Essence',
-            content: 'Frozen Magic',
-            mode: 0,
-            renderer: renderer
+        // Grimoire Log
+        const grimoire = new MagneticCard3D(env.scene, env.camera, [-3.5, 1.8, -3], {
+            width: 2.2, height: 3.2, color: 0x1a0a2e,
+            title: "THE GRIMOIRE", description: "Incantations logged. Mana flowing."
         });
+        env.add(grimoire.group);
+        env.updatables.push(grimoire);
 
-        const lightningCard = new MagneticCard3D(scene, camera, [2, 1, 0], {
-            width: 2.5,
-            height: 3.5,
-            title: '⚡ Lightning Essence',
-            content: 'Electric Fury',
-            mode: 0,
-            renderer: renderer
+
+        // 4. ESSENCE DISPLAYS
+        const essence1 = new VolumetricCard3D(env.scene, env.camera, [-1.5, 0.5, -1], {
+            width: 1, height: 1, baseColor: 0xff4400, title: "SOL", popHeight: 0.5
         });
+        env.add(essence1.group);
+        env.updatables.push(essence1);
 
-        const natureCard = new MagneticCard3D(scene, camera, [6, 1, 0], {
-            width: 2.5,
-            height: 3.5,
-            title: '🌿 Nature Essence',
-            content: 'Life Force',
-            mode: 0,
-            renderer: renderer
+        const essence2 = new VolumetricCard3D(env.scene, env.camera, [1.5, 0.5, -1], {
+            width: 1, height: 1, baseColor: 0x00ccff, title: "LUNA", popHeight: 0.5
         });
+        env.add(essence2.group);
+        env.updatables.push(essence2);
 
-        // Dimensional Portals
-        const firePortal = new PortalCard3D(scene, camera, [-6, -2, 0], {
-            width: 2,
-            height: 2,
-            title: '🔥 Fire Realm',
-            mode: 0,
-            renderer: renderer
-        });
 
-        const icePortal = new PortalCard3D(scene, camera, [6, -2, 0], {
-            width: 2,
-            height: 2,
-            title: '❄️ Ice Realm',
-            mode: 0,
-            renderer: renderer
-        });
+        // 5. START
+        env.start();
 
-        // Spell Toggles
-        const autocastToggle = new Toggle3D(scene, camera, [0, -2, 0], {
-            label: '✨ AUTO-CAST',
-            width: 2.5,
-            height: 0.8,
-            isOn: false,
-            onColor: 0xffd700,
-            offColor: 0x666666,
-            mode: 0,
-            renderer: renderer,
-            onClick: (toggle) => {
-                console.log(`Auto-cast: ${toggle.isOn ? 'ON' : 'OFF'}`);
-            }
-        });
-
-        // Spell casting function
-        let currentMana = 85;
-        function castSpell(spellName) {
-            const costs = {
-                '🔥 Fire': 30,
-                '❄️ Ice': 25,
-                '⚡ Lightning': 40,
-                '🌿 Nature': 20,
-                '🌀 Arcane': 50,
-                '✨ Light': 35
-            };
-
-            const cost = costs[spellName] || 20;
-            if (currentMana >= cost) {
-                currentMana -= cost;
-                updateMana();
-                console.log(`Cast ${spellName}! Mana: ${currentMana}`);
-            }
-        }
-
-        function updateMana() {
-            const fill = document.getElementById('mana-fill');
-            const text = document.getElementById('mana-text');
-            fill.style.width = currentMana + '%';
-            text.textContent = `${currentMana} / 100 Mana`;
-        }
-
-        // Mana regeneration
-        setInterval(() => {
-            if (currentMana < 100) {
-                currentMana = Math.min(100, currentMana + 5);
-                updateMana();
-            }
-        }, 1000);
-
-        // Animation loop
-        function animate() {
-            requestAnimationFrame(animate);
-
-            spellMenu.update();
-            fireCard.update();
-            iceCard.update();
-            lightningCard.update();
-            natureCard.update();
-            firePortal.update();
-            icePortal.update();
-            autocastToggle.update();
-
-            // Animate magical lights
-            purpleLight.intensity = 2 + Math.sin(Date.now() * 0.002) * 0.5;
-            goldLight.intensity = 2 + Math.cos(Date.now() * 0.002) * 0.5;
-            purpleLight.position.x = -5 + Math.sin(Date.now() * 0.001) * 2;
-            goldLight.position.x = 5 + Math.cos(Date.now() * 0.001) * 2;
-
-            scene3D.render();
-        }
-
-        animate();
     </script>
 </body>
 

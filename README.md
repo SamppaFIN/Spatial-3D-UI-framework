@@ -8,13 +8,13 @@
 
 ## 🚀 Overview
 
-Spatial UI 3D is a comprehensive framework for building stunning 3D user interfaces in the browser. With **25 interactive components**, smooth animations, and a focus on spatial design, it enables developers to create immersive experiences that go beyond traditional 2D interfaces.
+Spatial UI 3D is a comprehensive framework for building stunning 3D user interfaces in the browser. With **26 interactive components**, smooth animations, and a focus on spatial design, it enables developers to create immersive experiences that go beyond traditional 2D interfaces.
 
 **[🎮 Live Demo](https://samppafin.github.io/Spatial-3D-UI-framework/showcase/)** | **[📚 Documentation](https://samppafin.github.io/Spatial-3D-UI-framework/showcase/docs/)** | **[🎯 Component Playground](https://samppafin.github.io/Spatial-3D-UI-framework/showcase/demos/component-playground.html)**
 
 ## ✨ Features
 
-- 🎨 **25 Interactive 3D Components** - From basic buttons to advanced data visualizations
+- 🎨 **26 Interactive 3D Components** - From basic buttons to advanced geometric sculptures
 - 🌊 **Smooth Animations** - Fluid transitions and responsive interactions
 - 🎭 **10+ Narrative Demos** - Immersive themed experiences showcasing real-world applications
 - 📊 **Data Visualization** - 3D charts, graphs, and volumetric displays
@@ -48,12 +48,13 @@ Spatial UI 3D is a comprehensive framework for building stunning 3D user interfa
 - `NetworkGraph3D` - 3D network visualizations
 - `HoloMap3D` - Holographic map displays
 
-### 🎯 Advanced Interactions (5)
+### 🎯 Advanced Interactions (6)
 - `EchoInteraction3D` - Echo-based interactions
 - `HapticHorizon3D` - Haptic feedback simulation
 - `KineticSculpture3D` - Animated kinetic sculptures
 - `IKManipulator3D` - Inverse kinematics manipulation
 - `FlowFieldController3D` - Flow field controllers
+- `Oloid3D` - Oloid geometric sculpture with interactive materials
 
 ### 🧪 Experimental (2)
 - `SpatialScrubber3D` - Spatial timeline scrubbers
@@ -139,6 +140,9 @@ Visit `http://localhost:8080` to see the showcase.
 
 ## 📚 Documentation
 
+- 📖 **[LLM Guide](./docs/LLM_GUIDE.md)** - **Must read for AI agents** 🤖
+- 📖 **[Usage Guide](./USAGE.md)** - General usage and best practices
+- 📍 **[Component Specs](./docs/COMPONENT_SPECS.md)** - Detailed properties for every control
 - **[Getting Started Guide](https://samppafin.github.io/Spatial-3D-UI-framework/showcase/docs/getting-started.html)** - Installation and first steps
 - **[API Reference](https://samppafin.github.io/Spatial-3D-UI-framework/showcase/docs/api-reference.html)** - Complete component API
 - **[Architecture Overview](https://samppafin.github.io/Spatial-3D-UI-framework/showcase/docs/architecture.html)** - System design and patterns

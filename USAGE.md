@@ -6,8 +6,9 @@
 2. [Basic Setup](#basic-setup)
 3. [Component Usage](#component-usage)
 4. [Advanced Features](#advanced-features)
-5. [Best Practices](#best-practices)
-6. [Troubleshooting](#troubleshooting)
+5. [LLM Guide](./docs/LLM_GUIDE.md)
+6. [Best Practices](#best-practices)
+7. [Troubleshooting](#troubleshooting)
 
 ## Installation
 

@@ -8,8 +8,33 @@ import { Chart3D } from './controls/Chart3D.js';
 import { Slider3D } from './controls/Slider3D.js';
 import { Modal3D } from './controls/Modal3D.js';
 import { Accordion3D } from './controls/Accordion3D.js';
+import { Oloid3D } from './controls/Oloid3D.js';
+import { Sphericon3D } from './controls/Sphericon3D.js';
+import { ReuleauxTriangle3D } from './controls/ReuleauxTriangle3D.js';
+import { Gomboc3D } from './controls/Gomboc3D.js';
+import { MeissnerBody3D } from './controls/MeissnerBody3D.js';
 import { ControlRegistry } from './core/ControlRegistry.js';
 import * as THREE from 'three';
+
+// Export for external use
+export {
+    Scene3D,
+    RoomManager,
+    Button3D,
+    Toggle3D,
+    TextDisplay3D,
+    TextInput3D,
+    Chart3D,
+    Slider3D,
+    Modal3D,
+    Accordion3D,
+    Oloid3D,
+    Sphericon3D,
+    ReuleauxTriangle3D,
+    Gomboc3D,
+    MeissnerBody3D,
+    ControlRegistry
+};
 
 // Initialize application
 const canvas = document.getElementById('canvas');

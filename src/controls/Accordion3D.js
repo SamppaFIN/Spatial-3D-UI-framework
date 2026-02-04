@@ -543,4 +543,61 @@ export class Accordion3D extends BaseControl3D {
     isItemOpen(index) {
         return this.openItems.has(index);
     }
+
+    get2DContent() {
+        const container = super.get2DContent();
+
+        const preview = document.createElement('div');
+        preview.style.cssText = `
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        `;
+
+        const title = document.createElement('div');
+        title.innerText = 'ACCORDION ITEMS';
+        title.style.cssText = 'font-size: 0.8em; color: #00d4ff; font-weight: bold; margin-bottom: 5px;';
+        preview.appendChild(title);
+
+        this.items.forEach((item, index) => {
+            const isOpen = this.isItemOpen(index);
+            const row = document.createElement('div');
+            row.style.cssText = `
+                background: rgba(255,255,255,0.05);
+                border-radius: 8px;
+                padding: 12px;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                border: 1px solid ${isOpen ? 'rgba(0, 212, 255, 0.3)' : 'transparent'};
+            `;
+
+            const header = document.createElement('div');
+            header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; cursor: pointer;';
+            header.innerHTML = `
+                <span style="font-weight: 600; font-size: 0.9em;">${item.title || 'Untitled Item'}</span>
+                <span style="color: #00d4ff; font-size: 0.8em;">${isOpen ? 'OPEN' : 'CLOSED'}</span>
+            `;
+            header.onclick = () => {
+                this.toggleItem(index);
+                this.close2DOverlay(); // Refresh by reopening or just update DOM
+                this.open2DOverlay();
+            };
+
+            row.appendChild(header);
+
+            if (isOpen) {
+                const content = document.createElement('div');
+                content.style.cssText = 'font-size: 0.8em; color: #aaa; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;';
+                content.innerText = (item.content || '').substring(0, 150) + (item.content && item.content.length > 150 ? '...' : '');
+                row.appendChild(content);
+            }
+
+            preview.appendChild(row);
+        });
+
+        container.appendChild(preview);
+        return container;
+    }
 }

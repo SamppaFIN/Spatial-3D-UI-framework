@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinite CV - Sami Räisänen</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #050510;
+            font-family: 'Inter', sans-serif;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .overlay-ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin: 0;
+            background: linear-gradient(90deg, #00ffff, #d4a5ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            color: #a5b4fc;
+            margin-top: 5px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            pointer-events: auto;
+            background: rgba(10, 10, 20, 0.8);
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: 1px solid rgba(100, 200, 255, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover,
+        .btn.active {
+            background: rgba(0, 255, 255, 0.2);
+            border-color: #00ffff;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+        }
+
+        #detail-panel {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 400px;
+            background: rgba(5, 5, 10, 0.95);
+            border-left: 1px solid rgba(100, 200, 255, 0.3);
+            transform: translateX(100%);
+            transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+            padding: 40px;
+            box-sizing: border-box;
+            pointer-events: auto;
+            overflow-y: auto;
+            z-index: 20;
+        }
+
+        #detail-panel.active {
+            transform: translateX(0);
+        }
+
+        .panel-content h3 {
+            color: #00ffff;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .panel-content .role {
+            color: #d4a5ff;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(100, 200, 255, 0.1);
+            border: 1px solid rgba(100, 200, 255, 0.3);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            color: #a5f3fc;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="overlay-ui">
+        <h1>Sami "Infinite" Räisänen</h1>
+        <h2>Architecting the Future of AI Software</h2>
+    </div>
+
+    <div class="controls">
+        <button class="btn active" onclick="switchView('timeline')">Timeline</button>
+        <button class="btn" onclick="switchView('skills')">Skills Network</button>
+        <button class="btn" onclick="switchView('projects')">Project Matrix</button>
+    </div>
+
+    <div id="detail-panel">
+        <div class="panel-content" id="panel-content">
+            <!-- Dynamic Content -->
+        </div>
+        <button class="btn" style="margin-top: 20px; width: 100%;" onclick="closePanel()">Close Details</button>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <!-- Import Three.js and Components -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+        import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // --- Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x050510, 0.02);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 5, 20);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2;
+
+        // Post-Processing
+        const composer = new EffectComposer(renderer);
+        composer.addPass(new RenderPass(scene, camera));
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 0.2;
+        bloomPass.strength = 1.2;
+        bloomPass.radius = 0.5;
+        composer.addPass(bloomPass);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404040, 2);
+        scene.add(ambientLight);
+
+        const pointLight1 = new THREE.PointLight(0x00ffff, 2, 50);
+        pointLight1.position.set(10, 10, 10);
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0xd4a5ff, 2, 50);
+        pointLight2.position.set(-10, 5, -10);
+        scene.add(pointLight2);
+
+        // --- Data ---
+        const cvData = {
+            timeline: [
+                { year: "2026", title: "AI Full-Stack Architect", company: "Unseen Technologies", desc: "Pioneering AI-native development with Cursor & Multi-Agent Systems.", color: 0x00ffff },
+                { year: "2014-2025", title: "Senior Developer / Mentor", company: "Solita Oy", desc: "10 years of consultancy. Kesko, Ramirent, Motoral. Azure Architecture & Power Platform Mentoring.", color: 0xd4a5ff },
+                { year: "2012-2014", title: "Lead Architect", company: "TeamUp Oy", desc: "Social media platform architecture. End-to-end Azure & C# implementation.", color: 0xff00ff },
+                { year: "2008-2012", title: "Senior Software Engineer", company: "Flander / Symbio", desc: "Sandvik AutoMine (Mining Automation), Neste Oil, Patria.", color: 0xffff00 },
+                { year: "2000-2008", title: "Software Developer", company: "E-Bros Oy", desc: "ERP Systems, Financial Software, Enterprise Integration.", color: 0x00ff00 }
+            ],
+            skills: {
+                nodes: [
+                    { id: "AI", group: 1, size: 20 },
+                    { id: "RAG", group: 1, size: 15 },
+                    { id: "LLM Agents", group: 1, size: 15 },
+                    { id: "Cursor", group: 1, size: 15 },
+                    { id: "Cloud", group: 2, size: 20 },
+                    { id: "Azure", group: 2, size: 15 },
+                    { id: "DevOps", group: 2, size: 12 },
+                    { id: "Web", group: 3, size: 20 },
+                    { id: "React", group: 3, size: 15 },
+                    { id: "TypeScript", group: 3, size: 15 },
+                    { id: "Backend", group: 4, size: 18 },
+                    { id: "C# / .NET", group: 4, size: 18 },
+                    { id: "Python", group: 4, size: 15 },
+                    { id: "Node.js", group: 4, size: 15 }
+                ],
+                links: [
+                    { source: "AI", target: "RAG" },
+                    { source: "AI", target: "LLM Agents" },
+                    { source: "AI", target: "Cursor" },
+                    { source: "AI", target: "Python" },
+                    { source: "Cloud", target: "Azure" },
+                    { source: "Cloud", target: "DevOps" },
+                    { source: "Cloud", target: "Backend" },
+                    { source: "Web", target: "React" },
+                    { source: "Web", target: "TypeScript" },
+                    { source: "Backend", target: "C# / .NET" },
+                    { source: "Backend", target: "Python" },
+                    { source: "Backend", target: "Node.js" },
+                    { source: "Web", target: "AI" }
+                ]
+            },
+            projects: [
+                { name: "Software Factory Infinite", type: "AI Architecture", desc: "Orchestration environment for 30 autonomous AI agents simulating a software company breakdown." },
+                { name: "LegalInsights", type: "RAG System", desc: "Advanced semantic search for legal documentation using Qdrant vector DB." },
+                { name: "Electric-Billing", type: "Full-Stack", desc: "Housing company electricity billing automation with React & Node.js." },
+                { name: "LieDetector", type: "AI Analysis", desc: "Real-time content verification and analysis tool using LLMs." }
+            ]
+        };
+
+        // --- View Builders ---
+        const views = {
+            timeline: new THREE.Group(),
+            skills: new THREE.Group(),
+            projects: new THREE.Group()
+        };
+
+        let currentView = 'timeline';
+        scene.add(views.timeline);
+
+        // 1. Timeline View Construction (Simple 3D Line + Nodes)
+        function buildTimeline() {
+            const curve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(-15, 0, 0),
+                new THREE.Vector3(-5, 2, 5),
+                new THREE.Vector3(5, -2, -5),
+                new THREE.Vector3(15, 0, 0)
+            ]);
+
+            const points = curve.getPoints(50);
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineBasicMaterial({ color: 0x00ffff, opacity: 0.5, transparent: true });
+            const splineObject = new THREE.Line(geometry, material);
+            views.timeline.add(splineObject);
+
+            // Add Event Nodes
+            cvData.timeline.forEach((item, index) => {
+                const t = index / (cvData.timeline.length - 1);
+                const pos = curve.getPointAt(t);
+
+                // Sphere
+                const sphereGeo = new THREE.SphereGeometry(0.5, 32, 32);
+                const sphereMat = new THREE.MeshStandardMaterial({
+                    color: item.color,
+                    emissive: item.color,
+                    emissiveIntensity: 0.5,
+                    roughness: 0.2,
+                    metalness: 0.8
+                });
+                const sphere = new THREE.Mesh(sphereGeo, sphereMat);
+                sphere.position.copy(pos);
+                sphere.userData = { type: 'timeline', data: item };
+                views.timeline.add(sphere);
+
+                // Year Text (Simple sprite for readability)
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = 256;
+                canvas.height = 128;
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 40px Arial';
+                ctx.fillText(item.year, 10, 50);
+
+                const tex = new THREE.CanvasTexture(canvas);
+                const spriteMat = new THREE.SpriteMaterial({ map: tex });
+                const sprite = new THREE.Sprite(spriteMat);
+                sprite.position.copy(pos);
+                sprite.position.y += 1.5;
+                sprite.scale.set(4, 2, 1);
+                views.timeline.add(sprite);
+
+                // Glow ring (Torus)
+                const ringGeo = new THREE.TorusGeometry(0.8, 0.05, 16, 100);
+                const ringMat = new THREE.MeshBasicMaterial({ color: item.color, transparent: true, opacity: 0.3 });
+                const ring = new THREE.Mesh(ringGeo, ringMat);
+                ring.position.copy(pos);
+                ring.lookAt(camera.position); // Look at camera
+
+                // Animate ring
+                item.ring = ring; // Store reference
+                views.timeline.add(ring);
+            });
+        }
+
+        // 2. Skills View (3D Network Graph)
+        function buildSkills() {
+            const geometry = new THREE.IcosahedronGeometry(1, 1);
+
+            // Layout nodes in a sphere
+            cvData.skills.nodes.forEach((node, i) => {
+                const phi = Math.acos(-1 + (2 * i) / cvData.skills.nodes.length);
+                const theta = Math.sqrt(cvData.skills.nodes.length * Math.PI) * phi;
+
+                const r = 10;
+                const x = r * Math.cos(theta) * Math.sin(phi);
+                const y = r * Math.sin(theta) * Math.sin(phi);
+                const z = r * Math.cos(phi);
+
+                const color = node.group === 1 ? 0x00ffff : (node.group === 2 ? 0x0088ff : 0xd4a5ff);
+
+                const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
+                    color: color,
+                    emissive: color,
+                    emissiveIntensity: 0.4,
+                    wireframe: true
+                }));
+                mesh.position.set(x, y, z);
+                mesh.scale.setScalar(node.size / 15);
+                mesh.userData = { type: 'skill', data: node };
+                views.skills.add(mesh);
+
+                // Store pos for links
+                node.position = new THREE.Vector3(x, y, z);
+
+                // Label
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = 256; canvas.height = 64;
+                ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                ctx.fillRect(0, 0, 256, 64);
+                ctx.fillStyle = '#fff';
+                ctx.font = '24px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(node.id, 128, 40);
+                const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas) }));
+                sprite.position.set(x, y + 1.5, z);
+                sprite.scale.set(4, 1, 1);
+                views.skills.add(sprite);
+            });
+
+            // Links
+            cvData.skills.links.forEach(link => {
+                const source = cvData.skills.nodes.find(n => n.id === link.source);
+                const target = cvData.skills.nodes.find(n => n.id === link.target);
+
+                if (source && target) {
+                    const lineGeo = new THREE.BufferGeometry().setFromPoints([source.position, target.position]);
+                    const lineMat = new THREE.LineBasicMaterial({ color: 0x4444aa, transparent: true, opacity: 0.3 });
+                    const line = new THREE.Line(lineGeo, lineMat);
+                    views.skills.add(line);
+                }
+            });
+        }
+
+        // 3. Project Matrix (Grid of Cards)
+        function buildProjects() {
+            cvData.projects.forEach((proj, i) => {
+                const x = (i % 2) * 8 - 4;
+                const y = Math.floor(i / 2) * 6 - 3;
+
+                const group = new THREE.Group();
+                group.position.set(x, y, 0);
+
+                // Card Plate
+                const geo = new THREE.BoxGeometry(7, 4, 0.2);
+                const mat = new THREE.MeshPhysicalMaterial({
+                    color: 0x101020,
+                    metalness: 0.9,
+                    roughness: 0.1,
+                    clearcoat: 1.0,
+                    transparent: true,
+                    opacity: 0.9,
+                    side: THREE.DoubleSide
+                });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.userData = { type: 'project', data: proj };
+                group.add(mesh);
+
+                // Text Texture
+                const canvas = document.createElement('canvas');
+                canvas.width = 512; canvas.height = 256;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#00ffff';
+                ctx.font = 'bold 40px Arial';
+                ctx.fillText(proj.name, 20, 60);
+                ctx.fillStyle = '#a5b4fc';
+                ctx.font = '30px Arial';
+                ctx.fillText(proj.type, 20, 110);
+                ctx.fillStyle = 'white';
+                ctx.font = '20px Arial';
+                toggleText(ctx, proj.desc, 20, 160, 480, 30);
+
+                function toggleText(context, text, x, y, maxWidth, lineHeight) {
+                    // Simple wrap logic
+                    context.fillText(text.substring(0, 40) + "...", x, y);
+                }
+
+                const tex = new THREE.CanvasTexture(canvas);
+                const label = new THREE.Mesh(new THREE.PlaneGeometry(6.5, 3.5), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+                label.position.z = 0.15;
+                group.add(label);
+
+                views.projects.add(group);
+            });
+        }
+
+        buildTimeline();
+        buildSkills();
+        buildProjects();
+
+        // --- Interaction ---
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        window.addEventListener('click', (e) => {
+            // Normalize mouse
+            if (e.target.closest('.controls') || e.target.closest('#detail-panel')) return;
+
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(scene.children, true);
+
+            if (intersects.length > 0) {
+                // Find first object with userData
+                let obj = intersects[0].object;
+                while (obj.parent && !obj.userData.data) {
+                    obj = obj.parent;
+                }
+
+                if (obj.userData.data) {
+                    showDetails(obj.userData.type, obj.userData.data);
+
+                    // FX
+                    if (obj.userData.type === 'timeline') {
+                        // Pulse effect?
+                        new TWEEN.Tween(obj.scale).to({ x: 1.5, y: 1.5, z: 1.5 }, 200).yoyo(true).repeat(1).start();
+                    }
+                }
+            }
+        });
+
+        // --- UI Logic ---
+        window.switchView = (viewName) => {
+            scene.remove(views.timeline);
+            scene.remove(views.skills);
+            scene.remove(views.projects);
+
+            scene.add(views[viewName]);
+            currentView = viewName;
+
+            // Camera transition
+            const targetPos = viewName === 'timeline' ? new THREE.Vector3(0, 5, 20) :
+                viewName === 'skills' ? new THREE.Vector3(0, 0, 25) :
+                    new THREE.Vector3(0, 0, 15);
+
+            new TWEEN.Tween(camera.position)
+                .to(targetPos, 1000)
+                .easing(TWEEN.Easing.Cubic.Out)
+                .start();
+
+            // Update buttons
+            document.querySelectorAll('.btn').forEach(b => {
+                b.classList.remove('active');
+                if (b.textContent.toLowerCase().includes(viewName)) b.classList.add('active');
+            });
+        };
+
+        window.showDetails = (type, data) => {
+            const panel = document.getElementById('detail-panel');
+            const content = document.getElementById('panel-content');
+
+            let html = '';
+            if (type === 'timeline') {
+                html = `
+                    <h3>${data.year}</h3>
+                    <div class="role">${data.title} @ ${data.company}</div>
+                    <p>${data.desc}</p>
+                `;
+            } else if (type === 'skill') {
+                html = `
+                    <h3>${data.id}</h3>
+                    <div class="role">Skill Level: Master</div>
+                    <p>Core competency in ${data.group === 1 ? "AI & Generative Tech" : data.group === 2 ? "Cloud Architecture" : "Development"}.</p>
+                `;
+            } else if (type === 'project') {
+                html = `
+                    <h3>${data.name}</h3>
+                    <div class="role">${data.type}</div>
+                    <p>${data.desc}</p>
+                    <button class="btn" style="margin-top: 20px">View Source</button>
+                `;
+            }
+
+            content.innerHTML = html;
+            panel.classList.add('active');
+        };
+
+        window.closePanel = () => {
+            document.getElementById('detail-panel').classList.remove('active');
+        };
+
+        // --- Animation Loop ---
+        import TWEEN from 'https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.esm.js';
+
+        function animate(time) {
+            requestAnimationFrame(animate);
+            TWEEN.update(time);
+            controls.update();
+
+            // Passive animation for elements
+            if (views.timeline.visible) {
+                // Rotate rings
+                views.timeline.children.forEach(child => {
+                    if (child.geometry && child.geometry.type === 'TorusGeometry') {
+                        child.rotation.z += 0.01;
+                    }
+                });
+            }
+
+            if (views.skills.visible) {
+                views.skills.rotation.y += 0.001;
+            }
+
+            composer.render();
+        }
+
+        animate();
+
+        // Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+    </script>
+</body>
+
+</html>

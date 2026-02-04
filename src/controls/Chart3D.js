@@ -344,4 +344,76 @@ export class Chart3D extends BaseControl3D {
         htmlOverlay.removeOverlay(`chart_${this.controlId}`);
         super.dispose();
     }
+
+    get2DContent() {
+        const container = super.get2DContent();
+
+        const dataSection = document.createElement('div');
+        dataSection.style.cssText = 'margin-top: 20px; display: flex; flex-direction: column; gap: 15px;';
+
+        // AI Analysis Button
+        const aiBtn = document.createElement('button');
+        aiBtn.innerHTML = '✨ ANALYSOI TEKOÄLYLLÄ';
+        aiBtn.style.cssText = `
+            background: linear-gradient(135deg, #cc00ff, #00d4ff);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        `;
+
+        const log = document.createElement('div');
+        log.style.cssText = 'background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; font-size: 0.85em; display: none;';
+
+        aiBtn.onclick = async () => {
+            aiBtn.disabled = true;
+            aiBtn.innerHTML = '⌛ ANALYSOIDAAN...';
+            log.style.display = 'block';
+            log.innerHTML = 'Haetaan näkemyksiä tiedosta...';
+
+            try {
+                const prompt = `Analysoi tämä data ja anna 3 tärkeintä havaintoa: ${JSON.stringify(this.data)}`;
+                const response = await aiService.generateText(prompt, { maxTokens: 300 });
+                log.innerHTML = `<div style="color: #00d4ff; margin-bottom: 5px;">Havaittu:</div>` + (response || 'Analyysi epäonnistui.');
+            } catch (err) {
+                log.innerHTML = 'Virhe analyysissä.';
+            } finally {
+                aiBtn.disabled = false;
+                aiBtn.innerHTML = '✨ ANALYSOI UUDELLEEN';
+            }
+        };
+
+        // Data Table
+        const table = document.createElement('table');
+        table.style.cssText = `
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8em;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            overflow: hidden;
+        `;
+
+        const dataset = this.data.datasets[0] || { data: [] };
+        const labels = this.data.labels || [];
+
+        let tableHtml = `<tr style="background: rgba(255,255,255,0.1);"><th style="padding: 8px; text-align: left;">Label</th><th style="padding: 8px; text-align: right;">Value</th></tr>`;
+        labels.forEach((label, i) => {
+            tableHtml += `<tr style="border-top: 1px solid rgba(255,255,255,0.05);"><td style="padding: 8px;">${label}</td><td style="padding: 8px; text-align: right; color: #00d4ff;">${dataset.data[i] || 0}</td></tr>`;
+        });
+        table.innerHTML = tableHtml;
+
+        dataSection.appendChild(aiBtn);
+        dataSection.appendChild(log);
+        dataSection.appendChild(table);
+        container.appendChild(dataSection);
+
+        return container;
+    }
 }

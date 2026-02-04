@@ -53,8 +53,13 @@ export class Button3D extends BaseControl3D {
         this.pulseAnimation = config.pulseAnimation || false;
         this.pulseSpeed = config.pulseSpeed || 0.003;
         this.pulseIntensity = config.pulseIntensity || 0.1;
-        this.pulseTime = 0;
-        this.pulseGlow = null;
+
+        // NEW: Label visibility
+        this.showMeshLabel = config.showMeshLabel === true; // Default false (for clarity)
+
+        // NEW: Backplate (Circle)
+        this.backplateType = config.backplateType || 'none'; // 'none', 'circle', 'ring'
+        this.backplateColor = config.backplateColor || 0x00d4ff;
 
         // NEW: Sound effects
         this.soundEffect = config.soundEffect || null; // Path to sound file
@@ -88,33 +93,49 @@ export class Button3D extends BaseControl3D {
     }
 
     create() {
-
-
         // Early return if properties not initialized yet (called from BaseControl3D constructor)
         if (!this.modes || this.mode === undefined) {
-
             return; // Will be called again after initialization
+        }
+
+        // Clear existing group children for a clean redraw
+        while (this.group.children.length > 0) {
+            const child = this.group.children[0];
+            this.group.remove(child);
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) {
+                if (Array.isArray(child.material)) {
+                    child.material.forEach(m => m.dispose());
+                } else {
+                    child.material.dispose();
+                }
+            }
         }
 
         // Create gradient texture first (needed for shape material)
         this.createGradientTexture();
 
-
-
         // Create shape based on current mode
         this.createShape();
+
+        // Create backplate if enabled
+        if (this.backplateType !== 'none') {
+            this.createBackplate();
+        }
 
         // Create label and icon
         if (this.icon) {
             this.createIcon();
         }
-        this.createMeshLabel();
+
+        if (this.showMeshLabel) {
+            this.createMeshLabel();
+        }
 
         // Create loading spinner if needed
         if (this.loading) {
             this.createLoadingSpinner();
         }
-
 
         // Create glow effect
         this.createGlow();
@@ -270,13 +291,6 @@ export class Button3D extends BaseControl3D {
     }
 
     createShape() {
-        // Remove old mesh if exists
-        if (this.mesh) {
-            this.group.remove(this.mesh);
-            this.mesh.geometry.dispose();
-            this.mesh.material.dispose();
-        }
-
         let geometry;
         const type = this.geometryType || 'box';
 
@@ -317,15 +331,17 @@ export class Button3D extends BaseControl3D {
             this.createGradientTexture();
         }
 
-        // Create material with gradient texture
+        // Create material with a more premium look
         const material = new THREE.MeshStandardMaterial({
             map: this.gradientTexture,
-            color: 0xffffff,
-            metalness: 0.4,
-            roughness: 0.3,
-            emissive: this.currentColor || this.colorRed,
-            emissiveIntensity: 0.3,
-            emissiveMap: this.gradientTexture
+            color: this.color || 0x4ecdc4,
+            metalness: 0.6,
+            roughness: 0.2,
+            emissive: this.color || 0x4ecdc4,
+            emissiveIntensity: 0.15,
+            emissiveMap: this.gradientTexture,
+            transparent: true,
+            opacity: 0.95
         });
 
         this.mesh = new THREE.Mesh(geometry, material);
@@ -335,6 +351,10 @@ export class Button3D extends BaseControl3D {
         this.mesh.userData.control = this;
 
         this.group.add(this.mesh);
+
+        // Compute bounding box for sub-component positioning
+        geometry.computeBoundingBox();
+        this.meshBoundingBox = geometry.boundingBox;
     }
 
     // Geometry creation methods
@@ -372,7 +392,7 @@ export class Button3D extends BaseControl3D {
         const geo = new THREE.CylinderGeometry(
             Math.min(this.width, this.height) / 2,
             Math.min(this.width, this.height) / 2,
-            this.depth * 2,
+            this.depth,
             segments
         );
         geo.rotateX(Math.PI / 2);
@@ -392,7 +412,7 @@ export class Button3D extends BaseControl3D {
     createConeGeometry() {
         const geo = new THREE.ConeGeometry(
             Math.min(this.width, this.height) / 2,
-            this.depth * 3,
+            this.depth * 2,
             32
         );
         geo.rotateX(Math.PI / 2);
@@ -428,14 +448,20 @@ export class Button3D extends BaseControl3D {
         });
     }
 
-    createDiamondGeometry() {
-        const geo = new THREE.OctahedronGeometry(Math.min(this.width, this.height) / 2, 0);
-        geo.scale(1, 0.6, 1);
+    createOctahedronGeometry() {
+        const size = Math.min(this.width, this.height) / 2;
+        const geo = new THREE.OctahedronGeometry(size, 0);
+        // Flatten to respect button depth
+        geo.scale(1, 1, this.depth / size);
         return geo;
     }
 
-    createOctahedronGeometry() {
-        return new THREE.OctahedronGeometry(Math.min(this.width, this.height) / 2, 0);
+    createDiamondGeometry() {
+        const size = Math.min(this.width, this.height) / 2;
+        const geo = new THREE.OctahedronGeometry(size, 0);
+        // Diamond scale
+        geo.scale(1.2, 0.8, this.depth / size);
+        return geo;
     }
 
     createSacredGeometry() {
@@ -548,12 +574,7 @@ export class Button3D extends BaseControl3D {
     }
 
     createMeshLabel() {
-        // Remove old label if exists
-        if (this.labelMesh) {
-            this.group.remove(this.labelMesh);
-            this.labelMesh.geometry.dispose();
-            this.labelMesh.material.dispose();
-        }
+        if (!this.label) return;
 
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -568,34 +589,38 @@ export class Button3D extends BaseControl3D {
         canvas.height = scaledResolution;
         ctx.scale(pixelRatio, pixelRatio);
 
-        // Draw label with glow effect
+        // Draw label with a modern font and glow
         ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
-        ctx.shadowBlur = 20;
+        ctx.shadowBlur = 15;
         ctx.fillStyle = '#FFFFFF';
-        ctx.font = `bold ${resolution * 0.18}px Arial, sans-serif`;
+        ctx.font = `bold ${resolution * 0.16}px "Inter", Arial, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(this.label, resolution / 2, resolution / 2);
 
         const texture = new THREE.CanvasTexture(canvas);
         texture.needsUpdate = true;
-        texture.minFilter = THREE.LinearMipmapLinearFilter;
-        texture.magFilter = THREE.LinearFilter;
-        texture.generateMipmaps = true;
 
         const labelGeometry = new THREE.PlaneGeometry(
-            this.width * 0.7,
-            this.height * 0.4
+            this.width * 0.8,
+            this.height * 0.5
         );
         const labelMaterial = new THREE.MeshBasicMaterial({
             map: texture,
             transparent: true,
-            alphaTest: 0.1
+            side: THREE.FrontSide,
+            alphaTest: 0.05
         });
 
         this.labelMesh = new THREE.Mesh(labelGeometry, labelMaterial);
-        this.labelMesh.position.z = this.depth / 2 + 0.02;
-        this.labelMesh.renderOrder = 10;
+
+        // Position label in front of the geometry
+        let zPos = this.depth / 2 + 0.02;
+        if (this.meshBoundingBox) {
+            zPos = this.meshBoundingBox.max.z + 0.05;
+        }
+        this.labelMesh.position.z = zPos;
+        this.labelMesh.renderOrder = 20;
 
         this.group.add(this.labelMesh);
     }
@@ -807,81 +832,97 @@ export class Button3D extends BaseControl3D {
         this.group.add(this.glowMesh);
     }
 
+    createBackplate() {
+        // Remove old backplate if exists
+        if (this.backplateMesh) {
+            this.group.remove(this.backplateMesh);
+            this.backplateMesh.geometry.dispose();
+            this.backplateMesh.material.dispose();
+        }
+
+        let geometry;
+        const size = Math.max(this.width, this.height) * 1.2;
+
+        if (this.backplateType === 'circle') {
+            geometry = new THREE.CircleGeometry(size / 2, 32);
+        } else if (this.backplateType === 'ring') {
+            geometry = new THREE.TorusGeometry(size / 2, 0.05, 16, 100);
+        } else {
+            return;
+        }
+
+        const material = new THREE.MeshStandardMaterial({
+            color: this.backplateColor,
+            emissive: this.backplateColor,
+            emissiveIntensity: 0.5,
+            transparent: true,
+            opacity: 0.4,
+            side: THREE.DoubleSide
+        });
+
+        this.backplateMesh = new THREE.Mesh(geometry, material);
+        this.backplateMesh.position.z = -this.depth / 2 - 0.05;
+        this.group.add(this.backplateMesh);
+    }
+
     switchMode() {
         this.mode = (this.mode + 1) % this.modes.length;
-        // Recreate textures and shape for new mode
-        this.createGradientTexture();
+        this.geometryType = this.modes[this.mode];
         this.createShape();
-        this.createGlow();
+        this.createSacredTexture();
+        this.updateVisualState();
         // Update mode button to match new shape
         this.createModeButton();
         console.log(`Mode switched to: ${this.modes[this.mode]}`);
     }
 
-    onMouseClick(event) {
-        if (!this.isEnabled || !this.camera) return;
+    onStateChange(key, value, oldValue) {
+        // Sync state to local properties
+        this[key] = value;
 
-        const intersect = this.checkIntersection(this.camera, event);
-        if (intersect) {
-            // Create ripple effect at click point
-            if (intersect.point) {
-                this.createRipple(intersect.point);
-            }
-
-            // Check if mode button was clicked
-            if (intersect.isModeButton || (intersect.object && intersect.object.userData && intersect.object.userData.isModeButton)) {
-                this.switchMode();
-                return;
-            }
-
-            // Check for double-click (use parent class logic)
-            const currentTime = Date.now();
-            const timeSinceLastClick = currentTime - this.lastClickTime;
-
-            if (timeSinceLastClick < this.doubleClickDelay && this.lastClickTime > 0) {
-                // Double-click detected - cancel pending single click
-                if (this.clickTimeout) {
-                    clearTimeout(this.clickTimeout);
-                    this.clickTimeout = null;
-                }
-                this.handleDoubleClick();
-                this.lastClickTime = 0;
-            } else {
-                // Schedule single click with delay to allow double-click detection
-                this.lastClickTime = currentTime;
-                if (this.clickTimeout) {
-                    clearTimeout(this.clickTimeout);
-                }
-                this.clickTimeout = setTimeout(() => {
-                    this.handleClick();
-                    this.clickTimeout = null;
-                }, this.doubleClickDelay);
-            }
+        // If critical visual properties change, re-create the whole component
+        const criticalKeys = ['geometryType', 'width', 'height', 'depth', 'bevelRadius', 'color', 'icon', 'label', 'loading', 'showMeshLabel', 'backplateType', 'backplateColor'];
+        if (criticalKeys.includes(key)) {
+            this.create();
         }
+
+        super.onStateChange(key, value, oldValue);
     }
 
-    onClick() {
-        // Don't process clicks if loading
+    handleClick(intersect) {
         if (this.loading) return;
+
+        // Check if mode button was clicked
+        if (intersect.isModeButton || (intersect.object && intersect.object.userData && intersect.object.userData.isModeButton)) {
+            this.switchMode();
+            return;
+        }
+
+        // Create ripple effect at click point
+        if (intersect.point && this.rippleEffect) {
+            this.createRipple(intersect.point);
+        }
 
         // Play sound effect
         this.playSound();
 
-        // Toggle color
-        this.isRed = !this.isRed;
-        this.currentColor = this.isRed ? this.colorRed : this.colorGreen;
+        // Toggle color or execute callback
+        if (this.config.onClick) {
+            this.config.onClick(this);
+        } else {
+            this.isRed = !this.isRed;
+            this.currentColor = this.isRed ? this.colorRed : this.colorGreen;
 
-        // Update gradient texture
-        this.createGradientTexture();
-        if (this.mesh.material) {
-            this.mesh.material.map = this.gradientTexture;
-            this.mesh.material.emissive.setHex(this.currentColor);
-            this.mesh.material.emissiveIntensity = 0.6;
-        }
+            this.createGradientTexture();
+            if (this.mesh.material) {
+                this.mesh.material.map = this.gradientTexture;
+                this.mesh.material.emissive.setHex(this.currentColor);
+                this.mesh.material.emissiveIntensity = 0.6;
+            }
 
-        // Update glow
-        if (this.glowMesh) {
-            this.glowMesh.material.color.setHex(this.currentColor);
+            if (this.glowMesh) {
+                this.glowMesh.material.color.setHex(this.currentColor);
+            }
         }
 
         // Create particle effect
@@ -894,7 +935,10 @@ export class Button3D extends BaseControl3D {
         setTimeout(() => {
             this.targetScale = 1.0;
         }, 200);
+
+        super.handleClick(intersect);
     }
+
 
     createParticleEffect() {
         // Create burst particle effect
@@ -1030,103 +1074,91 @@ export class Button3D extends BaseControl3D {
         }
     }
     get2DContent() {
-        const container = document.createElement('div');
+        const container = super.get2DContent();
 
-        // Header
-        const header = document.createElement('div');
-        header.style.textAlign = 'center';
-        header.style.marginBottom = '20px';
+        const preview = document.createElement('div');
+        preview.style.cssText = `
+            margin-top: 20px;
+            padding: 30px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+        `;
 
-        // Preview Button
+        const previewTitle = document.createElement('div');
+        previewTitle.innerText = 'PAINIKKEEN ESKATSELU';
+        previewTitle.style.cssText = 'font-size: 0.7em; color: rgba(255,255,255,0.4); letter-spacing: 1px; font-weight: bold;';
+        preview.appendChild(previewTitle);
+
+        const colorHex = '#' + (this.color || 0xff3333).toString(16).padStart(6, '0');
+
         const previewBtn = document.createElement('button');
         previewBtn.innerText = (this.icon ? this.icon + ' ' : '') + this.label;
-        const colorHex = '#' + (this.color || 0x4ecdc4).toString(16).padStart(6, '0');
-        previewBtn.style.background = `linear-gradient(135deg, ${colorHex}, #2c3e50)`;
-        previewBtn.style.border = 'none';
-        previewBtn.style.padding = '12px 24px';
-        previewBtn.style.borderRadius = '8px';
-        previewBtn.style.color = 'white';
-        previewBtn.style.fontWeight = 'bold';
-        previewBtn.style.fontSize = '1.2em';
-        previewBtn.style.cursor = 'pointer';
-        previewBtn.style.boxShadow = '0 4px 15px rgba(0,0,0,0.4)';
+        previewBtn.style.cssText = `
+            background: linear-gradient(135deg, ${colorHex}, #1a1a2e);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 15px 40px;
+            border-radius: 12px;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2em;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        `;
+
         previewBtn.onclick = () => {
-            // Visual feedback
-            previewBtn.style.transform = 'scale(0.95)';
+            previewBtn.style.transform = 'scale(0.92)';
             setTimeout(() => previewBtn.style.transform = 'scale(1)', 100);
-            // Trigger actual button interaction
             this.handleClick();
         };
-        header.appendChild(previewBtn);
-        container.appendChild(header);
 
-        // Settings Form
-        const settings = document.createElement('div');
-        settings.style.background = 'rgba(255,255,255,0.05)';
-        settings.style.padding = '15px';
-        settings.style.borderRadius = '8px';
-
-        const createInput = (label, type, value, onChange) => {
-            const wrapper = document.createElement('div');
-            wrapper.style.marginBottom = '10px';
-            wrapper.style.display = 'flex';
-            wrapper.style.justifyContent = 'space-between';
-            wrapper.style.alignItems = 'center';
-
-            const lbl = document.createElement('label');
-            lbl.innerText = label;
-            lbl.style.color = '#ccc';
-            lbl.style.fontSize = '0.9em';
-
-            const input = document.createElement('input');
-            input.type = type;
-            if (type === 'checkbox') input.checked = value;
-            else input.value = value;
-
-            input.style.background = 'rgba(0,0,0,0.3)';
-            input.style.border = '1px solid #444';
-            input.style.color = 'white';
-            input.style.padding = '5px';
-            input.style.borderRadius = '4px';
-
-            input.onchange = (e) => onChange(type === 'checkbox' ? e.target.checked : e.target.value);
-            if (type !== 'color') {
-                input.oninput = (e) => onChange(type === 'checkbox' ? e.target.checked : e.target.value);
-            }
-
-            wrapper.appendChild(lbl);
-            wrapper.appendChild(input);
-            return wrapper;
+        previewBtn.onmouseover = () => {
+            previewBtn.style.boxShadow = `0 15px 40px ${colorHex}44`;
+            previewBtn.style.borderColor = '#00d4ff';
         };
 
-        // Label Input
-        settings.appendChild(createInput('Label', 'text', this.label, (val) => {
-            this.setLabel(val);
-            previewBtn.innerText = (this.icon ? this.icon + ' ' : '') + val;
-        }));
+        previewBtn.onmouseout = () => {
+            previewBtn.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+            previewBtn.style.borderColor = 'rgba(255,255,255,0.2)';
+        };
 
-        // Color Input
-        settings.appendChild(createInput('Color', 'color', colorHex, (val) => {
-            const colorInt = parseInt(val.replace('#', ''), 16);
-            this.color = colorInt;
-            this.currentColor = colorInt;
-            this.isRed = (colorInt >> 16 & 255) > 100; // Rough heuristic for gradient
+        preview.appendChild(previewBtn);
+        container.appendChild(preview);
 
-            this.createGradientTexture();
-            if (this.mesh && this.mesh.material) {
-                this.mesh.material.map = this.gradientTexture;
-                this.mesh.material.emissive.setHex(colorInt);
-            }
-            previewBtn.style.background = `linear-gradient(135deg, ${val}, #2c3e50)`;
-        }));
+        // Additional Settings for Button
+        const advanced = document.createElement('div');
+        advanced.style.cssText = 'margin-top: 20px; display: flex; flex-direction: column; gap: 10px;';
 
-        // Icon Input
-        settings.appendChild(createInput('Icon', 'text', this.icon || '', (val) => {
-            this.setIcon(val);
-            previewBtn.innerText = (val ? val + ' ' : '') + this.label;
-        }));
+        const createToggle = (label, value, onChange) => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display: flex; justify-content: space-between; align-items: center;';
+            row.innerHTML = `<span style="font-size: 0.8em; color: #ccc;">${label}</span>`;
 
-        container.appendChild(settings);
+            const sw = document.createElement('div');
+            sw.style.cssText = `width: 40px; height: 20px; background: ${value ? '#00d4ff' : '#333'}; border-radius: 10px; position: relative; cursor: pointer;`;
+            sw.innerHTML = `<div style="width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 2px; left: ${value ? '22px' : '2px'}; transition: left 0.2s;"></div>`;
+
+            sw.onclick = () => {
+                const newVal = !value;
+                onChange(newVal);
+                // Update sw locally
+                sw.style.background = newVal ? '#00d4ff' : '#333';
+                sw.firstChild.style.left = newVal ? '22px' : '2px';
+            };
+            row.appendChild(sw);
+            return row;
+        };
+
+        advanced.appendChild(createToggle('Particle Effect', this.particleEffect, (v) => this.particleEffect = v));
+        advanced.appendChild(createToggle('Pulse Animation', this.pulseAnimation, (v) => this.pulseAnimation = v));
+
+        container.appendChild(advanced);
+
         return container;
     }
 }

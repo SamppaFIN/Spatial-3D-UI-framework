@@ -51,6 +51,10 @@
             border: 1px solid rgba(78, 205, 196, 0.4);
             border-radius: 12px;
             padding: 1.5rem;
+            max-height: 500px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--cosmic-cyan) rgba(255, 255, 255, 0.1);
         }
 
         .demo-controls h3 {
@@ -265,23 +269,13 @@
                     </div>
 
                     <div class="control-row">
-                        <label>Panel Style</label>
-                        <div class="button-group" style="grid-template-columns: repeat(3, 1fr);">
-                            <button class="control-btn active" data-mode="0">Box</button>
-                            <button class="control-btn" data-mode="1">Sphere</button>
-                            <button class="control-btn" data-mode="2">Sacred</button>
-                        </div>
-                    </div>
-
-                    <div class="control-row">
                         <label>Style Preset</label>
                         <div class="button-group" style="grid-template-columns: repeat(3, 1fr);">
                             <button class="control-btn active" data-style="default">Default</button>
                             <button class="control-btn" data-style="post-it">Post-It</button>
                             <button class="control-btn" data-style="dialog">Dialog</button>
-                            <button class="control-btn" data-style="idea">Idea</button>
+                            <button class="control-btn" data-style="cyber">Cyber</button>
                             <button class="control-btn" data-style="board">Board</button>
-                            <button class="control-btn" data-style="message">Message</button>
                         </div>
                     </div>
 
@@ -427,7 +421,8 @@ function animate() {
     {
         "imports": {
             "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+            "troika-three-text": "https://esm.sh/troika-three-text@0.47.1?external=three"
         }
     }
     </script>
@@ -570,16 +565,6 @@ function animate() {
         passwordToggle.addEventListener('change', (e) => {
             config.type = e.target.checked ? 'password' : 'text';
             createTextInput();
-        });
-
-        // Mode Buttons
-        document.querySelectorAll('[data-mode]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                document.querySelectorAll('[data-mode]').forEach(b => b.classList.remove('active'));
-                e.target.classList.add('active');
-                config.mode = parseInt(e.target.dataset.mode);
-                createTextInput();
-            });
         });
 
         // Color Buttons

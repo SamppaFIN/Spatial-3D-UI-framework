@@ -32,8 +32,29 @@
             margin-top: 5px;
             opacity: 0.7;
         }
+
+        #story-overlay {
+            position: absolute;
+            bottom: 40px;
+            width: 100%;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 1s;
+        }
+
+        .story-text {
+            display: inline-block;
+            background: rgba(0, 20, 10, 0.8);
+            color: #ccffdd;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1.2rem;
+            border: 1px solid #33ff88;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+        }
     </style>
-    <!-- Import Map -->
     <script type="importmap">
         {
             "imports": {
@@ -47,7 +68,11 @@
 <body>
     <div id="info">
         <h1>THE NEURAL ARCHITECT</h1>
-        <p>Focus • Echo Discovery • Flow State</p>
+        <p>System Status: <span id="sys-status">STANDBY</span></p>
+    </div>
+
+    <div id="story-overlay">
+        <div class="story-text" id="story-msg">Initializing Neural Link...</div>
     </div>
 
     <script type="module">
@@ -59,105 +84,194 @@
         import { VolumetricCard3D } from '../../src/controls/VolumetricCard3D.js';
         import { TimeRibbon3D } from '../../src/controls/TimeRibbon3D.js';
         import { Slider3D } from '../../src/controls/Slider3D.js';
+        import { HaloCard3D } from '../../src/controls/HaloCard3D.js';
+        import { Button3D } from '../../src/controls/Button3D.js';
+
+        // --- STORY STATE MACHINE ---
+        const STORY = {
+            state: 'INIT', // INIT -> SIGNAL_LOST -> FOUND -> STABILIZING -> COMPILED
+            msg: (text) => {
+                const el = document.getElementById('story-msg');
+                const con = document.getElementById('story-overlay');
+                el.innerText = text;
+                con.style.opacity = 1;
+            },
+            hide: () => {
+                document.getElementById('story-overlay').style.opacity = 0;
+            },
+            status: (text) => {
+                document.getElementById('sys-status').innerText = text;
+            }
+        };
 
         // 1. Initialize Environment
         const env = new SpatialEnvironment(document.body, {
-            cameraPos: [0, 1.6, 2], // Close focus
+            cameraPos: [0, 1.6, 2],
             gridSize: 20
         });
         env.init();
 
         // Minimalist Lighting
-        env.scene.background = new THREE.Color(0x050505);
+        env.scene.background = new THREE.Color(0x020205);
         const ambient = new THREE.AmbientLight(0x222222);
         env.scene.add(ambient);
 
-        // Dynamic spotlight aimed at center focus
+        // Starfield
+        const starsGeo = new THREE.BufferGeometry();
+        const starsCount = 800;
+        const posArray = new Float32Array(starsCount * 3);
+        const sizesArray = new Float32Array(starsCount);
+        for (let i = 0; i < starsCount; i++) {
+            posArray[i * 3] = (Math.random() - 0.5) * 60;
+            posArray[i * 3 + 1] = (Math.random() - 0.5) * 60;
+            posArray[i * 3 + 2] = (Math.random() - 0.5) * 60;
+            sizesArray[i] = Math.random() < 0.2 ? 0.12 : 0.04;
+        }
+        starsGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        starsGeo.setAttribute('size', new THREE.BufferAttribute(sizesArray, 1));
+        const starField = new THREE.Points(starsGeo, new THREE.PointsMaterial({
+            size: 0.1, color: 0x88ffaa, transparent: true, opacity: 0.3, sizeAttenuation: true
+        }));
+        env.scene.add(starField);
+
+        // Spotlight
         const spot = new THREE.SpotLight(0xffffff, 5);
         spot.position.set(0, 5, 2);
         spot.target.position.set(0, 1, 0);
-        spot.angle = 0.5;
-        spot.penumbra = 0.8;
-        env.scene.add(spot);
-        env.scene.add(spot.target);
+        spot.angle = 0.5; spot.penumbra = 0.8;
+        env.scene.add(spot); env.scene.add(spot.target);
 
 
         // ============================================
-        // SCENARIO 3: THE NEURAL ARCHITECT
+        // SCENARIO COMPONENTS
         // ============================================
 
-        // A. ECHO INTERACTION (The Revealer)
-        // System that manages visibility/material of hidden objects
+        // A. ECHO INTERACTION
         const echoSystem = new EchoInteraction3D(env.scene, env.camera, {
-            pulseSpeed: 8,
-            maxRadius: 30,
-            glowColor: 0x00ff88,
-            audioEnabled: false
+            pulseSpeed: 6, maxRadius: 30, glowColor: 0x00ff88, audioEnabled: false
         });
-
-        // Hook into animation loop
-        env.updatables.push({
-            update: () => echoSystem.update()
-        });
+        env.updatables.push({ update: () => echoSystem.update() });
 
 
-        // B. VOLUMETRIC CARD (The Focused Object)
-        // Hidden initially, revealed by Echo
+        // B. VOLUMETRIC CARD (The Idea)
         const volCard = new VolumetricCard3D(env.scene, env.camera, [0, 1.2, -1.5], {
-            width: 1.5,
-            height: 2.0,
-            baseColor: 0x111111,
-            popHeight: 0.8,
-            popScale: 1.5
+            width: 1.5, height: 2.0, baseColor: 0x050510, popHeight: 0.8, popScale: 1.5
         });
-        // Override material for concealment (start invisible/dark)
-        // The EchoSystem will "register" this and handle the reveal shader
+
+        // Narrative Reveal Logic
         echoSystem.registerObject(volCard.baseMesh, {
-            onReveal: () => console.log("Card Revealed")
+            onReveal: () => {
+                if (STORY.state === 'SIGNAL_LOST') {
+                    STORY.state = 'FOUND';
+                    STORY.status("SIGNAL DETECTED");
+                    STORY.msg("Anomaly detected. The idea is taking shape.");
+                    halo.group.visible = true;
+                    // Trigger timeline awareness
+                    setTimeout(() => {
+                        STORY.msg("Use the SLIDER to stabilize the temporal ribbon.");
+                        STORY.state = 'STABILIZING';
+                    }, 4000);
+                }
+            }
         });
-        env.add(volCard.group);
-        env.updatables.push(volCard);
+        env.add(volCard.group); env.updatables.push(volCard);
 
 
-        // C. TIME RIBBON (History)
-        // Spirals around the focused object
+        // E. HALO INFO PANEL
+        const halo = new HaloCard3D(env.scene, env.camera, [0, 0, 0], {
+            title: "Signal Integrity: 12%",
+            color: 0x00ff88, width: 1.6, height: 0.4, offset: [0, 1.3, 0],
+            anchorObject: volCard.group, floatingEffect: true, lookAtCamera: true
+        });
+        halo.group.visible = false;
+        env.add(halo.group); env.updatables.push(halo);
+
+
+        // C. TIME RIBBON
         const historyRibbon = new TimeRibbon3D(env.scene, env.camera, [0, 1.2, -1.5], {
-            radius: 1.2,
-            turns: 2,
-            ribbonWidth: 0.1,
+            radius: 1.2, turns: 2, ribbonWidth: 0.1, color: 0x00ff88,
             timeline: [
-                { time: 0, label: "Concept" },
-                { time: 50, label: "Draft" },
-                { time: 100, label: "Final" }
+                { time: 0, label: "Chaos" },
+                { time: 50, label: "Structure" },
+                { time: 100, label: "Reality" }
             ],
-            onTimeChange: (t) => console.log("Time shift:", t)
+            onTimeChange: (t) => { /* handled by slider */ }
         });
-        // Ideally this is also hidden until revealed?
-        // For visual clarity in demo, let's keep it visible but subtle, or register parts.
-        env.add(historyRibbon.group);
-        env.updatables.push(historyRibbon);
+        env.add(historyRibbon.group); env.updatables.push(historyRibbon);
 
 
-        // D. MINIMALIST SLIDER (Contextual UI)
-        // "Thin line appearing near finger" -> We'll place it near the card
-        const slider = new Slider3D(env.scene, env.camera, [0.8, 1.2, -1.2], {
-            width: 0.02, // Very thin
-            length: 1.0,
-            color: 0xffffff,
-            min: 0,
-            max: 100,
-            value: 50,
-            orientation: 'vertical',
-            showValue: false // Minimalist
+        // D. SLIDER (The Stabilizer)
+        const slider = new Slider3D(env.scene, env.camera, [1.2, 1.2, -1.2], {
+            width: 0.05, height: 1.5, trackShape: 'cylinder', handleShape: 'sphere',
+            color: 0x88ffaa, min: 0, max: 100, value: 0, orientation: 'vertical', showValue: true,
+            onChange: (control, val) => {
+                historyRibbon.setTime(val);
+
+                // Narrative Logic
+                if (STORY.state === 'STABILIZING') {
+                    let integrity = Math.floor(12 + (val * 0.86)); // Map to 100%
+                    halo.addTextLabel(`Signal Integrity: ${integrity}%`, 1.6, 0.4, 0.1);
+
+                    if (val > 95) {
+                        STORY.msg("Signal stabilized. Ready for compilation.");
+                        STORY.status("READY TO COMPILE");
+                        btn.set('label', 'MANIFEST'); // Change button text if possible or just imply
+                    }
+                }
+            }
         });
-        // Register slider base for echo reveal too?
-        // Or just let it be there.
-        env.add(slider.group);
-        env.updatables.push(slider);
+        env.add(slider.group); env.updatables.push(slider);
+
+
+        // F. ACTION BUTTON (The Compiler)
+        const btn = new Button3D(env.scene, env.camera, [-1.2, 1.2, -1.2], {
+            label: "SEARCH",
+            width: 0.8, color: 0x00ff88,
+            onClick: () => {
+                if (STORY.state === 'INIT') {
+                    // Phase 1: Search
+                    STORY.state = 'SIGNAL_LOST';
+                    STORY.status("SCANNING...");
+                    STORY.msg("Scanning for neural patterns...");
+                    echoSystem.triggerPulse(new THREE.Vector3(0, 0, 5)); // Ping
+                    btn.set('label', 'PING');
+                } else if (STORY.state === 'SIGNAL_LOST') {
+                    // Keep pinging
+                    echoSystem.triggerPulse(new THREE.Vector3(0, 0, 5));
+                } else if (STORY.state === 'STABILIZING' && slider.value > 90) {
+                    // Phase: Compile
+                    STORY.state = 'COMPILED';
+                    STORY.status("MANIFESTED");
+                    STORY.msg("Neural Architecture successfully constructed.");
+
+                    // Visual Grand Finale
+                    echoSystem.triggerPulse(volCard.group.position);
+                    volCard.baseMesh.material.emissiveIntensity = 3.0;
+                    historyRibbon.group.rotation.y += 10; // Spin effect?
+
+                    setTimeout(() => {
+                        volCard.baseMesh.material.emissiveIntensity = 0.5;
+                        btn.set('label', 'RESET');
+                    }, 1000);
+                } else if (STORY.state === 'COMPILED') {
+                    location.reload();
+                } else {
+                    STORY.msg("Signal too weak. Stabilize with Slider first.");
+                    echoSystem.triggerPulse(volCard.group.position);
+                }
+            }
+        });
+        env.add(btn.group); env.updatables.push(btn);
 
 
         // 3. Start Loop
         env.start();
+
+        // Auto-Start Story
+        setTimeout(() => {
+            STORY.msg("System Online. Press 'SEARCH' to begin neural link.");
+        }, 1000);
+
     </script>
 </body>
 

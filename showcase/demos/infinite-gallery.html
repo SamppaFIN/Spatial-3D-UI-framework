@@ -87,6 +87,8 @@
             { pos: [2.5, 1.6, -3], color: 0xccff33, label: "Organic" }
         ];
 
+        const portals = []; // Store references
+
         portalConfig.forEach(cfg => {
             const portal = new AIPortal3D(env.scene, env.camera, cfg.pos, {
                 width: 1.8,
@@ -103,6 +105,7 @@
             portal.group.lookAt(env.camera.position.x, portal.group.position.y, env.camera.position.z);
             env.add(portal.group);
             env.updatables.push(portal);
+            portals.push(portal);
 
             // D. 2D INFO BUTTON (Integrated)
             // Floating "Info" icon at bottom corner of portal
@@ -115,11 +118,51 @@
                 onClick: () => console.log(`Info for ${cfg.label}`)
             });
             // Attach to portal group
-            portal.group.add(infoBtn.group); // Parenting checks might be needed in Button3D but group is standard
-            // Note: Button3D updates might require world position logic, but parenting works for transform
+            portal.group.add(infoBtn.group);
             // We need to register button for updates too
             env.updatables.push(infoBtn);
         });
+
+        // B. RADIAL MENU (Filter)
+        // "Activated when user grabs air" -> We simulate this by placing it near camera
+        // or toggle with Spacebar. For demo, let's float it at hand level.
+        const radialMenu = new RadialMenu3D(env.scene, env.camera, [0.5, 1.3, 3.5], {
+            radius: 0.4,
+            innerRadius: 0.15,
+            items: [
+                { label: "🎨", color: 0xff4444, action: () => updatePortals("Art") }, // Art
+                { label: "🎵", color: 0x44ff44, action: () => updatePortals("Music") }, // Music
+                { label: "📝", color: 0x4444ff, action: () => updatePortals("Text") }, // Text
+                { label: "⚙️", color: 0x888888, action: () => updatePortals("Settings") }  // Settings
+            ]
+        });
+
+        env.add(radialMenu.group);
+        // Add manual update for radial menu hover logic if not in updatables loop by default control logic
+        // RadialMenu3D mainly updates on event, but might have animations.
+        // Let's ensure interaction works.
+
+        // INTERACTION MANAGER for Radial Menu
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            // Radial Menu needs explicit event passing if it's not hooking window itself (BaseControl usually acts on provided logic or requires manual)
+            // Checking RadialMenu3D: it has onMouseMove(event). We need to bridge it.
+            radialMenu.onMouseMove(event); // Pass event
+        }
+
+        function onClick(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            // Check interaction
+            radialMenu.onClick();
+        }
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('click', onClick);
 
 
         // C. SPATIAL SCROLLER (Timeline)
@@ -147,24 +190,81 @@
         env.updatables.push(scrubber);
 
 
-        // B. RADIAL MENU (Filter)
-        // "Activated when user grabs air" -> We simulate this by placing it near camera
-        // or toggle with Spacebar. For demo, let's float it at hand level.
-        const radialMenu = new RadialMenu3D(env.scene, env.camera, [0.5, 1.3, 3.5], {
-            radius: 0.4,
-            innerRadius: 0.15,
-            items: [
-                { label: "🎨", color: 0xff4444 }, // Art
-                { label: "🎵", color: 0x44ff44 }, // Music
-                { label: "📝", color: 0x4444ff }, // Text
-                { label: "⚙️", color: 0x888888 }  // Settings
-            ]
-        });
-        // Attach to camera? Or just keep it relative. 
-        // Let's put it in front of view.
-        // For simple demo, fixed position is fine.
-        env.add(radialMenu.group);
-        // radialMenu needs update? It uses onMouseMove primarily.
+        // === LOGIC: CONTENT UPDATE ===
+        function updatePortals(theme) {
+            console.log(`Switching theme to: ${theme}`);
+
+            portals.forEach((portal, index) => {
+                const scene = portal.portalScene;
+
+                // Clear existing meshes (except lights)
+                for (let i = scene.children.length - 1; i >= 0; i--) {
+                    const child = scene.children[i];
+                    if (child.isMesh || child.isGroup) {
+                        scene.remove(child);
+                        // Dispose geometry/material if needed for memory, but for demo let's skip rigorous cleanup
+                    }
+                }
+
+                // Add New Content
+                if (theme === "Art") {
+                    const geo = new THREE.IcosahedronGeometry(0.8, 1);
+                    const mat = new THREE.MeshNormalMaterial({ wireframe: false });
+                    const mesh = new THREE.Mesh(geo, mat);
+                    scene.add(mesh);
+
+                    // Add rotation logic? PortalCard3D has default animation if 'defaultObject' is set.
+                    // But we cleared it. Let's add simple flicker logic or use Portal's update loop if exposed.
+                    // We can attach a custom 'onUpdate' to userData or just let it be static.
+                    // Let's make it spin by hacking the update loop or adding to global updatables.
+                    // PortalCard3D rotates `this.defaultObject`. Let's reassign it.
+                    portal.defaultObject = mesh;
+                    portal.hasDefaultAnimation = true;
+
+                } else if (theme === "Music") {
+                    const group = new THREE.Group();
+                    for (let j = 0; j < 5; j++) {
+                        const bar = new THREE.Mesh(
+                            new THREE.BoxGeometry(0.2, 1 + Math.random(), 0.2),
+                            new THREE.MeshStandardMaterial({ color: 0x00ff00, emissive: 0x00aa00 })
+                        );
+                        bar.position.x = (j - 2) * 0.4;
+                        group.add(bar);
+                    }
+                    scene.add(group);
+                    portal.defaultObject = group; // Will rotate the whole group
+                    portal.hasDefaultAnimation = true;
+
+                } else if (theme === "Text") {
+                    const plane = new THREE.Mesh(
+                        new THREE.PlaneGeometry(1.2, 1.5),
+                        new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, color: 0xffffff }) // Placeholder for text doc
+                    );
+                    // Add "lines"
+                    for (let k = 0; k < 5; k++) {
+                        const line = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 0.05), new THREE.MeshBasicMaterial({ color: 0x000000 }));
+                        line.position.z = 0.01;
+                        line.position.y = 0.4 - k * 0.2;
+                        plane.add(line);
+                    }
+                    scene.add(plane);
+                    portal.defaultObject = plane;
+                    portal.hasDefaultAnimation = true;
+
+                } else if (theme === "Settings") {
+                    const tor = new THREE.Mesh(
+                        new THREE.TorusKnotGeometry(0.6, 0.1, 100, 16),
+                        new THREE.MeshStandardMaterial({ color: 0xaaaaaa, roughness: 0.2, metalness: 1.0 })
+                    );
+                    scene.add(tor);
+                    portal.defaultObject = tor;
+                    portal.hasDefaultAnimation = true;
+                }
+            });
+        }
+
+        // Initialize with default
+        updatePortals("Art");
 
         // 3. Start Loop
         env.start();

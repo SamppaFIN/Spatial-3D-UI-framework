@@ -506,4 +506,54 @@ export class Modal3D extends BaseControl3D {
     isModalOpen() {
         return this.isOpen;
     }
+
+    get2DContent() {
+        const container = super.get2DContent();
+
+        const preview = document.createElement('div');
+        preview.style.cssText = `
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        `;
+
+        const statusText = document.createElement('div');
+        statusText.style.cssText = 'font-weight: bold; font-size: 1.1em; color: #00d4ff;';
+        statusText.innerText = `MODAL STATUS: ${this.isOpen ? 'OPEN' : 'CLOSED'}`;
+
+        const toggleBtn = document.createElement('button');
+        toggleBtn.innerText = this.isOpen ? 'CLOSE MODAL' : 'OPEN MODAL';
+        toggleBtn.style.cssText = `
+            padding: 10px;
+            background: ${this.isOpen ? '#ff4444' : '#00d4ff'};
+            color: black;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        `;
+
+        toggleBtn.onclick = () => {
+            if (this.isOpen) this.close();
+            else this.open();
+            statusText.innerText = `MODAL STATUS: ${this.isOpen ? 'OPEN' : 'CLOSED'}`;
+            toggleBtn.innerText = this.isOpen ? 'CLOSE MODAL' : 'OPEN MODAL';
+            toggleBtn.style.background = this.isOpen ? '#ff4444' : '#00d4ff';
+        };
+
+        const contentPreview = document.createElement('div');
+        contentPreview.style.cssText = 'font-size: 0.85em; color: #888; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;';
+        contentPreview.innerHTML = `<strong>Current HTML Content:</strong><br><pre style="white-space: pre-wrap; margin-top: 5px;">${this.htmlContent || 'No HTML content set'}</pre>`;
+
+        preview.appendChild(statusText);
+        preview.appendChild(toggleBtn);
+        preview.appendChild(contentPreview);
+        container.appendChild(preview);
+
+        return container;
+    }
 }

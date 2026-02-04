@@ -4,538 +4,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forest Ranger Station - Spatial UI 3D Demo</title>
+    <title>Ranger Station Alpha: Nature Hub</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Consolas', monospace;
-            background: linear-gradient(to bottom, #87ceeb 0%, #2d5016 100%);
-            color: #2d5016;
+            margin: 0;
             overflow: hidden;
+            background: #e8f5e9;
+            font-family: 'Inter', sans-serif;
         }
 
-        #canvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-        }
-
-        .ranger-info {
-            position: fixed;
+        #ranger-hud {
+            position: absolute;
             top: 20px;
             left: 20px;
-            background: rgba(255, 255, 255, 0.95);
-            border: 3px solid #2d5016;
-            padding: 20px;
-            max-width: 400px;
-            z-index: 100;
-            box-shadow: 0 4px 20px rgba(45, 80, 22, 0.4);
-            border-radius: 8px;
-        }
-
-        .ranger-title {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #2d5016;
-        }
-
-        .ranger-text {
-            color: #3d6020;
-            line-height: 1.6;
-            font-size: 13px;
-        }
-
-        .weather-monitor {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(255, 255, 255, 0.95);
-            border: 3px solid #87ceeb;
-            padding: 15px;
-            z-index: 100;
-            min-width: 250px;
-            border-radius: 8px;
-        }
-
-        .weather-title {
-            color: #4682b4;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .weather-item {
-            display: flex;
-            justify-content: space-between;
-            margin: 5px 0;
-            font-size: 12px;
-        }
-
-        .weather-label {
-            color: #5a7c8c;
-        }
-
-        .weather-value {
-            color: #2d5016;
-            font-weight: bold;
-        }
-
-        .wildlife-log {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(255, 255, 255, 0.95);
-            border: 3px solid #8b4513;
-            padding: 15px;
-            z-index: 100;
-            max-width: 350px;
-            border-radius: 8px;
-        }
-
-        .wildlife-title {
-            color: #8b4513;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .wildlife-item {
-            color: #654321;
-            margin: 5px 0;
-            font-size: 12px;
-            padding-left: 15px;
-        }
-
-        .alert-panel {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(255, 255, 255, 0.95);
-            border: 3px solid #ff6b00;
-            padding: 15px;
-            z-index: 100;
-            max-width: 300px;
-            border-radius: 8px;
-        }
-
-        .alert-title {
-            color: #ff6b00;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .alert-text {
-            color: #d35400;
-            font-size: 12px;
-            line-height: 1.5;
-        }
-
-        .leaf {
-            position: fixed;
-            width: 15px;
-            height: 15px;
-            background: #2d5016;
-            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
             pointer-events: none;
-            animation: fall 8s infinite;
-            opacity: 0.6;
+            color: #2e7d32;
+            text-shadow: 0 0 5px rgba(46, 125, 50, 0.3);
         }
 
-        @keyframes fall {
-            0% {
-                transform: translateY(-100px) rotate(0deg);
-                opacity: 0;
-            }
+        h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            letter-spacing: 1px;
+        }
 
-            10% {
-                opacity: 0.6;
-            }
+        .sub {
+            font-size: 0.8rem;
+            color: #4caf50;
+        }
 
-            90% {
-                opacity: 0.6;
-            }
-
-            100% {
-                transform: translateY(100vh) rotate(360deg);
-                opacity: 0;
-            }
+        /* Forest canopy vignette */
+        #canopy {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, transparent 50%, rgba(46, 125, 50, 0.2) 100%);
+            pointer-events: none;
+            z-index: 5;
         }
     </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
 </head>
 
 <body>
-    <canvas id="canvas"></canvas>
-
-    <!-- Falling leaves -->
-    <div class="leaf" style="left: 15%; animation-delay: 0s;"></div>
-    <div class="leaf" style="left: 35%; animation-delay: 2s;"></div>
-    <div class="leaf" style="left: 55%; animation-delay: 4s;"></div>
-    <div class="leaf" style="left: 75%; animation-delay: 6s;"></div>
-    <div class="leaf" style="left: 90%; animation-delay: 3s;"></div>
-
-    <!-- Ranger Info -->
-    <div class="ranger-info">
-        <div class="ranger-title">🌲 FOREST RANGER STATION</div>
-        <div class="ranger-text">
-            <strong>DAILY LOG - DAY 156</strong><br><br>
-            Welcome to Redwood National Park Ranger Station Alpha.
-            You are responsible for monitoring wildlife activity,
-            environmental conditions, and visitor safety across
-            45,000 acres of protected forest.<br><br>
-            <strong>TODAY'S FOCUS:</strong><br>
-            Black bear activity increased near Trail 7. Monitor
-            closely and update visitor alerts as needed.
-        </div>
+    <div id="canopy"></div>
+    <div id="ranger-hud">
+        <h1>RANGER STATION ALPHA</h1>
+        <div class="sub">Redwood Sector 7 • Fire Risk: LOW</div>
     </div>
-
-    <!-- Weather Monitor -->
-    <div class="weather-monitor">
-        <div class="weather-title">🌤️ ENVIRONMENTAL DATA</div>
-        <div class="weather-item">
-            <span class="weather-label">Temperature:</span>
-            <span class="weather-value" id="temperature">18°C</span>
-        </div>
-        <div class="weather-item">
-            <span class="weather-label">Humidity:</span>
-            <span class="weather-value" id="humidity">62%</span>
-        </div>
-        <div class="weather-item">
-            <span class="weather-label">Wind Speed:</span>
-            <span class="weather-value" id="wind">12 km/h</span>
-        </div>
-        <div class="weather-item">
-            <span class="weather-label">Fire Risk:</span>
-            <span class="weather-value" id="fire-risk">LOW</span>
-        </div>
-        <div class="weather-item">
-            <span class="weather-label">Air Quality:</span>
-            <span class="weather-value" id="air-quality">GOOD</span>
-        </div>
-    </div>
-
-    <!-- Wildlife Log -->
-    <div class="wildlife-log">
-        <div class="wildlife-title">🦌 RECENT SIGHTINGS</div>
-        <div class="wildlife-item">🐻 Black Bear - Trail 7, 08:34 (2 cubs)</div>
-        <div class="wildlife-item">🦌 White-tailed Deer - Meadow 3, 09:15 (herd of 8)</div>
-        <div class="wildlife-item">🦅 Bald Eagle - River Bend, 10:42</div>
-        <div class="wildlife-item">🐺 Gray Wolf - North Ridge, 11:20 (lone)</div>
-        <div class="wildlife-item">🦫 Beaver - Dam Site 2, 12:05</div>
-        <div class="wildlife-item">🦉 Great Horned Owl - Old Growth, 13:30</div>
-    </div>
-
-    <!-- Alert Panel -->
-    <div class="alert-panel">
-        <div class="alert-title">⚠️ ACTIVE ALERTS</div>
-        <div class="alert-text">
-            Trail 7 visitor caution: Bear activity with cubs.
-            Maintain 100m distance. Fire detection system active.
-            All cameras operational.
-        </div>
-    </div>
-
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-        }
-    }
-    </script>
 
     <script type="module">
-        import { Scene3D } from '../../src/core/Scene3D.js';
-        import { Chart3D } from '../../src/controls/Chart3D.js';
-        import { Slider3D } from '../../src/controls/Slider3D.js';
-        import { Toggle3D } from '../../src/controls/Toggle3D.js';
-        import { Accordion3D } from '../../src/controls/Accordion3D.js';
-        import { Button3D } from '../../src/controls/Button3D.js';
-        import { HaloCard3D } from '../../src/controls/HaloCard3D.js';
         import * as THREE from 'three';
+        import { SpatialEnvironment } from '../../src/environments/SpatialEnvironment.js';
+        import { SemanticGhost } from '../../src/ai/SemanticGhost.js';
 
-        const canvas = document.getElementById('canvas');
-        const scene3D = new Scene3D(canvas);
-        const scene = scene3D.getScene();
-        const camera = scene3D.getCamera();
-        const renderer = scene3D.getRenderer();
+        // Components
+        import { MagneticCard3D } from '../../src/controls/MagneticCard3D.js';
+        import { Chart3D } from '../../src/controls/Chart3D.js';
+        import { Toggle3D } from '../../src/controls/Toggle3D.js';
+        import { VolumetricCard3D } from '../../src/controls/VolumetricCard3D.js';
 
-        // Forest environment
-        scene.background = new THREE.Color(0x87ceeb); // Sky blue
-        scene.fog = new THREE.Fog(0x87ceeb, 20, 60);
+        // 1. Setup
+        const env = new SpatialEnvironment(document.body, { cameraPos: [0, 1.8, 5] });
+        env.init();
+        env.scene.background = new THREE.Color(0xdcedc8);
+        env.scene.fog = new THREE.Fog(0xdcedc8, 5, 25);
 
-        // Natural lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
+        // Natural Sun Lighting
+        const amb = new THREE.AmbientLight(0xffffff, 0.6);
+        env.scene.add(amb);
 
-        const sunLight = new THREE.DirectionalLight(0xffd700, 0.8);
-        sunLight.position.set(10, 20, 5);
-        scene.add(sunLight);
+        const sun = new THREE.DirectionalLight(0xfffde7, 1);
+        sun.position.set(5, 10, 5);
+        env.scene.add(sun);
 
-        // Green fill light for forest feel
-        const forestLight = new THREE.PointLight(0x90ee90, 0.3, 40);
-        forestLight.position.set(-10, 5, -10);
-        scene.add(forestLight);
-
-        camera.position.set(0, 2, 12);
-
-        // Ground plane (forest floor)
-        const groundGeometry = new THREE.PlaneGeometry(100, 100);
-        const groundMaterial = new THREE.MeshStandardMaterial({
-            color: 0x2d5016,
-            roughness: 0.8
-        });
-        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-        ground.rotation.x = -Math.PI / 2;
-        ground.position.y = -2;
-        scene.add(ground);
-
-        // Section Labels
-        const wildlifeLabel = new HaloCard3D(scene, camera, [-6, 4, 0], {
-            text: 'WILDLIFE TRACKING',
-            width: 4,
-            height: 0.5,
-            color: 0x8b4513,
-            mode: 0,
-            renderer: renderer
-        });
-
-        const sensorsLabel = new HaloCard3D(scene, camera, [0, 4, 0], {
-            text: 'ENVIRONMENTAL SENSORS',
-            width: 4,
-            height: 0.5,
-            color: 0x2d5016,
-            mode: 0,
-            renderer: renderer
-        });
-
-        const incidentsLabel = new HaloCard3D(scene, camera, [6, 4, 0], {
-            text: 'INCIDENT REPORTS',
-            width: 4,
-            height: 0.5,
-            color: 0xff6b00,
-            mode: 0,
-            renderer: renderer
-        });
-
-        // Wildlife Sightings Chart (Last 7 Days)
-        const wildlifeChart = new Chart3D(scene, camera, [-6, 2, 0], {
-            chartType: 'bar',
-            data: {
-                labels: ['Bears', 'Deer', 'Wolves', 'Eagles', 'Beavers'],
-                datasets: [{
-                    label: 'Sightings (Last 7 Days)',
-                    data: [12, 47, 3, 8, 15],
-                    backgroundColor: [
-                        'rgba(139, 69, 19, 0.8)',
-                        'rgba(160, 82, 45, 0.8)',
-                        'rgba(105, 105, 105, 0.8)',
-                        'rgba(70, 130, 180, 0.8)',
-                        'rgba(139, 90, 43, 0.8)'
-                    ]
-                }]
-            },
-            width: 4.5,
-            height: 3,
-            mode: 0,
-            renderer: renderer
-        });
-
-        // Trail Camera Sensitivity Slider
-        const cameraSlider = new Slider3D(scene, camera, [0, 1.5, 0], {
-            label: '📷 CAMERA SENSITIVITY',
-            width: 4,
-            height: 0.3,
-            min: 0,
-            max: 100,
-            value: 68,
-            mode: 0,
-            renderer: renderer,
-            onChange: (slider, value) => {
-                console.log(`Camera sensitivity: ${Math.round(value)}%`);
-            }
-        });
-
-        // Fire Alert System Toggle
-        const fireToggle = new Toggle3D(scene, camera, [0, 0.3, 0], {
-            label: '🔥 FIRE DETECTION',
-            width: 2.5,
-            height: 0.7,
-            isOn: true,
-            onColor: 0xff6b00,
-            offColor: 0x95a5a6,
-            mode: 0,
-            renderer: renderer
-        });
-
-        // Camera System Toggle
-        const cameraToggle = new Toggle3D(scene, camera, [0, -0.9, 0], {
-            label: '📹 TRAIL CAMERAS',
-            width: 2.5,
-            height: 0.7,
-            isOn: true,
-            onColor: 0x2d5016,
-            offColor: 0x95a5a6,
-            mode: 0,
-            renderer: renderer
-        });
-
-        // Species Profiles Accordion
-        const speciesAccordion = new Accordion3D(scene, camera, [-6, -1, 0], {
-            width: 5,
-            itemHeight: 0.7,
-            itemSpacing: 0.15,
-            mode: 0,
-            renderer: renderer,
-            items: [
-                {
-                    title: '🐻 Black Bears',
-                    contentHeight: 3,
-                    content: `# Black Bear Population
-
-## Status
-- **Population**: ~45 individuals
-- **Health**: Healthy, stable
-- **Last Sighting**: Trail 7, 08:34
-- **Activity**: Mother with 2 cubs
-
-## Behavior Notes
-Bears are currently foraging for berries and 
-preparing for winter. Increased activity near 
-human trails. Visitor caution advised.
-
-## Management
-- Monitor den sites
-- Track berry crop availability
-- Update trail signage`
-                },
-                {
-                    title: '🦌 White-tailed Deer',
-                    contentHeight: 3,
-                    content: `# Deer Population
-
-## Status
-- **Population**: ~200 individuals
-- **Migration**: Normal seasonal pattern
-- **Health**: Good body condition
-- **Fawn Survival**: 85% (above average)
-
-## Recent Observations
-Large herd spotted in Meadow 3. Rutting 
-season approaching. Bucks showing territorial 
-behavior.
-
-## Conservation
-- Habitat quality: Excellent
-- Food sources: Abundant
-- Predation: Natural balance maintained`
-                },
-                {
-                    title: '🦅 Bird Species',
-                    contentHeight: 3,
-                    content: `# Avian Diversity
-
-## Species Count
-- **Total Species**: 127 catalogued
-- **Nesting Season**: Active
-- **Migration**: Fall migration beginning
-
-## Notable Species
-- Bald Eagles: 3 nesting pairs
-- Great Horned Owls: 8 individuals
-- Woodpeckers: 5 species present
-- Songbirds: 89 species
-
-## Research
-Banding program ongoing. Nest monitoring 
-shows 92% success rate this season.`
-                }
-            ],
-            openItems: [0]
-        });
-
-        // Report Wildlife Incident Button
-        const incidentButton = new Button3D(scene, camera, [6, 1, 0], {
-            label: '📝 REPORT INCIDENT',
-            width: 3,
-            height: 1,
-            color: 0xff6b00,
-            mode: 0,
-            renderer: renderer,
-            onClick: () => {
-                console.log('Wildlife incident report initiated');
-                const report = prompt('Enter incident details:');
-                if (report) {
-                    alert(`Incident logged: ${report}\nTimestamp: ${new Date().toLocaleString()}\nLocation: Ranger Station Alpha`);
-                }
-            }
-        });
-
-        // Emergency Contact Button
-        const emergencyButton = new Button3D(scene, camera, [6, -0.5, 0], {
-            label: '🚨 EMERGENCY',
-            width: 3,
-            height: 1,
-            color: 0xe74c3c,
-            mode: 0,
-            renderer: renderer,
-            onClick: () => {
-                alert('Emergency services contacted!\n\nPark Emergency: (555) 0100\nFire Department: (555) 0101\nWildlife Control: (555) 0102');
-            }
-        });
-
-        // Simulate environmental data changes
-        let time = 0;
-        setInterval(() => {
-            time++;
-
-            // Temperature variation (16-20°C)
-            const temp = 18 + Math.sin(time * 0.1) * 2;
-            document.getElementById('temperature').textContent = temp.toFixed(1) + '°C';
-
-            // Humidity (58-66%)
-            const humidity = 62 + Math.sin(time * 0.15) * 4;
-            document.getElementById('humidity').textContent = Math.round(humidity) + '%';
-
-            // Wind speed (8-16 km/h)
-            const wind = 12 + Math.sin(time * 0.2) * 4;
-            document.getElementById('wind').textContent = Math.round(wind) + ' km/h';
-
-            // Fire risk calculation
-            const fireRisk = (temp > 22 && humidity < 40) ? 'HIGH' :
-                (temp > 20 || humidity < 50) ? 'MODERATE' : 'LOW';
-            document.getElementById('fire-risk').textContent = fireRisk;
-            document.getElementById('fire-risk').style.color =
-                fireRisk === 'HIGH' ? '#e74c3c' :
-                    fireRisk === 'MODERATE' ? '#f39c12' : '#27ae60';
-        }, 3000);
-
-        // Animation loop
-        function animate() {
-            requestAnimationFrame(animate);
-
-            wildlifeLabel.update();
-            sensorsLabel.update();
-            incidentsLabel.update();
-            wildlifeChart.update();
-            cameraSlider.update();
-            fireToggle.update();
-            cameraToggle.update();
-            speciesAccordion.update();
-            incidentButton.update();
-            emergencyButton.update();
-
-            // Animate sunlight
-            sunLight.position.x = Math.sin(Date.now() * 0.0002) * 15;
-            sunLight.position.z = Math.cos(Date.now() * 0.0002) * 15;
-
-            scene3D.render();
+        // 3D Leaf Particles
+        const leafGeo = new THREE.BufferGeometry();
+        const leafCount = 100;
+        const leafPos = new Float32Array(leafCount * 3);
+        for (let i = 0; i < leafCount; i++) {
+            leafPos[i * 3] = (Math.random() - 0.5) * 20;
+            leafPos[i * 3 + 1] = Math.random() * 10;
+            leafPos[i * 3 + 2] = (Math.random() - 0.5) * 20;
         }
+        leafGeo.setAttribute('position', new THREE.BufferAttribute(leafPos, 3));
+        const leafMat = new THREE.PointsMaterial({ size: 0.15, color: 0x4caf50, transparent: true, opacity: 0.6 });
+        const leaves = new THREE.Points(leafGeo, leafMat);
+        env.scene.add(leaves);
 
-        animate();
+        env.updatables.push({
+            update: (d) => {
+                const pos = leafGeo.attributes.position.array;
+                for (let i = 0; i < leafCount; i++) {
+                    pos[i * 3 + 1] -= 0.02;
+                    pos[i * 3] += Math.sin(Date.now() * 0.001 + i) * 0.01;
+                    if (pos[i * 3 + 1] < -2) pos[i * 3 + 1] = 8;
+                }
+                leafGeo.attributes.position.needsUpdate = true;
+            }
+        });
+
+
+        // 2. Ranger AI (Ghost)
+        const guardian = new SemanticGhost(env.camera, env.scene, env.renderer);
+        env.add(guardian);
+        env.updatables.push(guardian);
+
+        setTimeout(() => {
+            guardian.updatePanelText("MONITORING FOREST INTEGRITY");
+            guardian.guideTo(wildlifeLog.group, "New Wildlife Sightings");
+        }, 1500);
+
+
+        // 3. RANGER TOOLS
+
+        // Wildlife Log
+        const wildlifeLog = new MagneticCard3D(env.scene, env.camera, [-3, 1.5, -3], {
+            width: 2.2, height: 3, color: 0xffffff,
+            title: "WILDLIFE LOG", description: "Bears: 1 (Trail 7)\nDeer: 8 (Meadow 3)\nPack: Grey Wolf tracked."
+        });
+        wildlifeLog.group.rotation.y = 0.4;
+        env.add(wildlifeLog.group);
+        env.updatables.push(wildlifeLog);
+
+        // Weather Chart
+        const weather = new Chart3D(env.scene, env.camera, [3, 2, -3], {
+            width: 3, height: 2, chartType: 'line',
+            data: {
+                labels: ['8AM', '10AM', '12PM', '2PM', '4PM'],
+                datasets: [{
+                    label: 'Humidity %',
+                    data: [65, 62, 58, 60, 63],
+                    borderColor: '#2196f3',
+                    backgroundColor: 'rgba(33, 150, 243, 0.1)'
+                }]
+            }
+        });
+        weather.group.rotation.y = -0.4;
+        env.add(weather.group);
+        env.updatables.push(weather);
+
+        // Sensor Toggle
+        const sensorToggle = new Toggle3D(env.scene, env.camera, [3, 0.8, -3], {
+            label: "FIRE SENSORS", width: 2.5, isOn: true, onColor: 0xff9800
+        });
+        sensorToggle.group.rotation.y = -0.4;
+        env.add(sensorToggle.group);
+        env.updatables.push(sensorToggle);
+
+
+        // 4. SPECIMEN SCANNER
+        const specimen = new VolumetricCard3D(env.scene, env.camera, [0, 0.5, -1.5], {
+            width: 1.5, height: 1.5, baseColor: 0x8bc34a, title: "FLORA_SCAN", popHeight: 0.8
+        });
+        env.add(specimen.group);
+        env.updatables.push(specimen);
+
+
+        // 5. START
+        env.start();
+
     </script>
 </body>
 

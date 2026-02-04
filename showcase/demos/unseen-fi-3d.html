@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UnSeen Technologies - 3D Experience</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Inter', sans-serif;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px;
+            box-sizing: border-box;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: bold;
+            letter-spacing: -1px;
+            color: #fff;
+            text-transform: uppercase;
+        }
+
+        .logo span {
+            color: #00d4ff;
+        }
+
+        .tagline {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            max-width: 800px;
+            background: linear-gradient(135deg, #fff 0%, #a5f3fc 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-top: 2rem;
+            text-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
+        }
+
+        .nav-dots {
+            position: absolute;
+            right: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            pointer-events: auto;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .dot:hover,
+        .dot.active {
+            background: #00d4ff;
+            box-shadow: 0 0 10px #00d4ff;
+            transform: scale(1.2);
+        }
+
+        .cta-button {
+            pointer-events: auto;
+            background: #fff;
+            color: #000;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: inline-block;
+            margin-top: 2rem;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 255, 255, 0.2);
+        }
+
+        .service-label {
+            position: absolute;
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        #case-study-panel {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            max-width: 400px;
+            background: rgba(10, 10, 20, 0.8);
+            backdrop-filter: blur(20px);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            pointer-events: auto;
+            transform: translateY(150%);
+            transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        #case-study-panel.active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+
+    <div class="ui-overlay">
+        <div class="header">
+            <div class="logo">Un<span>Seen</span> Technologies</div>
+        </div>
+
+        <div class="hero-content">
+            <div class="tagline">Taivuta tekniikka<br>tahtoosi.</div>
+            <a href="#" class="cta-button">Ota yhteyttä</a>
+        </div>
+
+        <div class="nav-dots">
+            <div class="dot active" onclick="moveToSection(0)"></div>
+            <div class="dot" onclick="moveToSection(1)"></div>
+            <div class="dot" onclick="moveToSection(2)"></div>
+        </div>
+    </div>
+
+    <div id="case-study-panel">
+        <h3 style="color: #00d4ff; margin-top: 0;">Case Study</h3>
+        <h4 id="case-title" style="margin: 10px 0;">KONE</h4>
+        <p id="case-desc" style="font-size: 0.9rem; color: #ccc; line-height: 1.5;">Notkea innovointi luo uutta
+            liiketoimintaa ja lisää kilpailukykyä.</p>
+        <a href="#" style="color: #fff; font-size: 0.8rem;">Lue lisää →</a>
+    </div>
+
+    <!-- Import Three.js -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // --- Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x020205, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 0, 15);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        container.appendChild(renderer.domElement);
+
+        // --- Controls ---
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 5;
+        controls.maxDistance = 30;
+
+        // --- Post Processing ---
+        const composer = new EffectComposer(renderer);
+        const renderPass = new RenderPass(scene, camera);
+        composer.addPass(renderPass);
+
+
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 0.1;
+        bloomPass.strength = 0.8;
+        bloomPass.radius = 0.5;
+        composer.addPass(bloomPass);
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+        scene.add(ambientLight);
+
+        const spot1 = new THREE.SpotLight(0x00d4ff, 10);
+        spot1.position.set(10, 10, 10);
+        spot1.angle = 0.5;
+        spot1.penumbra = 0.5;
+        scene.add(spot1);
+
+        const spot2 = new THREE.SpotLight(0xffffff, 8);
+        spot2.position.set(-10, 0, 10);
+        spot2.angle = 0.5;
+        spot2.penumbra = 0.5;
+        scene.add(spot2);
+
+        // --- Content: Services ---
+        const services = [
+            {
+                id: "software",
+                title: "Ohjelmisto- ja\nDataratkaisut",
+                desc: "Kekseliästä kehitystyötä ja datan valjastamista mitattaviksi bisneshyödyiksi.",
+                details: "Rakennamme skaalautuvia pilvipalveluita, moderneja web-sovelluksia ja data-alustoja. Emme vain koodaa – me ratkaisemme liiketoimintaongelmia teknologian avulla.",
+                color: 0x00d4ff,
+                icon: "💻"
+            },
+            {
+                id: "digital",
+                title: "Bisneslähtöiset\nDigiratkaisut",
+                desc: "Tasapainoisia, fiksuja ja kestäviä ratkaisuja, jotka tuottavat todellista arvoa.",
+                details: "Palvelumuotoilu ja käyttäjäkokemus (UX) ovat ytimessä. Luomme digitaalisia tuotteita, joita ihmiset rakastavat käyttää ja jotka tuottavat mitattavaa arvoa asiakkaalle.",
+                color: 0xff00ff,
+                icon: "🚀"
+            },
+            {
+                id: "labs",
+                title: "UnSeen Labs",
+                desc: "Investointipäätös on helppo tehdä, kun idea on todistettu käytännössä.",
+                details: "Nopeat POCit (Proof of Concept) ja prototyypit. Testaa ideasi markkinoilla viikoissa, ei kuukausissa. Vähennä riskiä ja innovoi ketterästi.",
+                color: 0xffff00,
+                icon: "🧪"
+            }
+        ];
+
+        const serviceGroup = new THREE.Group();
+        scene.add(serviceGroup);
+
+        const cards = [];
+
+        services.forEach((s, i) => {
+            const group = new THREE.Group();
+            group.userData = { id: s.id };
+
+            // Helper to propagate ID to all parts
+            function addToGroup(obj) {
+                obj.userData = { id: s.id };
+                group.add(obj);
+            }
+
+            // Position in a slight arc
+            group.position.set((i - 1) * 6, -1, (Math.abs(i - 1) * -2));
+
+            // Glass Card
+            const geo = new THREE.BoxGeometry(4, 5, 0.2);
+            const mat = new THREE.MeshPhysicalMaterial({
+                color: 0x101015,
+                metalness: 0.9,
+                roughness: 0.1,
+                clearcoat: 1.0,
+                transparent: true,
+                opacity: 0.8,
+                transmission: 0.2,
+                side: THREE.DoubleSide
+            });
+            const mesh = new THREE.Mesh(geo, mat);
+            addToGroup(mesh);
+
+            // Border Glow
+            const borderGeo = new THREE.BoxGeometry(4.1, 5.1, 0.1);
+            const borderMat = new THREE.MeshBasicMaterial({ color: s.color, wireframe: true, transparent: true, opacity: 0.3 });
+            const border = new THREE.Mesh(borderGeo, borderMat);
+            addToGroup(border);
+
+            // Text Label
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+
+            // Icon
+            ctx.font = "80px Arial";
+            ctx.fillStyle = "#fff";
+            ctx.textAlign = "center";
+            ctx.fillText(s.icon, 256, 120);
+
+            // Title
+            ctx.font = "bold 40px Arial";
+            ctx.fillStyle = "#fff";
+            const lines = s.title.split('\n');
+            lines.forEach((line, idx) => ctx.fillText(line, 256, 220 + (idx * 50)));
+
+            // Desc
+            ctx.font = "24px Arial";
+            ctx.fillStyle = "#aaa";
+            wrapText(ctx, s.desc, 256, 350, 400, 30);
+
+            // "Click for info" hint
+            ctx.font = "italic 20px Arial";
+            ctx.fillStyle = "#00d4ff";
+            ctx.fillText("Click details", 256, 480);
+
+            const tex = new THREE.CanvasTexture(canvas);
+            const label = new THREE.Mesh(new THREE.PlaneGeometry(3.8, 4.8), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+            label.position.z = 0.15;
+            addToGroup(label);
+
+            serviceGroup.add(group);
+            cards.push({ mesh: group, data: s, originalPos: group.position.clone() });
+        });
+
+        // --- Particles ---
+        const particleGeo = new THREE.BufferGeometry();
+        const particleCount = 200;
+        const posArray = new Float32Array(particleCount * 3);
+        for (let i = 0; i < particleCount * 3; i++) {
+            posArray[i] = (Math.random() - 0.5) * 50;
+        }
+        particleGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const particleMat = new THREE.PointsMaterial({ size: 0.1, color: 0x00d4ff, transparent: true, opacity: 0.5 });
+        const particles = new THREE.Points(particleGeo, particleMat);
+        scene.add(particles);
+
+        function wrapText(context, text, x, y, maxWidth, lineHeight) {
+            const words = text.split(' ');
+            let line = '';
+            for (let n = 0; n < words.length; n++) {
+                const testLine = line + words[n] + ' ';
+                const metrics = context.measureText(testLine);
+                const testWidth = metrics.width;
+                if (testWidth > maxWidth && n > 0) {
+                    context.fillText(line, x, y);
+                    line = words[n] + ' ';
+                    y += lineHeight;
+                } else {
+                    line = testLine;
+                }
+            }
+            context.fillText(line, x, y);
+        }
+
+        // --- Interaction ---
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let hoveredCard = null;
+
+        // 2D Overlay Logic
+        const overlayDiv = document.createElement('div');
+        overlayDiv.style.cssText = `
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
+            width: 80%; max-width: 800px;
+            background: rgba(10, 15, 30, 0.95);
+            border: 1px solid #00d4ff;
+            border-radius: 20px;
+            padding: 40px;
+            color: #fff;
+            opacity: 0; pointer-events: none;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 0 50px rgba(0, 212, 255, 0.2);
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        `;
+        document.body.appendChild(overlayDiv);
+
+        function showInfo(data) {
+            overlayDiv.innerHTML = `
+                <button onclick="hideInfo()" style="position: absolute; top: 20px; right: 20px; background: none; border: none; color: #fff; font-size: 24px; cursor: pointer;">✕</button>
+                <h2 style="color: ${'#' + data.color.toString(16).padStart(6, '0')}; font-size: 2.5rem; margin-top: 0;">${data.icon} ${data.title.replace('\n', ' ')}</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 30px;">
+                    <div>
+                        <h3 style="color: #ccc;">Palvelukuvaus</h3>
+                        <p style="font-size: 1.1rem; line-height: 1.6;">${data.desc}</p>
+                        <p style="font-size: 1rem; color: #aaa; margin-top: 20px;">${data.details}</p>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px;">
+                        <h3 style="color: #fff;">Miksi UnSeen?</h3>
+                        <ul style="list-style: none; padding: 0; line-height: 2;">
+                            <li>✅ Ketterä kehitysmalli</li>
+                            <li>✅ Kokeneet senior-osaajat</li>
+                            <li>✅ Todistettu track record</li>
+                            <li>✅ Innovaatio & R&D fokus</li>
+                        </ul>
+                         <a href="#" class="cta-button" style="margin-top: 20px; display: inline-block; text-align: center; width: 100%; box-sizing: border-box;">Pyydä tarjous</a>
+                    </div>
+                </div>
+            `;
+            overlayDiv.style.opacity = '1';
+            overlayDiv.style.pointerEvents = 'auto';
+            overlayDiv.style.transform = 'translate(-50%, -50%) scale(1)';
+        }
+
+        window.hideInfo = () => {
+            overlayDiv.style.opacity = '0';
+            overlayDiv.style.pointerEvents = 'none';
+            overlayDiv.style.transform = 'translate(-50%, -50%) scale(0.9)';
+        };
+
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+            // Parallax effect on cards
+            serviceGroup.rotation.y = mouse.x * 0.05;
+            serviceGroup.rotation.x = -mouse.y * 0.05;
+
+            // Raycast
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(scene.children, true);
+
+            let found = null;
+            if (intersects.length > 0) {
+                // Traverse up to find group with data
+                let obj = intersects[0].object;
+                while (obj.parent && !obj.userData.id) {
+                    obj = obj.parent;
+                }
+                if (obj.userData.id) found = obj;
+            }
+
+            if (found !== hoveredCard) {
+                if (hoveredCard) {
+                    // Reset prev
+                    new TWEEN.Tween(hoveredCard.scale).to({ x: 1, y: 1, z: 1 }, 200).start();
+                }
+                hoveredCard = found;
+                if (hoveredCard) {
+                    // Scale up
+                    new TWEEN.Tween(hoveredCard.scale).to({ x: 1.1, y: 1.1, z: 1.1 }, 200).start();
+                    document.body.style.cursor = 'pointer';
+                } else {
+                    document.body.style.cursor = 'default';
+                }
+            }
+        });
+
+        function handleInteraction(event) {
+            // Calculate mouse position for THIS specific event
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(scene.children, true);
+
+            let found = null;
+            if (intersects.length > 0) {
+                // Traverse up to find group with data
+                let obj = intersects[0].object;
+                while (obj.parent && !obj.userData.id) {
+                    obj = obj.parent;
+                }
+                if (obj.userData.id) found = obj;
+            }
+
+            if (found && found.userData.id) {
+                const cardData = services.find(s => s.id === found.userData.id);
+                if (cardData) showInfo(cardData);
+            }
+        }
+
+        // Support both single and double click for better usability
+        window.addEventListener('click', handleInteraction);
+        window.addEventListener('dblclick', handleInteraction);
+
+        // Handle touch tap for mobile
+        window.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                // gentle hack to treat tap as click
+                e.clientX = e.touches[0].clientX;
+                e.clientY = e.touches[0].clientY;
+                handleInteraction(e);
+            }
+        });
+
+        // Import Tween for smooth anims
+        import TWEEN from 'https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.esm.js';
+
+        // --- Animation Loop ---
+        function animate(time) {
+            requestAnimationFrame(animate);
+            TWEEN.update(time);
+            controls.update();
+
+            // Gentle float
+            const t = Date.now() * 0.001;
+            cards.forEach((c, i) => {
+                c.mesh.position.y = c.originalPos.y + Math.sin(t + i) * 0.1;
+            });
+
+            // Particle drift
+            particles.rotation.y = t * 0.05;
+
+            composer.render();
+        }
+
+        animate();
+
+        // --- Resize ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- Logic ---
+        window.moveToSection = (idx) => {
+            document.querySelectorAll('.dot').forEach((d, i) => {
+                d.classList.toggle('active', i === idx);
+            });
+
+            // Simple camera move demo
+            const targetZ = 15 - (idx * 5);
+            // In a real implementation we'd tween this
+            camera.position.z = targetZ;
+        }
+
+    </script>
+</body>
+
+</html>
