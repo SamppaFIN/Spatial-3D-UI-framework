@@ -20,8 +20,9 @@ Spatial UI 3D is a comprehensive framework for building stunning 3D user interfa
 - 📊 **Data Visualization** - 3D charts, graphs, and volumetric displays
 - 🎮 **Advanced Interactions** - Haptic feedback, kinetic sculptures, IK manipulation
 - 🌐 **Zero Build Required** - Pure ES6 modules, works directly in modern browsers
-- 📱 **Responsive Design** - Adapts to different screen sizes and devices
+- 📱 **Responsive Design** - Adapts to different screen sizes with mobile controls toggle
 - ♿ **Accessibility Focused** - Built with inclusive design principles
+- 🧪 **Playwright Testing** - Automated browser tests for console errors and mobile functionality
 
 ## 🎯 Component Categories
 
@@ -154,6 +155,7 @@ Visit `http://localhost:8080` to see the showcase.
 - **ES6 Modules** - Modern JavaScript architecture
 - **WebGL** - Hardware-accelerated graphics
 - **Pure JavaScript** - No framework dependencies
+- **[Playwright](https://playwright.dev/)** - End-to-end browser testing
 
 ## 🌟 Use Cases
 
@@ -170,16 +172,48 @@ Visit `http://localhost:8080` to see the showcase.
 spatial-ui-3d/
 ├── src/
 │   ├── core/           # Core scene and rendering
-│   ├── controls/       # 25 interactive components
+│   ├── controls/       # 26 interactive components
 │   ├── effects/        # Visual effects and shaders
 │   └── utils/          # Helper utilities
 ├── showcase/
 │   ├── demos/          # Narrative demo experiences
 │   ├── components/     # Component detail pages
+│   ├── scripts/        # Shared scripts (mobile-controls.js)
+│   ├── styles/         # Shared CSS (showcase.css, responsive.css)
 │   └── docs/           # Documentation
+├── tests/              # Playwright browser tests
 ├── index.html          # Redirect to showcase
 └── README.md           # This file
 ```
+
+## 📱 Mobile Controls
+
+All component demos include an automatic mobile controls toggle for viewports ≤768px:
+
+- A floating action button (⚙️) appears in the bottom-right corner
+- Clicking it reveals/hides the properties panel with a smooth slide-up animation
+- The system uses `showcase/scripts/mobile-controls.js` and responsive CSS from `showcase/styles/responsive.css`
+
+## 🧪 Testing
+
+The project uses Playwright for automated browser testing:
+
+```bash
+# Install test dependencies
+npm install -D @playwright/test
+npx playwright install chromium
+
+# Run all tests
+npx playwright test
+
+# Run only mobile tests
+npx playwright test --project "Mobile Chrome"
+```
+
+Tests verify:
+- **No console errors** on page load for all demo pages
+- **No 404 errors** for CSS, JS, and other resources
+- **Mobile toggle functionality** on mobile viewports
 
 ## 🤝 Contributing
 

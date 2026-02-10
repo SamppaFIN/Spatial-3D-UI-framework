@@ -10,3 +10,7 @@ yarn-error.log*
 .env.local
 dist/
 build/
+test-results/
+playwright-report/
+test-log.txt
+test-results*.json

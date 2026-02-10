@@ -17,5 +17,8 @@
     "multimodal"
   ],
   "author": "🌸 Aurora & ♾️ Infinite",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.58.2"
+  }
 }

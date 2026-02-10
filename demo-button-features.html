@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Button Features Demo - Spatial UI 3D</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="./showcase/styles/showcase.css">
 
     <style>
         body {
@@ -93,7 +93,9 @@
         <a href="../index.html" class="back-link">← Back to Home</a>
     </nav>
 
-    <div id="canvas-container"></div>
+    <div id="canvas-container">
+        <canvas id="canvas"></canvas>
+    </div>
 
     <div class="controls-overlay demo-controls">
         <div class="control-item">
@@ -122,13 +124,13 @@
         type="importmap">{"imports": {"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
     <script type="module">
         import * as THREE from 'three';
-        import { Scene3D } from '../../src/core/Scene3D.js';
-        import { Button3D } from '../../src/controls/Button3D.js';
-        import { ControlRegistry } from '../../src/core/ControlRegistry.js';
+        import { Scene3D } from './src/core/Scene3D.js';
+        import { Button3D } from './src/controls/Button3D.js';
+        import { ControlRegistry } from './src/core/ControlRegistry.js';
 
         // Setup Scene
-        const container = document.getElementById('canvas-container');
-        const scene3D = new Scene3D(container);
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
         const scene = scene3D.getScene();
         const camera = scene3D.getCamera();
         const renderer = scene3D.getRenderer();
