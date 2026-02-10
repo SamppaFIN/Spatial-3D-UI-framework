@@ -658,19 +658,37 @@ export class BaseControl3D {
 
     onTouchStart(event) {
         if (!this.isEnabled) return;
-        event.preventDefault();
+        // Do NOT preventDefault globally immediately
+
         const touch = event.touches[0];
         const syntheticEvent = {
             clientX: touch.clientX,
             clientY: touch.clientY,
-            target: event.target
+            target: event.target,
+            preventDefault: () => event.preventDefault(), // Pass through
+            stopPropagation: () => event.stopPropagation()
         };
-        this.onMouseDown(syntheticEvent);
+
+        // onMouseDown will check intersection. 
+        // If it hits, we should probably prevent default there or handle it.
+        // But onMouseDown doesn't return anything. 
+        // Let's check intersection explicitly here first.
+
+        if (this.camera) {
+            const intersect = this.checkIntersection(this.camera, syntheticEvent);
+            if (intersect) {
+                event.preventDefault(); // Only block if we hit this control
+                this.onMouseDown(syntheticEvent);
+            }
+        }
     }
 
     onTouchEnd(event) {
-        event.preventDefault();
-        this.onMouseUp(event);
+        // Only prevent if we were pressing this control
+        if (this.isPressed) {
+            event.preventDefault();
+            this.onMouseUp(event);
+        }
     }
 
     handleClick() {

@@ -20,6 +20,16 @@
     .grid-4 {
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     }
+
+    /* Force single column for demo grid on smaller screens */
+    .demo-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .demo-canvas-container {
+        height: 50vh !important;
+        min-height: 300px !important;
+    }
 }
 
 /* Mobile (768px and below) */
@@ -113,10 +123,65 @@
         font-size: 0.85rem;
     }
 
-    /* Buttons */
-    .btn {
-        padding: 0.8rem 1.5rem;
-        font-size: 0.95rem;
+    /* Mobile Controls Toggle */
+    .demo-controls {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(20, 20, 31, 0.98);
+        backdrop-filter: blur(20px);
+        z-index: 1000;
+        border-top: 1px solid var(--cosmic-cyan);
+        border-radius: 20px 20px 0 0;
+        padding: 20px;
+        transform: translateY(110%);
+        transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        max-height: 60vh;
+        overflow-y: auto;
+        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .demo-controls.mobile-visible {
+        transform: translateY(0);
+    }
+
+    #mobile-controls-toggle {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--cosmic-cyan);
+        color: #000;
+        border: none;
+        box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+        z-index: 1001;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        opacity: 0.9;
+    }
+
+    #mobile-controls-toggle:hover {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+
+    #mobile-controls-toggle.active {
+        background: #ff6b9d;
+        color: white;
+        transform: rotate(180deg);
+    }
+
+    /* Adjust main content when controls are collapsed */
+    .demo-container {
+        padding-bottom: 80px;
+        /* Space for FAB */
     }
 }
 

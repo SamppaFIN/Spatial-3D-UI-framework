@@ -35,16 +35,7 @@
             pointer-events: none;
         }
 
-        .info-panel {
-            background: rgba(15, 15, 25, 0.85);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 215, 0, 0.3);
-            border-radius: 16px;
-            padding: 24px;
-            max-width: 400px;
-            pointer-events: all;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-        }
+        /* .info-panel styles moved to main.css */
 
         h1 {
             font-size: 28px;
@@ -257,7 +248,7 @@
     </div>
 
     <div id="ui-overlay">
-        <div class="info-panel">
+        <div class="info-panel demo-controls">
             <h1>🥚 Gömböc</h1>
             <p class="subtitle">
                 The world's first self-righting mono-monostatic body! Discovered in 2006 - only ONE stable and ONE
@@ -858,6 +849,7 @@
         document.getElementById('loading').style.display = 'none';
         animate();
     </script>
+    <script type="module" src="../scripts/mobile-controls.js"></script>
 </body>
 
 </html>

@@ -44,7 +44,7 @@
             line-height: 1.5;
         }
 
-        .controls-panel {
+        .controls-panel.demo-controls {
             position: absolute;
             bottom: 20px;
             left: 20px;
@@ -108,7 +108,7 @@
 
     <div class="time-display" id="timeDisplay">2000</div>
 
-    <div class="controls-panel">
+    <div class="controls-panel demo-controls">
         <h3 style="margin: 0 0 10px 0; color: var(--cosmic-cyan);">Quick Jump</h3>
         <button id="btn2000">2000 - Start</button>
         <button id="btn2010">2010 - Mid</button>
@@ -268,6 +268,7 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
     </script>
+    <script type="module" src="../../scripts/mobile-controls.js"></script>
 </body>
 
 </html>

@@ -27,6 +27,30 @@
             font-family: 'Inter', sans-serif;
             pointer-events: none;
             text-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+            z-index: 100;
+        }
+
+        @media (max-width: 768px) {
+            .hud {
+                top: auto;
+                bottom: 20px;
+                left: 20px;
+                right: 20px;
+                text-align: center;
+                background: rgba(0, 0, 0, 0.5);
+                padding: 10px;
+                border-radius: 8px;
+            }
+
+            .hud h1 {
+                font-size: 1.2rem;
+                margin: 0;
+            }
+
+            .hud p {
+                font-size: 0.9rem;
+                margin: 5px 0 0 0;
+            }
         }
     </style>
     <script type="importmap">

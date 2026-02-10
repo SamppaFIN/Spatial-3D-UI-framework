@@ -229,7 +229,7 @@
         <section class="demo-card">
             <h2 style="margin: 0 0 1.5rem 0; color: var(--cosmic-cyan); font-size: 1.8rem;">Live Interaction</h2>
 
-            <div class="demo-grid" style="grid-template-columns: 1fr 350px;">
+            <div class="demo-grid">
                 <div class="demo-canvas-container" style="height: 75vh; min-height: 500px;">
                     <canvas id="component-canvas" style="width: 100%; height: 100%; display: block;"></canvas>
                 </div>
@@ -272,7 +272,7 @@
 
                     <div class="control-row">
                         <label>Handle Type</label>
-                        <div class="button-group" style="grid-template-columns: repeat(3, 1fr);">
+                        <div class="button-group">
                             <button class="control-btn active" data-handle="sphere">Sphere</button>
                             <button class="control-btn" data-handle="box">Box</button>
                             <button class="control-btn" data-handle="hexagon">Hex</button>
@@ -382,6 +382,7 @@
             }
         }
     </script>
+    <script type="module" src="../../scripts/mobile-controls.js"></script>
     <script type="module">
         import * as THREE from 'three';
         import { Scene3D } from '../../src/core/Scene3D.js';

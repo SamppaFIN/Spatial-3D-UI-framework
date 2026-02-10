@@ -234,7 +234,7 @@
             <p style="margin: 0 0 2rem 0; opacity: 0.6; font-size: 0.9rem;">Explore presets, kinetic physics, and the
                 new styling system.</p>
 
-            <div class="demo-grid" style="grid-template-columns: 1fr 400px;">
+            <div class="demo-grid">
                 <div class="canvas-wrapper" style="height: 650px;">
                     <canvas id="canvas-main"></canvas>
                 </div>
@@ -328,7 +328,7 @@
         <!-- Experience Levels (Discrete) -->
         <section class="demo-card">
             <h2 style="margin: 0 0 0.5rem 0;">Experience Levels</h2>
-            <div class="demo-grid" style="grid-template-columns: 1fr 400px;">
+            <div class="demo-grid">
                 <div class="canvas-wrapper"
                     style="height: 400px; background: radial-gradient(circle at center, #251225 0%, #0a0a12 100%);">
                     <canvas id="canvas-experience"></canvas>
@@ -352,6 +352,7 @@
             }
         }
     </script>
+    <script type="module" src="../../scripts/mobile-controls.js"></script>
     <script type="module">
         import * as THREE from 'three';
         import { Scene3D } from '../../src/core/Scene3D.js';

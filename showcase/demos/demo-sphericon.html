@@ -224,6 +224,36 @@
                 transform: rotate(360deg);
             }
         }
+
+        /* Mobile Optimization */
+        @media (max-width: 600px) {
+            .info-panel {
+                left: 10px;
+                right: 10px;
+                /* Full width minus margins */
+                top: auto;
+                bottom: 20px;
+                /* Move to bottom */
+                max-width: none;
+                /* Reset max-width */
+                max-height: 50vh;
+                /* Scroll if too tall */
+                overflow-y: auto;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .subtitle {
+                display: none;
+                /* Hide subtitle to save space */
+            }
+
+            .control-group {
+                margin-bottom: 12px;
+            }
+        }
     </style>
     <script type="importmap">
     {
@@ -242,7 +272,7 @@
     </div>
 
     <div id="ui-overlay">
-        <div class="info-panel">
+        <div class="info-panel demo-controls">
             <h1>⚽ The Sphericon</h1>
             <p class="subtitle">
                 A bicone cut and rejoined with a 90° rotation. It wobbles side-to-side while rolling forward in a
@@ -779,6 +809,7 @@
         document.getElementById('loading').style.display = 'none';
         animate();
     </script>
+    <script type="module" src="../scripts/mobile-controls.js"></script>
 </body>
 
 </html>

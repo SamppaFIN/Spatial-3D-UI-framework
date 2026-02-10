@@ -200,7 +200,7 @@
         <section class="demo-section">
             <h2 style="margin: 0 0 1.5rem 0; color: var(--cosmic-cyan); font-size: 1.8rem;">Live Demo</h2>
 
-            <div class="demo-grid" style="grid-template-columns: 1fr 350px;">
+            <div class="demo-grid">
                 <div class="demo-canvas-container" style="height: 80vh; min-height: 500px;">
                     <canvas id="component-canvas" style="height: 100%;"></canvas>
                 </div>
@@ -235,7 +235,7 @@
 
                     <div class="control-row">
                         <label>Backplate Style</label>
-                        <div class="button-group" style="grid-template-columns: repeat(3, 1fr);">
+                        <div class="button-group">
                             <button class="control-btn active" data-backplate="none">None</button>
                             <button class="control-btn" data-backplate="circle">Circle</button>
                             <button class="control-btn" data-backplate="ring">Ring</button>
@@ -489,6 +489,7 @@ function animate() {
 
     <script
         type="importmap">{"imports": {"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+    <script type="module" src="../../scripts/mobile-controls.js"></script>
     <script type="module">
         import { Scene3D } from '../../src/core/Scene3D.js';
         import { Button3D } from '../../src/controls/Button3D.js?v=2';

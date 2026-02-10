@@ -226,7 +226,7 @@ const active = true;
 
                     <div class="control-row">
                         <label>Panel Style</label>
-                        <div class="button-group" style="grid-template-columns: repeat(3, 1fr);">
+                        <div class="button-group">
                             <button class="control-btn active" data-mode="0">Box</button>
                             <button class="control-btn" data-mode="1">Sphere</button>
                             <button class="control-btn" data-mode="2">Sacred</button>
@@ -235,7 +235,7 @@ const active = true;
 
                     <div class="control-row">
                         <label>Style Preset</label>
-                        <div class="button-group" style="grid-template-columns: repeat(3, 1fr);">
+                        <div class="button-group">
                             <button class="control-btn active" data-style="default">Default</button>
                             <button class="control-btn" data-style="post-it">Post-It</button>
                             <button class="control-btn" data-style="dialog">Dialog</button>
@@ -309,9 +309,7 @@ function animate() {
             /* Default generic style */
         }
 
-        .spatial-text-display.default {
-            /* Minimal styling, relies on 3D panel */
-        }
+        /* .spatial-text-display.default uses default styles */
 
         /* Post-it Note */
         .spatial-text-display.post-it {
@@ -373,7 +371,7 @@ function animate() {
         }
     }
     </script>
-
+    <script type="module" src="../../scripts/mobile-controls.js"></script>
     <script type="module">
         import { Scene3D } from '../../src/core/Scene3D.js';
         import { TextDisplay3D } from '../../src/controls/TextDisplay3D.js';

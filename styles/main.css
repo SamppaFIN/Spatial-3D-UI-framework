@@ -66,3 +66,147 @@ body {
     z-index: 1000;
     backdrop-filter: blur(10px);
 }
+
+/* --- Library Standard Styles (Mobile First) --- */
+
+/* Tooltip */
+.spatial-tooltip {
+    background: linear-gradient(145deg, rgba(20, 20, 40, 0.95), rgba(10, 10, 30, 0.95));
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: #ffffff;
+    font-family: 'Arial', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 250px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    pointer-events: none;
+    user-select: none;
+}
+
+/* Labels */
+.spatial-label {
+    background: linear-gradient(145deg, rgba(30, 30, 50, 0.9), rgba(20, 20, 40, 0.9));
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 500;
+    backdrop-filter: blur(8px);
+    pointer-events: none;
+}
+
+/* 2D Overlay (Mobile Optimization) */
+.spatial-2d-overlay {
+    width: 90%;
+    max-width: 600px;
+    max-height: 85vh;
+}
+
+/* Text Display Styles */
+.spatial-text-display {
+    background: linear-gradient(145deg, rgba(20, 20, 40, 0.95), rgba(10, 10, 30, 0.95));
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    color: #ffffff;
+    font-family: 'Arial', sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    max-width: 400px;
+}
+
+.spatial-text-display h1,
+.spatial-text-display h2,
+.spatial-text-display h3 {
+    color: #ffffff;
+    margin-top: 0.5em;
+    margin-bottom: 0.3em;
+}
+
+.spatial-text-display p {
+    margin: 0.5em 0;
+}
+
+.spatial-text-display code {
+    background: rgba(0, 0, 0, 0.4);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #ffd700;
+}
+
+/* Info Panel (Global Style for Demos) */
+.info-panel {
+    background: rgba(15, 15, 25, 0.85);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 400px;
+    pointer-events: all;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 100;
+}
+
+/* --- Mobile Responsiveness --- */
+@media (max-width: 768px) {
+
+    /* Adjust fixed UI elements */
+    .background-switcher {
+        top: auto;
+        bottom: 20px;
+        right: 20px;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .room-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+
+    .fps-counter {
+        top: 10px;
+        left: 10px;
+        font-size: 10px;
+        padding: 4px 8px;
+    }
+
+    /* Adjust Tooltips for touch */
+    .spatial-tooltip {
+        padding: 8px 12px;
+        font-size: 12px;
+        max-width: 200px;
+    }
+
+    /* Adjust 2D Overlay */
+    .spatial-2d-overlay {
+        width: 95%;
+        padding: 20px !important;
+    }
+
+    /* Mobile Info Panel */
+    .info-panel {
+        left: 10px;
+        right: 10px;
+        top: auto;
+        bottom: 10px;
+        max-width: none;
+        max-height: 45vh;
+        /* Ensure 3D view is visible */
+        overflow-y: auto;
+        padding: 16px;
+        border-radius: 12px 12px 12px 12px;
+    }
+}

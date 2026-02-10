@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Olloid's Journey - Spatial 3D Roguelike</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        #canvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            pointer-events: none;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .hud-panel {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #4ecdc4;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            max-width: 300px;
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 1.5em;
+            color: #4ecdc4;
+            text-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+        }
+
+        .controls {
+            font-size: 0.9em;
+            line-height: 1.5;
+            color: #aaa;
+        }
+
+        .key {
+            display: inline-block;
+            padding: 2px 6px;
+            border: 1px solid #666;
+            border-radius: 4px;
+            color: #fff;
+            background: #333;
+            font-family: monospace;
+        }
+
+        #status {
+            font-weight: bold;
+            color: #ffd700;
+            margin-top: 10px;
+        }
+    </style>
+    <!-- Import Map for Three.js -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div id="ui-layer">
+        <div class="hud-panel demo-controls">
+            <h1>🌀 Olloid's Journey</h1>
+            <div class="controls">
+                <p>Use <span class="key">W</span> <span class="key">A</span> <span class="key">S</span> <span
+                        class="key">D</span> to move.</p>
+                <p>Goal: Find the Golden Gomboc!</p>
+                <div id="status">Tick: 0 | Waiting...</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { Scene3D } from './src/core/Scene3D.js';
+        import { RoguelikeGame } from './src/game/RoguelikeGame.js';
+        import { GameRenderer } from './src/game/GameRenderer.js';
+        import * as THREE from 'three';
+
+        // Initialize 3D Scene
+        const canvas = document.getElementById('canvas');
+        const scene3D = new Scene3D(canvas);
+        const scene = scene3D.getScene();
+        const camera = scene3D.getCamera();
+
+        // Adjust Camera
+        camera.position.set(0, 15, 20);
+        camera.lookAt(0, 0, 0);
+
+        // Initialize Game Logic
+        const game = new RoguelikeGame({ width: 15, height: 15 });
+
+        // Initialize Renderer
+        const renderer = new GameRenderer(scene, camera, game);
+
+        // Input Handling
+        window.addEventListener('keydown', (e) => {
+            switch (e.key.toLowerCase()) {
+                case 'w': game.queueAction('move_up'); break;
+                case 's': game.queueAction('move_down'); break;
+                case 'a': game.queueAction('move_left'); break;
+                case 'd': game.queueAction('move_right'); break;
+            }
+        });
+
+        // UI Updates
+        const statusEl = document.getElementById('status');
+        game.subscribe((event, data) => {
+            if (event === 'tick') {
+                statusEl.textContent = `Tick: ${data.tick} | Status: ${data.status.toUpperCase()}`;
+            }
+        });
+
+        // Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.update();
+            scene3D.render();
+        }
+        animate();
+
+    </script>
+    <script type="module" src="./showcase/scripts/mobile-controls.js"></script>
+</body>
+
+</html>

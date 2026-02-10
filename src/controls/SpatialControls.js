@@ -82,6 +82,11 @@ export class SpatialControls {
         this.domElement.addEventListener('wheel', (e) => this.onWheel(e), { passive: false });
         this.domElement.addEventListener('dblclick', (e) => this.onDoubleClick(e));
         this.domElement.addEventListener('contextmenu', (e) => e.preventDefault()); // Block context menu
+
+        // Touch Events
+        this.domElement.addEventListener('touchstart', (e) => this.onTouchStart(e), { passive: false });
+        this.domElement.addEventListener('touchmove', (e) => this.onTouchMove(e), { passive: false });
+        this.domElement.addEventListener('touchend', (e) => this.onTouchEnd(e), { passive: false });
     }
 
     onKeyDown(event) {
@@ -341,6 +346,94 @@ export class SpatialControls {
         // Look at target during transition
         this.focusLookAt = targetWorldPos;
         this.focusStartTime = performance.now();
+    }
+
+    // --- Touch Support ---
+
+    onTouchStart(event) {
+        if (event.touches.length === 1) {
+            // One finger: Look/Rotate (treat like Right Click Drag)
+            this.isDragging = true;
+            this.dragButton = 2; // Emulate Right Click
+            this.dragStartX = event.touches[0].clientX;
+            this.dragStartY = event.touches[0].clientY;
+            this.previousMousePosition = { x: this.dragStartX, y: this.dragStartY };
+        } else if (event.touches.length === 2) {
+            // Two fingers: Move/Pan (treat like Left Click Drag)
+            this.isDragging = true;
+            this.dragButton = 0; // Emulate Left Click
+
+            // Store center point for panning
+            this.dragStartX = (event.touches[0].clientX + event.touches[1].clientX) / 2;
+            this.dragStartY = (event.touches[0].clientY + event.touches[1].clientY) / 2;
+
+            // Store initial pinch distance for zoom
+            const dx = event.touches[0].clientX - event.touches[1].clientX;
+            const dy = event.touches[0].clientY - event.touches[1].clientY;
+            this.pinchStartDistance = Math.sqrt(dx * dx + dy * dy);
+        }
+    }
+
+    onTouchMove(event) {
+        event.preventDefault(); // Prevent scrolling while interacting with 3D scene
+
+        if (event.touches.length === 1 && this.isDragging) {
+            // One finger: Look logic
+            const touch = event.touches[0];
+            const movementX = touch.clientX - this.previousMousePosition.x;
+            const movementY = touch.clientY - this.previousMousePosition.y;
+
+            this.previousMousePosition = { x: touch.clientX, y: touch.clientY };
+
+            // Apply rotation (slightly higher sensitivity for touch)
+            this.euler.y -= movementX * this.lookSpeed * 2.5;
+            this.euler.x -= movementY * this.lookSpeed * 2.5;
+            this.euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.euler.x));
+            this.camera.quaternion.setFromEuler(this.euler);
+
+        } else if (event.touches.length === 2 && this.isDragging) {
+            // Two fingers: Pan + Zoom logic
+            const touch1 = event.touches[0];
+            const touch2 = event.touches[1];
+
+            // 1. Pan (Move camera sideways/up-down)
+            const currentX = (touch1.clientX + touch2.clientX) / 2;
+            const currentY = (touch1.clientY + touch2.clientY) / 2;
+
+            const deltaX = currentX - this.dragStartX;
+            const deltaY = currentY - this.dragStartY;
+
+            const panSpeed = 0.02;
+            const offset = new THREE.Vector3(-deltaX * panSpeed, deltaY * panSpeed, 0);
+            offset.applyQuaternion(this.camera.quaternion);
+            this.camera.position.add(offset);
+
+            // Update drag start for next frame to get delta
+            this.dragStartX = currentX;
+            this.dragStartY = currentY;
+
+            // 2. Zoom (Move forward/backward)
+            const dx = touch1.clientX - touch2.clientX;
+            const dy = touch1.clientY - touch2.clientY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (this.pinchStartDistance > 0) {
+                const zoomDelta = distance - this.pinchStartDistance;
+                const zoomSpeed = 0.05;
+
+                // Only zoom if pinch changed significantly to avoid jitter
+                if (Math.abs(zoomDelta) > 1) {
+                    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(this.camera.quaternion);
+                    this.camera.position.add(forward.multiplyScalar(zoomDelta * zoomSpeed));
+                    this.pinchStartDistance = distance;
+                }
+            }
+        }
+    }
+
+    onTouchEnd(event) {
+        this.isDragging = false;
+        // If needed, detect taps here
     }
 
     update(delta) {

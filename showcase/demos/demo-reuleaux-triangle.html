@@ -224,6 +224,31 @@
                 transform: rotate(360deg);
             }
         }
+
+        /* Mobile Optimization */
+        @media (max-width: 600px) {
+            .info-panel {
+                left: 10px;
+                right: 10px;
+                top: auto;
+                bottom: 20px;
+                max-width: none;
+                max-height: 50vh;
+                overflow-y: auto;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .subtitle {
+                display: none;
+            }
+
+            .control-group {
+                margin-bottom: 12px;
+            }
+        }
     </style>
     <script type="importmap">
     {
@@ -242,7 +267,7 @@
     </div>
 
     <div id="ui-overlay">
-        <div class="info-panel">
+        <div class="info-panel demo-controls">
             <h1>🔺 Reuleaux Triangle</h1>
             <p class="subtitle">
                 A curve of constant width formed by three intersecting circles. Can drill square holes and rolls at
@@ -879,6 +904,7 @@
         document.getElementById('loading').style.display = 'none';
         animate();
     </script>
+    <script type="module" src="../scripts/mobile-controls.js"></script>
 </body>
 
 </html>

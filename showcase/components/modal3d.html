@@ -241,7 +241,7 @@
 
                     <div class="control-row">
                         <label>Panel Style</label>
-                        <div class="button-group" style="grid-template-columns: repeat(3, 1fr);">
+                        <div class="button-group">
                             <button class="control-btn active" data-mode="0">Box</button>
                             <button class="control-btn" data-mode="1">Sphere</button>
                             <button class="control-btn" data-mode="2">Sacred</button>
@@ -250,7 +250,7 @@
 
                     <div class="control-row">
                         <label>Spatial Behavior</label>
-                        <div class="button-group" style="grid-template-columns: repeat(3, 1fr);">
+                        <div class="button-group">
                             <button class="control-btn active" data-billboard="none">Fixed</button>
                             <button class="control-btn" data-billboard="y-axis">Y-Lock</button>
                             <button class="control-btn" data-billboard="full">Face</button>
@@ -322,7 +322,7 @@ function animate() {
         }
     }
     </script>
-
+    <script type="module" src="../../scripts/mobile-controls.js"></script>
     <script type="module">
         import { Scene3D } from '../../src/core/Scene3D.js';
         import { Modal3D } from '../../src/controls/Modal3D.js';
