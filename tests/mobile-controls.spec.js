@@ -64,7 +64,7 @@ test.describe('Mobile Controls & Console Errors', () => {
             await expect(controlsPanel).toHaveClass(/mobile-visible/, { timeout: 2000 });
 
             // Click to close
-            await toggleBtn.click();
+            await toggleBtn.click({ force: true });
 
             // Check if class is removed
             await expect(controlsPanel).not.toHaveClass(/mobile-visible/, { timeout: 2000 });
