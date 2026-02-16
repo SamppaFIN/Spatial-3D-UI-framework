@@ -317,6 +317,13 @@ code {
     backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--glass-border);
     transition: all var(--transition-normal);
+    pointer-events: none;
+    /* Allow clicks to pass through */
+}
+
+.navbar * {
+    pointer-events: auto;
+    /* Re-enable clicks on content */
 }
 
 .navbar.scrolled {
