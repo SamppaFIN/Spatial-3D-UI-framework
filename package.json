@@ -1,11 +1,33 @@
 {
   "name": "spatial-ui-3d",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "3D Spatial UI Component Library - Transform web controls into immersive 3D spatial interfaces",
   "type": "module",
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./core/*": "./src/core/*.js",
+    "./controls/*": "./src/controls/*.js"
+  },
+  "files": [
+    "src/",
+    "types/",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SamppaFIN/Spatial-3D-UI-framework.git"
+  },
+  "homepage": "https://github.com/SamppaFIN/Spatial-3D-UI-framework#readme",
+  "bugs": "https://github.com/SamppaFIN/Spatial-3D-UI-framework/issues",
   "scripts": {
     "dev": "npx http-server . -p 3002 -o",
-    "start": "npx http-server . -p 3002 -o"
+    "start": "npx http-server . -p 3002 -o",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "keywords": [
     "three.js",
@@ -19,6 +41,9 @@
   "author": "🌸 Aurora & ♾️ Infinite",
   "license": "MIT",
   "devDependencies": {
-    "@playwright/test": "^1.58.2"
+    "@playwright/test": "^1.58.2",
+    "@vitest/coverage-v8": "^4.0.18",
+    "jsdom": "^28.1.0",
+    "vitest": "^4.0.18"
   }
 }

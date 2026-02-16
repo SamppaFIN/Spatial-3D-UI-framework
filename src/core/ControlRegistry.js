@@ -5,8 +5,9 @@
 export class ControlRegistry {
     static controls = [];
     static orbitControls = null;
+    static renderer = null;
     static isEditMode = false;
-    
+
     /**
      * Register a control to be managed by the registry
      * @param {BaseControl3D} control - The control to register
@@ -20,7 +21,7 @@ export class ControlRegistry {
             }
         }
     }
-    
+
     /**
      * Unregister a control from the registry
      * @param {BaseControl3D} control - The control to unregister
@@ -31,7 +32,7 @@ export class ControlRegistry {
             this.controls.splice(index, 1);
         }
     }
-    
+
     /**
      * Set OrbitControls reference for coordination
      * @param {OrbitControls} controls - OrbitControls instance
@@ -39,19 +40,19 @@ export class ControlRegistry {
     static setOrbitControls(controls) {
         this.orbitControls = controls;
     }
-    
+
     /**
      * Set edit mode for all registered controls
      * @param {boolean} enabled - Whether edit mode should be enabled
      */
     static setEditMode(enabled) {
         this.isEditMode = enabled;
-        
+
         // Ensure OrbitControls is enabled when exiting edit mode
         if (!enabled && this.orbitControls) {
             this.orbitControls.enabled = true;
         }
-        
+
         // Update all controls safely
         this.controls.forEach(control => {
             if (control && control.setEditMode) {
@@ -63,7 +64,7 @@ export class ControlRegistry {
             }
         });
     }
-    
+
     /**
      * Get current edit mode state
      * @returns {boolean} Current edit mode state
@@ -71,12 +72,28 @@ export class ControlRegistry {
     static getEditMode() {
         return this.isEditMode;
     }
-    
+
     /**
      * Get all registered controls
      * @returns {Array<BaseControl3D>} Array of all registered controls
      */
     static getAll() {
         return this.controls;
+    }
+
+    /**
+     * Set the WebGLRenderer reference for auto-detection by controls.
+     * @param {THREE.WebGLRenderer} renderer
+     */
+    static setRenderer(renderer) {
+        this.renderer = renderer;
+    }
+
+    /**
+     * Get the stored WebGLRenderer reference.
+     * @returns {THREE.WebGLRenderer|null}
+     */
+    static getRenderer() {
+        return this.renderer;
     }
 }

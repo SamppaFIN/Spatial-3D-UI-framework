@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { getHTMLOverlay } from '../utils/HTMLOverlay.js';
+import { ControlRegistry } from './ControlRegistry.js';
 
 export class Scene3D {
     constructor(canvas) {
@@ -69,6 +70,10 @@ export class Scene3D {
 
         // Handle window resize
         window.addEventListener('resize', () => this.onWindowResize());
+
+        // Auto-register with ControlRegistry (DX improvement: no manual call needed)
+        ControlRegistry.setOrbitControls(this.controls);
+        ControlRegistry.setRenderer(this.renderer);
     }
 
     onWindowResize() {

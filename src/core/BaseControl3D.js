@@ -5,12 +5,47 @@ import { getHTMLOverlay } from '../utils/HTMLOverlay.js';
 import { MarkdownRenderer } from '../utils/MarkdownRenderer.js';
 
 export class BaseControl3D {
+    /** @enum {number} Geometry mode constants */
+    static MODE = Object.freeze({ BOX: 0, SPHERE: 1, SACRED: 2 });
+
+    /**
+     * Sanitize HTML string to prevent XSS.
+     * @param {string} input - Raw string
+     * @returns {string} Escaped string safe for innerHTML
+     */
+    static sanitizeHTML(input) {
+        if (typeof input !== 'string') return String(input);
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return input.replace(/[&<>"']/g, c => map[c]);
+    }
+
+    /**
+     * Create a new 3D control.
+     * @param {THREE.Scene} scene - The Three.js scene
+     * @param {THREE.Camera} camera - The Three.js camera
+     * @param {number[]} position - Position as [x, y, z] array
+     * @param {Object} config - Configuration options
+     */
     constructor(scene, camera, position = [0, 0, 0], config = {}) {
+        // --- Input Validation ---
+        if (!scene) throw new Error('BaseControl3D: scene is required');
+        if (!camera) throw new Error('BaseControl3D: camera is required');
+        if (!Array.isArray(position) || position.length < 3 || position.some(v => typeof v !== 'number' || isNaN(v))) {
+            throw new TypeError(`BaseControl3D: position must be an Array of 3 numbers, got: ${JSON.stringify(position)}`);
+        }
+        if (typeof config !== 'object' || config === null || Array.isArray(config)) {
+            throw new TypeError(`BaseControl3D: config must be a plain object, got: ${typeof config}`);
+        }
+
         this.scene = scene;
         this.camera = camera;
-        this.renderer = config.renderer || null;
+        this.renderer = config.renderer || ControlRegistry.getRenderer() || null;
         this.position = position;
         this.config = config;
+
+        // Accessibility: reduced motion detection
+        this.reducedMotion = typeof window !== 'undefined' &&
+            window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
 
         // Create group for the control
         this.group = new THREE.Group();

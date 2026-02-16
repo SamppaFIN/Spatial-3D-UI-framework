@@ -91,6 +91,34 @@ export class ThemeManager {
                 warning: 0xffd700,
                 error: 0xff69b4,
                 border: 0x483d8b
+            },
+            highContrast: {
+                name: 'High Contrast',
+                primary: 0xffffff,
+                secondary: 0xffff00,
+                accent: 0x00ffff,
+                background: 0x000000,
+                surface: 0x111111,
+                text: 0xffffff,
+                textSecondary: 0xeeeeee,
+                success: 0x00ff00,
+                warning: 0xffff00,
+                error: 0xff0000,
+                border: 0xffffff
+            },
+            colorBlindSafe: {
+                name: 'Color Blind Safe',
+                primary: 0x0077bb,
+                secondary: 0x33bbee,
+                accent: 0xee7733,
+                background: 0x0a0a14,
+                surface: 0x1a1a2e,
+                text: 0xffffff,
+                textSecondary: 0xcccccc,
+                success: 0x009988,
+                warning: 0xee7733,
+                error: 0xcc3311,
+                border: 0x4a4a6e
             }
         };
 
