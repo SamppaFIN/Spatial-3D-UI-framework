@@ -5,6 +5,39 @@ All notable changes to the Spatial UI 3D Framework will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-02-16
+
+### 📚 Documentation Overhaul
+
+#### Added
+- **Comprehensive LLM Takeover Guide** in README.md — complete instructions for AI agents to understand, use, and extend the framework
+  - Full architecture tree with file descriptions
+  - BaseControl3D lifecycle documentation
+  - Complete component reference table (35 controls)
+  - Step-by-step new component creation guide
+  - Import map and full page template
+  - 10 critical rules for LLMs
+  - Debugging cheatsheet
+  - Reading priority list
+- **4 New Mathematical Body Components** since v1.0
+  - Gömböc3D - Self-righting shape
+  - MeissnerBody3D - Meissner body of constant width
+  - Sphericon3D - Sphericon rolling geometry
+  - ReuleauxTriangle3D - Reuleaux triangle body
+- **5 New Experimental Components** since v1.0
+  - ChronoLens3D - Temporal lens
+  - LiquidStateContainer3D - Liquid simulation
+  - GestureLoom3D - Gesture weaving
+  - AIChatBot3D - AI chatbot component
+  - Oloid3D - Oloid geometric sculpture
+
+#### Changed
+- Updated CONTRIBUTING.md with correct port (3002) and BaseControl3D patterns
+- Updated LLM_GUIDE.md to reference comprehensive README guide
+- Updated component count from 25 to 26+ across documentation
+
+---
+
 ## [1.0.0] - 2026-01-22
 
 ### 🎉 Initial Release

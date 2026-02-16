@@ -43,7 +43,7 @@ Follow our coding standards (see below).
 
 ```bash
 npm start
-# Test in browser at http://localhost:8080
+# Test in browser at http://localhost:3002
 ```
 
 ### 6. Commit and Push
@@ -93,35 +93,43 @@ if (condition) {
 All components should follow this pattern:
 
 ```javascript
+import { BaseControl3D } from '../core/BaseControl3D.js';
 import * as THREE from 'three';
 
-export default class MyComponent3D {
-    constructor(options = {}) {
-        this.options = {
-            position: { x: 0, y: 0, z: 0 },
-            ...options
-        };
-        
-        this.mesh = null;
-        this.init();
+export class MyComponent3D extends BaseControl3D {
+    constructor(scene, camera, position = [0, 0, 0], config = {}) {
+        super(scene, camera, position, config);
+        this.color = config.color || 0x00d4ff;
+        this.create();
     }
     
-    init() {
-        // Create geometry and materials
-        // Build mesh
-        // Set position
+    create() {
+        const geo = new THREE.BoxGeometry(1, 1, 1);
+        const mat = new THREE.MeshStandardMaterial({
+            color: this.color,
+            emissive: this.color,
+            emissiveIntensity: 0.2,
+            transparent: true,
+            opacity: 0.85
+        });
+        this.mesh = new THREE.Mesh(geo, mat);
+        this.group.add(this.mesh);
     }
     
     update() {
-        // Animation logic
+        // Animation logic (called every frame)
+    }
+    
+    onStateChange(key, value, oldValue) {
+        // React to state changes
     }
     
     dispose() {
-        // Clean up resources
         if (this.mesh) {
             this.mesh.geometry?.dispose();
             this.mesh.material?.dispose();
         }
+        super.dispose();
     }
 }
 ```
@@ -151,36 +159,38 @@ touch src/controls/MyNewComponent3D.js
 ### 2. Implement Component
 
 ```javascript
+import { BaseControl3D } from '../core/BaseControl3D.js';
 import * as THREE from 'three';
 
-export default class MyNewComponent3D {
-    constructor(options = {}) {
-        this.options = {
-            position: { x: 0, y: 0, z: 0 },
-            color: 0x00ffff,
-            ...options
-        };
-        
-        this.mesh = null;
-        this.init();
+export class MyNewComponent3D extends BaseControl3D {
+    constructor(scene, camera, position = [0, 0, 0], config = {}) {
+        super(scene, camera, position, config);
+        this.color = config.color || 0x00ffff;
+        this.create();
     }
     
-    init() {
+    create() {
         const geometry = new THREE.BoxGeometry(1, 1, 1);
         const material = new THREE.MeshStandardMaterial({
-            color: this.options.color
+            color: this.color,
+            emissive: this.color,
+            emissiveIntensity: 0.2,
+            transparent: true,
+            opacity: 0.85
         });
         
         this.mesh = new THREE.Mesh(geometry, material);
-        this.mesh.position.set(
-            this.options.position.x,
-            this.options.position.y,
-            this.options.position.z
-        );
+        this.group.add(this.mesh);
     }
     
     update() {
-        // Animation logic
+        // Animation logic (called every frame)
+    }
+    
+    onStateChange(key, value, oldValue) {
+        if (key === 'color' && this.mesh) {
+            this.mesh.material.color.set(value);
+        }
     }
     
     dispose() {
@@ -188,6 +198,7 @@ export default class MyNewComponent3D {
             this.mesh.geometry.dispose();
             this.mesh.material.dispose();
         }
+        super.dispose();
     }
 }
 ```
