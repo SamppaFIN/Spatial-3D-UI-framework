@@ -4,159 +4,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aurora Live: Virtual Metaverse Arena</title>
+    <title>Aurora Live XR — Spatial UI 3D</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/mobile-panel.css">
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: #0a0015;
-            font-family: 'Arial', sans-serif;
-        }
-
-        #concert-hud {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            pointer-events: none;
-            color: #ff00ff;
-            text-shadow: 0 0 10px rgba(255, 0, 255, 0.6);
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 1.6rem;
-            letter-spacing: 2px;
-        }
-
-        .sub {
-            font-size: 0.8rem;
-            color: #00ffff;
-            opacity: 0.8;
-        }
-
-        /* Neon vignette */
-        #neon-wash {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, transparent 40%, rgba(10, 0, 21, 0.7) 100%);
-            pointer-events: none;
-            z-index: 5;
-        }
+        body { margin: 0; overflow: hidden; background: #0a0015; font-family: 'Inter', sans-serif; }
+        .concert-hud { position: fixed; top: 20px; left: 20px; pointer-events: none; z-index: 10; color: #ff44ff; text-shadow: 0 0 20px rgba(255,68,255,0.6); }
+        .concert-hud h1 { margin: 0; font-family: 'Orbitron', monospace; font-size: 1.3rem; letter-spacing: 4px; }
+        .concert-hud .sub { font-size: 0.7rem; color: #00e5ff; margin-top: 2px; }
+        .crowd-count { position: fixed; top: 20px; right: 20px; pointer-events: none; z-index: 10; color: #ff44ff; font-size: 0.8rem; text-align: right; }
+        #neon-wash { position: fixed; inset: 0; pointer-events: none; z-index: 5; background: radial-gradient(ellipse, transparent 35%, rgba(10,0,21,0.8) 100%); }
+        .concert-panel.demo-controls { position: fixed; bottom: 24px; left: 24px; background: rgba(10,0,21,0.95); border: 1px solid rgba(255,68,255,0.3); border-radius: 12px; padding: 16px; color: #faf; font-size: 0.85rem; max-width: 300px; z-index: 20; }
+        .concert-panel h3 { margin: 0 0 6px 0; color: #ff44ff; font-size: 0.95rem; }
+        @media (max-width: 768px) { .concert-hud { top:12px; left:12px; } .concert-hud h1 { font-size:0.9rem; } .crowd-count { font-size:0.65rem; } .concert-panel.demo-controls { left:0;right:0;bottom:0;max-width:none;border-radius:20px 20px 0 0; } }
     </style>
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
-        }
-    </script>
+    <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
 
 <body>
     <div id="neon-wash"></div>
-    <div id="concert-hud">
-        <h1>AURORA LIVE XR</h1>
-        <div class="sub">Attendance: 47,892 • Energy: PEAK</div>
-    </div>
+    <div class="concert-hud"><h1>◆ AURORA LIVE ◆ XR ARENA</h1><div class="sub">NOW: "Digital Dreams" · Next: "Neon Pulse"</div></div>
+    <div class="crowd-count" id="crowdCount">👥 47,892</div>
+    <div class="concert-panel demo-controls" id="infoPanel"><h3>🎸 Stage Control</h3><p id="guideText">Welcome to the metaverse concert. Use the radial menu to switch tracks.</p></div>
 
     <script type="module">
         import * as THREE from 'three';
         import { SpatialEnvironment } from '../../src/environments/SpatialEnvironment.js';
         import { SemanticGhost } from '../../src/ai/SemanticGhost.js';
-
-        // Components
-        import { FlowFieldController3D } from '../../src/controls/FlowFieldController3D.js';
-        import { AIPortal3D } from '../../src/controls/AIPortal3D.js';
-        import { HaloCard3D } from '../../src/controls/HaloCard3D.js';
-        import { Slider3D } from '../../src/controls/Slider3D.js';
+        import { KineticSculpture3D } from '../../src/controls/KineticSculpture3D.js';
         import { RadialMenu3D } from '../../src/controls/RadialMenu3D.js';
+        import { Slider3D } from '../../src/controls/Slider3D.js';
 
-        // 1. Setup
-        const env = new SpatialEnvironment(document.body, { cameraPos: [0, 1.8, 5] });
+        const env = new SpatialEnvironment(document.body, { cameraPos: [0, 2.0, 5.5], fogDensity: 0.01 });
         env.init();
         env.scene.background = new THREE.Color(0x0a0015);
+        env.scene.add(new THREE.AmbientLight(0x330044, 0.4));
+        const stageLight = new THREE.SpotLight(0xff44ff, 5, 20, 0.5, 0.6); stageLight.position.set(0, 6, 3); env.scene.add(stageLight);
+        const sideLight = new THREE.PointLight(0x00e5ff, 2, 10); sideLight.position.set(5, 2, -2); env.scene.add(sideLight);
 
-        // Concert Lighting
-        const amb = new THREE.AmbientLight(0xff00ff, 0.4);
-        env.scene.add(amb);
+        // Floor
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(20,20), new THREE.MeshStandardMaterial({color:0x110022,roughness:0.8}));
+        floor.rotation.x = -Math.PI/2; floor.position.y = -2.5; env.scene.add(floor);
 
-        const spot = new THREE.SpotLight(0x00ffff, 4, 20, 0.5, 1);
-        spot.position.set(0, 8, 2);
-        env.scene.add(spot);
+        const ghost = new SemanticGhost(env.camera, env.scene, env.renderer); env.add(ghost); env.updatables.push(ghost);
 
-        // 2. V-Host AI (Ghost)
-        const vHost = new SemanticGhost(env.camera, env.scene, env.renderer);
-        env.add(vHost);
-        env.updatables.push(vHost);
+        // ── KineticSculpture3D — UNIQUE: Music Visualizer ──
+        const visualizer = new KineticSculpture3D(env.scene, env.camera, [0, 1.8, -2.5], { particleCount: 300, animationSpeed: 1.2 });
+        env.add(visualizer.group); env.updatables.push(visualizer);
 
-        setTimeout(() => {
-            vHost.updatePanelText("WELCOME TO THE METAVERSE TOUR");
-            vHost.guideTo(nowPlaying.group, "Currently: Digital Dreams");
-        }, 1500);
+        const tracks = ['Digital Dreams','Neon Pulse','Cyber Lullaby','Stellar Drift','Bass Reactor'];
+        let currentTrack = 0;
 
-
-        // 3. STAGE TOOLS
-
-        // Flow Field Center (Stage Visuals)
-        const flow = new FlowFieldController3D(env.scene, env.camera, [0, 1.8, -3], {
-            pointCount: 2000, color: 0x00ffff, spread: 5
-        });
-        env.add(flow.group);
-        env.updatables.push(flow);
-
-        // Backstage Entrance (Portal)
-        const stageGate = new AIPortal3D(env.scene, env.camera, [4, 1.8, -3], {
-            width: 2.2, height: 3.5, label: "BACKSTAGE", theme: 'cyber'
-        });
-        env.add(stageGate.group);
-        env.updatables.push(stageGate);
-
-
-        // 4. NOW PLAYING
-
-        const nowPlaying = new HaloCard3D(env.scene, env.camera, [0, 1, -1.5], {
-            title: "NOW PLAYING", description: "Aurora - Digital Dreams (Remix)",
-            width: 2.5, height: 0.6, color: 0xff00ff
-        });
-        env.add(nowPlaying.group);
-        env.updatables.push(nowPlaying);
-
-        // Mixer Sliders
-        const bassSlider = new Slider3D(env.scene, env.camera, [-4, 2, -3], {
-            label: "BASS_BOOST", width: 2.5, color: 0x00ffff,
-            onChange: (c, v) => {
-                flow.speed = 1 + (v * 5);
-                spot.intensity = 2 + (v * 6);
+        // Track selector radial menu
+        const trackMenu = new RadialMenu3D(env.scene, env.camera, [5, 1.2, -2.5], {
+            items: tracks.map(t => ({ label: t, icon: '🎵' })),
+            onSelect: (m, idx) => {
+                currentTrack = idx;
+                visualizer.animationSpeed = 0.5 + idx*0.4;
+                stageLight.color.setHSL(idx/5, 1, 0.5);
+                sideLight.color.setHSL((idx+0.3)/5, 1, 0.5);
+                ghost.updatePanelText(`🎵 NOW PLAYING: ${tracks[idx]}. Visualizer synced.`);
             }
         });
-        bassSlider.group.rotation.y = 0.4;
-        env.add(bassSlider.group);
-        env.updatables.push(bassSlider);
+        trackMenu.group.rotation.y = -0.3; env.add(trackMenu.group); env.updatables.push(trackMenu);
 
-        // Camera Menu
-        const camMenu = new RadialMenu3D(env.scene, env.camera, [-4, 0.8, -3], {
-            items: [
-                { label: "Front", icon: "📷" },
-                { label: "Pit", icon: "🔥" },
-                { label: "Drone", icon: "🛸" }
-            ],
-            onSelect: (m, idx, item) => {
-                vHost.updatePanelText(`SWITCHING_ANGLE: ${item.label.toUpperCase()}`);
+        // Energy slider
+        const energySlider = new Slider3D(env.scene, env.camera, [-5, 1.5, -2.5], {
+            label: 'CROWD ENERGY', width: 2.2, min: 0, max: 100, value: 78, color: 0xff44ff,
+            onChange: (c,v) => {
+                const crowd = Math.floor(40000 + v*200);
+                document.getElementById('crowdCount').textContent = '👥 ' + crowd.toLocaleString();
+                stageLight.intensity = 2 + (v/100)*6;
+                visualizer.animationSpeed = 0.5 + (v/100)*2;
+                ghost.updatePanelText(v>90?'🔥 CROWD AT PEAK! Energy levels maximum!':'Crowd energy: ' + v + '%. Keep the beat going!');
             }
         });
-        camMenu.group.rotation.y = 0.4;
-        env.add(camMenu.group);
-        env.updatables.push(camMenu);
+        energySlider.group.rotation.y = 0.3; env.add(energySlider.group); env.updatables.push(energySlider);
 
+        env.updatables.push({ update: (d) => { stageLight.intensity += Math.sin(Date.now()*0.005)*d*0.5; sideLight.intensity += Math.cos(Date.now()*0.007)*d*0.3; } });
 
-        // 5. START
         env.start();
+        setTimeout(()=>{ ghost.updatePanelText('🎸 WELCOME TO AURORA LIVE XR! Select a track from the radial menu.'); ghost.guideTo(trackMenu.group, 'Track Selector'); },1500);
 
+        const guideText = document.getElementById('guideText');
+        const orig = ghost.updatePanelText.bind(ghost); ghost.updatePanelText = (t) => { guideText.textContent = t; orig(t); };
     </script>
+    <script src="../scripts/mobile-controls.js"></script>
 </body>
-
 </html>

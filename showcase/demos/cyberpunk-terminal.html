@@ -4,161 +4,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ghost Protocol: Cybernetic Terminal</title>
+    <title>Ghost Protocol V4 — Spatial UI 3D</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/mobile-panel.css">
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: #050505;
-            font-family: 'Courier New', monospace;
-        }
-
-        #deck-hud {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            pointer-events: none;
-            color: #00ff88;
-            text-shadow: 0 0 10px rgba(0, 255, 136, 0.6);
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 1.4rem;
-            letter-spacing: 4px;
-        }
-
-        .sub {
-            font-size: 0.8rem;
-            color: #ff00ff;
-            opacity: 0.8;
-        }
-
-        /* Glitch scanlines */
-        #scanlines {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
-                linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            background-size: 100% 4px, 3px 100%;
-            pointer-events: none;
-            z-index: 5;
-        }
+        body { margin: 0; overflow: hidden; background: #050505; font-family: 'Share Tech Mono', monospace; }
+        .deck-hud { position: fixed; top: 20px; left: 20px; pointer-events: none; z-index: 10; color: #00ff88; text-shadow: 0 0 12px rgba(0,255,136,0.5); }
+        .deck-hud h1 { margin: 0; font-size: 1.1rem; letter-spacing: 3px; }
+        .deck-hud .sub { font-size: 0.65rem; color: #ff44ff; margin-top: 2px; }
+        .ice-level { position: fixed; top: 20px; right: 20px; pointer-events: none; z-index: 10; font-size: 0.7rem; color: #00ff88; }
+        #scanlines { position: fixed; inset: 0; pointer-events: none; z-index: 5; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px); }
+        .deck-panel.demo-controls { position: fixed; bottom: 24px; left: 24px; background: rgba(5,5,5,0.95); border: 1px solid rgba(0,255,136,0.3); border-radius: 12px; padding: 16px; color: #0f8; font-size: 0.8rem; max-width: 320px; z-index: 20; }
+        .deck-panel h3 { margin: 0 0 6px 0; color: #00ff88; font-size: 0.9rem; }
+        @media (max-width: 768px) { .deck-hud { top:12px; left:12px; } .deck-hud h1 { font-size:0.85rem; } .ice-level { top:12px; right:8px; } .deck-panel.demo-controls { left:0;right:0;bottom:0;max-width:none;border-radius:20px 20px 0 0; } }
     </style>
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
-        }
-    </script>
+    <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
 
 <body>
     <div id="scanlines"></div>
-    <div id="deck-hud">
-        <h1>GHOST_PROTOCOL_V4</h1>
-        <div class="sub">ICE Level: Critical • Trace: 0%</div>
-    </div>
+    <div class="deck-hud"><h1>◆ GHOST_PROTOCOL_V4 ◆</h1><div class="sub">ICE Level: CRITICAL · Trace: 0% · Uplink: ACTIVE</div></div>
+    <div class="ice-level" id="iceLevel">🛡️ ICE: 78%</div>
+    <div class="deck-panel demo-controls" id="infoPanel"><h3>💀 Terminal · Ghost AI</h3><p id="guideText">Connection established. Type commands or use the interface to bypass security.</p></div>
 
     <script type="module">
         import * as THREE from 'three';
         import { SpatialEnvironment } from '../../src/environments/SpatialEnvironment.js';
         import { SemanticGhost } from '../../src/ai/SemanticGhost.js';
-
-        // Components
-        import { MagneticCard3D } from '../../src/controls/MagneticCard3D.js';
         import { Button3D } from '../../src/controls/Button3D.js';
-        import { Chart3D } from '../../src/controls/Chart3D.js';
-        import { VolumetricCard3D } from '../../src/controls/VolumetricCard3D.js';
-        import { HaloCard3D } from '../../src/controls/HaloCard3D.js';
+        import { Slider3D } from '../../src/controls/Slider3D.js';
+        import { Toggle3D } from '../../src/controls/Toggle3D.js';
 
-        // 1. Setup
-        const env = new SpatialEnvironment(document.body, { cameraPos: [0, 1.6, 4] });
+        const env = new SpatialEnvironment(document.body, { cameraPos: [0, 1.8, 4.5], fogDensity: 0.015 });
         env.init();
         env.scene.background = new THREE.Color(0x050505);
+        env.scene.fog = new THREE.FogExp2(0x050505, 0.015);
 
-        // Neon Matrix Ambience
-        const grid = new THREE.GridHelper(20, 20, 0xff00ff, 0x00ff88);
-        grid.position.y = -2;
-        env.scene.add(grid);
+        const grid = new THREE.PolarGridHelper(8, 32, 16, 64, 0x00ff88, 0x003322);
+        grid.position.y = -2; env.scene.add(grid);
+        env.scene.add(new THREE.AmbientLight(0x003322, 0.3));
+        const neonLight = new THREE.PointLight(0x00ff88, 3, 10); neonLight.position.set(0, 3, 2); env.scene.add(neonLight);
 
-        // 2. Hacker AI (Ghost)
-        const deckAI = new SemanticGhost(env.camera, env.scene, env.renderer);
-        env.add(deckAI);
-        env.updatables.push(deckAI);
+        const ghost = new SemanticGhost(env.camera, env.scene, env.renderer); env.add(ghost); env.updatables.push(ghost);
 
-        setTimeout(() => {
-            deckAI.updatePanelText("DECK_LINK_ESTABLISHED: WELCOME GHOST");
-            deckAI.guideTo(mainLog.group, "Accessing Mission Log");
-        }, 1500);
+        let iceLevel = 78;
 
-
-        // 3. NET DECK TOOLS
-
-        // Main Hacking Log
-        const mainLog = new MagneticCard3D(env.scene, env.camera, [0, 1.2, -2], {
-            width: 3.5, height: 2, color: 0x0a0a0a,
-            title: "SYS_LOG", description: "> Scanning firewall...\n> Exploit detected in sector 4\n> Bypassing ICE..."
-        });
-        env.add(mainLog.group);
-        env.updatables.push(mainLog);
-
-        // Traffic Monitor
-        const traffic = new Chart3D(env.scene, env.camera, [-3.5, 2.0, -2.5], {
-            width: 3, height: 2, chartType: 'line',
-            data: {
-                labels: ['T1', 'T2', 'T3', 'T4', 'T5'],
-                datasets: [{
-                    label: 'Bandwidth',
-                    data: [40, 60, 45, 80, 70],
-                    borderColor: '#00ff88',
-                    backgroundColor: 'rgba(0, 255, 136, 0.1)'
-                }]
+        // ── ICE Slider (hacking difficulty) ──
+        const iceSlider = new Slider3D(env.scene, env.camera, [4.5, 1.2, -2], {
+            label: 'ICE LEVEL', width: 2.2, min: 0, max: 100, value: 78, color: 0x00ff88,
+            onChange: (c,v) => {
+                iceLevel = Math.round(v);
+                document.getElementById('iceLevel').textContent = '🛡️ ICE: ' + iceLevel + '%';
+                neonLight.color.setHSL(0.3, 1, 0.3 + (v/100)*0.3);
+                grid.material.color.set(v>70?0xff4444:v>40?0xffaa00:0x00ff88);
+                ghost.updatePanelText(v>80?'⚠️ BLACK ICE DETECTED. Counter-intrusion active.':'ICE at ' + iceLevel + '%. Proceed with caution.');
             }
         });
-        traffic.group.rotation.y = 0.4;
-        env.add(traffic.group);
-        env.updatables.push(traffic);
+        iceSlider.group.rotation.y = -0.3; env.add(iceSlider.group); env.updatables.push(iceSlider);
 
-        // Hacking Actions
-        const breachBtn = new Button3D(env.scene, env.camera, [-3.5, 0.8, -2.5], {
-            label: "BREACH_ICE", width: 2.5, color: 0xff00ff,
+        // ── Breach Button ──
+        const breachBtn = new Button3D(env.scene, env.camera, [4.5, -0.5, -2], {
+            label: '⚡ BREACH', width: 2.2, color: 0xff44ff,
             onClick: () => {
-                deckAI.updatePanelText("WARNING: BLACK_ICE_ACTIVE");
-                grid.material.color.setHex(0xff0000);
-                setTimeout(() => grid.material.color.setHex(0xff00ff), 1000);
+                if(iceLevel > 60) {
+                    ghost.updatePanelText('🚫 BREACH FAILED. ICE too strong. Lower security first.');
+                    neonLight.intensity = 8; setTimeout(()=>{neonLight.intensity=3;},300);
+                } else {
+                    ghost.updatePanelText('✅ BREACH SUCCESSFUL. Data core accessed. Downloading files...');
+                    neonLight.color.set(0x44ff44);
+                    setTimeout(()=>{neonLight.color.set(0x00ff88);},2000);
+                }
             }
         });
-        breachBtn.group.rotation.y = 0.4;
-        env.add(breachBtn.group);
-        env.updatables.push(breachBtn);
+        breachBtn.group.rotation.y = -0.3; env.add(breachBtn.group); env.updatables.push(breachBtn);
 
-
-        // 4. DATA NODES (Specimens)
-        const node1 = new VolumetricCard3D(env.scene, env.camera, [3.5, 1.5, -2.5], {
-            width: 2, height: 3, baseColor: 0x00ff88, title: "DATA_CORE_01", popScale: 0.5
+        // ── Stealth Toggle ──
+        const stealthToggle = new Toggle3D(env.scene, env.camera, [-4.5, 1.2, -2], {
+            label: 'GHOST MODE', width: 2.2, isOn: true, onColor: 0x4444ff, offColor: 0x333333,
+            onClick: (t) => {
+                ghost.updatePanelText(t.isOn?'🕶️ Ghost mode active. Trace: 0%. Moving silently.':'⚠️ Ghost mode OFF. You are visible to ICE.');
+            }
         });
-        node1.group.rotation.y = -0.4;
-        env.add(node1.group);
-        env.updatables.push(node1);
+        stealthToggle.group.rotation.y = 0.3; env.add(stealthToggle.group); env.updatables.push(stealthToggle);
 
-        const nodeInfo = new HaloCard3D(env.scene, env.camera, [0, 0, 0], {
-            title: "ENCRYPTION: AES-2048", width: 1.5, height: 0.4,
-            offset: [0, 1.2, 0], anchorObject: node1.group, color: 0x00ff88
-        });
-        env.add(nodeInfo.group);
-        env.updatables.push(nodeInfo);
+        // Data fragments (floating particles)
+        const fragGeo = new THREE.BufferGeometry(); const fCount = 80; const fPos = new Float32Array(fCount*3);
+        for(let i=0;i<fCount;i++){ fPos[i*3]=(Math.random()-0.5)*8; fPos[i*3+1]=Math.random()*4; fPos[i*3+2]=(Math.random()-0.5)*4-2; }
+        fragGeo.setAttribute('position',new THREE.BufferAttribute(fPos,3));
+        const frags = new THREE.Points(fragGeo,new THREE.PointsMaterial({size:0.04,color:0x00ff88,transparent:true,opacity:0.6}));
+        env.scene.add(frags);
 
+        env.updatables.push({ update: (d) => {
+            const pos = fragGeo.attributes.position.array;
+            for(let i=0;i<fCount;i++){ pos[i*3+1]+=d*0.5; if(pos[i*3+1]>5)pos[i*3+1]=0; pos[i*3]+=Math.sin(Date.now()*0.002+i)*d*0.3; }
+            fragGeo.attributes.position.needsUpdate = true;
+            neonLight.intensity += Math.sin(Date.now()*0.006)*d*0.5;
+        }});
 
-        // 5. START
         env.start();
+        setTimeout(()=>{ ghost.updatePanelText('> DECK ONLINE. ICE detected at 78%. Use slider to weaken, then BREACH.'); },1500);
 
+        const guideText = document.getElementById('guideText');
+        const orig = ghost.updatePanelText.bind(ghost); ghost.updatePanelText = (t) => { guideText.textContent = t; orig(t); };
     </script>
+    <script src="../scripts/mobile-controls.js"></script>
 </body>
 
 </html>

@@ -1,0 +1,205 @@
+/* ⚡ Spatial UI 3D — Mobile Panel System
+   Shared bottom-sheet styles for all component demo pages.
+   Load this AFTER showcase.css and responsive.css. */
+
+/* ── CSS Custom Properties ── */
+:root {
+    --mobile-panel-bg: rgba(20, 20, 31, 0.98);
+    --mobile-panel-border: var(--cosmic-cyan, #4ecdc4);
+    --mobile-fab-bg: var(--cosmic-cyan, #4ecdc4);
+    --mobile-fab-active-bg: #ff6b9d;
+    --mobile-backdrop-bg: rgba(0, 0, 0, 0.5);
+    --mobile-panel-radius: 20px;
+    --mobile-fab-size: 56px;
+    --mobile-fab-margin: 20px;
+    --mobile-panel-max-height: 60vh;
+    --mobile-transition: 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* ── Mobile Breakpoint (≤768px) ── */
+@media (max-width: 768px) {
+    /* === Prevent browser gestures on 3D canvas === */
+    canvas {
+        touch-action: none;
+    }
+
+    /* === Bottom Sheet Panel === */
+    .demo-controls {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--mobile-panel-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        z-index: 1000;
+        border-top: 1px solid var(--mobile-panel-border);
+        border-radius: var(--mobile-panel-radius) var(--mobile-panel-radius) 0 0;
+        padding: 20px;
+        padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+
+        /* Hidden below viewport by default */
+        transform: translateY(110%);
+        transition: transform var(--mobile-transition);
+
+        max-height: var(--mobile-panel-max-height);
+        overflow-y: auto;
+        overflow-x: hidden;
+
+        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+
+        /* Pull handle */
+        --handle-width: 36px;
+        --handle-height: 4px;
+    }
+
+    /* Pull handle indicator */
+    .demo-controls::before {
+        content: '';
+        display: block;
+        width: var(--handle-width);
+        height: var(--handle-height);
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 2px;
+        margin: 0 auto 12px auto;
+    }
+
+    /* === Visible State === */
+    .demo-controls.mobile-visible {
+        transform: translateY(0);
+    }
+
+    /* === Backdrop Overlay === */
+    .mobile-panel-backdrop {
+        position: fixed;
+        inset: 0;
+        background: var(--mobile-backdrop-bg);
+        z-index: 999;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity var(--mobile-transition);
+    }
+
+    .mobile-panel-backdrop.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* === FAB (Floating Action Button) === */
+    #mobile-controls-toggle {
+        position: fixed;
+        bottom: var(--mobile-fab-margin);
+        right: var(--mobile-fab-margin);
+        width: var(--mobile-fab-size);
+        height: var(--mobile-fab-size);
+        border-radius: 50%;
+        background: var(--mobile-fab-bg);
+        color: #000;
+        border: none;
+        box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+        z-index: 2001;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        opacity: 0.9;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+    }
+
+    #mobile-controls-toggle:hover {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+
+    #mobile-controls-toggle:active {
+        transform: scale(0.95);
+        opacity: 0.8;
+    }
+
+    #mobile-controls-toggle.active {
+        background: var(--mobile-fab-active-bg);
+        color: white;
+        transform: rotate(180deg);
+    }
+
+    /* === Custom Scrollbar for Panel === */
+    .demo-controls::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .demo-controls::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .demo-controls::-webkit-scrollbar-thumb {
+        background: var(--mobile-panel-border);
+        border-radius: 10px;
+        opacity: 0.5;
+    }
+
+    /* === Body scroll lock when panel open === */
+    body.mobile-panel-open {
+        overflow: hidden;
+        touch-action: none;
+    }
+
+    /* === Adjust main content for FAB space === */
+    .demo-container {
+        padding-bottom: 80px;
+    }
+}
+
+/* ── Small Mobile (≤480px) ── */
+@media (max-width: 480px) {
+    :root {
+        --mobile-panel-radius: 16px;
+        --mobile-fab-size: 48px;
+        --mobile-fab-margin: 16px;
+        --mobile-panel-max-height: 70vh;
+    }
+
+    .demo-controls {
+        padding: 16px;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    }
+
+    #mobile-controls-toggle {
+        font-size: 20px;
+    }
+}
+
+/* ── Touch Device Optimizations ── */
+@media (hover: none) and (pointer: coarse) {
+    .demo-controls .control-btn,
+    .demo-controls button {
+        min-height: 44px;           /* Apple HIG minimum touch target */
+        touch-action: manipulation;
+    }
+
+    .demo-controls input[type="range"] {
+        min-height: 30px;           /* Larger slider for thumbs */
+    }
+
+    .demo-controls select {
+        min-height: 44px;
+    }
+}
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+    .demo-controls {
+        transition: none;
+    }
+
+    #mobile-controls-toggle {
+        transition: none;
+    }
+
+    .mobile-panel-backdrop {
+        transition: none;
+    }
+}

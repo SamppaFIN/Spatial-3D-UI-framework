@@ -4,157 +4,325 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Medical Bay 2050: Clinical Interface</title>
+    <title>Medical Bay 2050 — Spatial UI 3D</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/mobile-panel.css">
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background: #eef4f9;
+            background: #f0f4f8;
             font-family: 'Inter', sans-serif;
         }
 
-        #med-hud {
-            position: absolute;
+        .med-hud {
+            position: fixed;
             top: 20px;
             left: 20px;
             pointer-events: none;
-            color: #2c98f0;
-            text-shadow: 0 0 5px rgba(44, 152, 240, 0.3);
+            z-index: 10;
+            color: #2c7be5;
+            text-shadow: 0 0 8px rgba(44, 123, 229, 0.2);
         }
-
-        h1 {
+        .med-hud h1 {
             margin: 0;
-            font-size: 1.4rem;
-            letter-spacing: 1px;
+            font-size: 1.3rem;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+        .med-hud .sub {
+            font-size: 0.75rem;
+            color: #5a8ab5;
+            margin-top: 2px;
         }
 
-        .sub {
+        /* Vital signs monitor (top-right) */
+        .vitals-monitor {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            pointer-events: none;
+            z-index: 10;
             font-size: 0.8rem;
-            color: #555;
+            font-family: 'Inter', monospace;
         }
+        .vitals-monitor .vital { margin-bottom: 6px; }
+        .vitals-monitor .vital .val { font-weight: 700; font-size: 1.1rem; }
+        .vitals-monitor .vital.bpm .val { color: #e63757; }
+        .vitals-monitor .vital.o2 .val { color: #00d97e; }
+        .vitals-monitor .vital.bp .val { color: #2c7be5; }
 
         /* Sterile vignette */
-        #sterile {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, transparent 50%, rgba(200, 220, 240, 0.4) 100%);
+        #sterile-vignette {
+            position: fixed;
+            inset: 0;
             pointer-events: none;
             z-index: 5;
+            background: radial-gradient(ellipse, transparent 55%, rgba(200, 215, 235, 0.35) 100%);
+        }
+
+        /* Info panel (mobile toggle) */
+        .med-panel.demo-controls {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(44, 123, 229, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            color: #334;
+            font-size: 0.85rem;
+            max-width: 300px;
+            z-index: 20;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .med-panel h3 { margin: 0 0 6px 0; color: #2c7be5; font-size: 0.95rem; }
+
+        @media (max-width: 768px) {
+            .med-hud { top: 12px; left: 12px; }
+            .med-hud h1 { font-size: 1rem; }
+            .vitals-monitor { top: 12px; right: 12px; font-size: 0.65rem; }
+            .vitals-monitor .vital .val { font-size: 0.9rem; }
+            .med-panel.demo-controls {
+                left: 0; right: 0; bottom: 0;
+                max-width: none;
+                border-radius: 20px 20px 0 0;
+            }
         }
     </style>
     <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
         }
+    }
     </script>
 </head>
 
 <body>
-    <div id="sterile"></div>
-    <div id="med-hud">
-        <h1>MED-BAY SECTOR 4</h1>
-        <div class="sub">Patient #4521 • Stable Condition</div>
+    <div id="sterile-vignette"></div>
+
+    <div class="med-hud">
+        <h1>🏥 MED-BAY SECTOR 4</h1>
+        <div class="sub">Patient #4521 · Post-Op Observation · Stable</div>
+    </div>
+
+    <div class="vitals-monitor">
+        <div class="vital bpm"><span class="val" id="bpmVal">72</span> <span>BPM</span></div>
+        <div class="vital o2"><span class="val" id="o2Val">98</span> <span>SpO₂%</span></div>
+        <div class="vital bp"><span class="val" id="bpVal">120/80</span> <span>mmHg</span></div>
+    </div>
+
+    <div class="med-panel demo-controls" id="infoPanel">
+        <h3>🩺 Surgical Hologram Suite</h3>
+        <p id="guideText">3D cardiac model active. Drag to rotate. Vital signs nominal.</p>
+        <p style="font-size:0.7rem;opacity:0.4;margin-top:8px;">← Swipe down to dismiss on mobile</p>
     </div>
 
     <script type="module">
         import * as THREE from 'three';
         import { SpatialEnvironment } from '../../src/environments/SpatialEnvironment.js';
         import { SemanticGhost } from '../../src/ai/SemanticGhost.js';
-
-        // Components
-        import { MagneticCard3D } from '../../src/controls/MagneticCard3D.js';
-        import { HaloCard3D } from '../../src/controls/HaloCard3D.js';
+        import { IKManipulator3D } from '../../src/controls/IKManipulator3D.js';
         import { Chart3D } from '../../src/controls/Chart3D.js';
-        import { VolumetricCard3D } from '../../src/controls/VolumetricCard3D.js';
+        import { DataVolume3D } from '../../src/controls/DataVolume3D.js';
+        import { Toggle3D } from '../../src/controls/Toggle3D.js';
+        import { Slider3D } from '../../src/controls/Slider3D.js';
+        import { MagneticCard3D } from '../../src/controls/MagneticCard3D.js';
 
-        // 1. Setup
-        const env = new SpatialEnvironment(document.body, { cameraPos: [0, 1.8, 4] });
+        // ── 1. Environment ──
+        const env = new SpatialEnvironment(document.body, { cameraPos: [0, 2.0, 5], fogDensity: 0.008 });
         env.init();
-        env.scene.background = new THREE.Color(0xeef4f9);
-        env.scene.fog = new THREE.Fog(0xeef4f9, 5, 20);
+        env.scene.background = new THREE.Color(0xf0f4f8);
+        env.scene.fog = new THREE.Fog(0xf0f4f8, 6, 22);
 
-        // Clinical Lighting
+        // Clinical bright lighting
         const amb = new THREE.AmbientLight(0xffffff, 0.7);
         env.scene.add(amb);
-
-        const surgeryLight = new THREE.SpotLight(0xffffff, 1.5, 10, 0.4);
-        surgeryLight.position.set(0, 5, 0);
+        const surgeryLight = new THREE.SpotLight(0xffffff, 2, 12, 0.35, 0.6);
+        surgeryLight.position.set(0, 5, 2);
+        surgeryLight.castShadow = true;
         env.scene.add(surgeryLight);
 
-        // 2. Med AI (Ghost)
+        // Floor grid (surgical suite)
+        const floorGrid = new THREE.PolarGridHelper(8, 24, 16, 64, 0xccddee, 0xccddee);
+        floorGrid.position.y = -2;
+        env.scene.add(floorGrid);
+
+        // ── 2. Medical AI ──
         const medAI = new SemanticGhost(env.camera, env.scene, env.renderer);
         env.add(medAI);
         env.updatables.push(medAI);
 
         setTimeout(() => {
-            medAI.updatePanelText("DIAGNOSTIC SYSTEM ONLINE");
-            medAI.guideTo(vitalsHub.group, "Scanning Patient Vitals");
+            medAI.updatePanelText("DIAGNOSTIC SYSTEM ONLINE. Cardiac hologram initialized.");
+            medAI.guideTo(anatomyModel.group, "3D Cardiac Model — Drag to Examine");
         }, 1500);
 
+        // ── 3. IKManipulator3D — UNIQUE: 3D Organ Model ──
+        const heartGeometry = new THREE.IcosahedronGeometry(0.7, 3);
+        // Deform to make it heart-like
+        const heartPositions = heartGeometry.attributes.position;
+        for (let i = 0; i < heartPositions.count; i++) {
+            const x = heartPositions.getX(i);
+            const y = heartPositions.getY(i);
+            const z = heartPositions.getZ(i);
+            // Pinch bottom, bulge top
+            const deformY = y * (1 + Math.abs(y) * 0.4);
+            heartPositions.setY(i, deformY);
+            // Slight X squeeze
+            heartPositions.setX(i, x * 0.85);
+        }
+        heartGeometry.computeVertexNormals();
 
-        // 3. CLINICAL TOOLS
-
-        // Patient Records
-        const records = new MagneticCard3D(env.scene, env.camera, [-3, 1.5, -2], {
-            width: 2.2, height: 3, color: 0xffffff,
-            title: "PATIENT RECORD", description: "Name: John Doe\nAge: 45\nStatus: Post-Op"
+        const heartMaterial = new THREE.MeshStandardMaterial({
+            color: 0xe63757,
+            roughness: 0.3,
+            metalness: 0.1,
+            emissive: 0x330010,
+            emissiveIntensity: 0.2,
+            transparent: true,
+            opacity: 0.9
         });
-        records.group.rotation.y = 0.3;
-        env.add(records.group);
-        env.updatables.push(records);
 
-        // Vitals Hub
-        const vitalsHub = new THREE.Group();
-        vitalsHub.position.set(3, 1.5, -2);
-        vitalsHub.rotation.y = -0.3;
-        env.scene.add(vitalsHub);
+        const heartMesh = new THREE.Mesh(heartGeometry, heartMaterial);
+        heartMesh.position.set(0, 1.8, -2.5);
 
-        const heartChart = new Chart3D(env.scene, env.camera, [0, 0, 0], {
-            width: 2.5, height: 1.5, chartType: 'line',
+        // Add subtle wireframe overlay
+        const wireframeGeo = heartGeometry.clone();
+        const wireframe = new THREE.LineSegments(
+            new THREE.WireframeGeometry(wireframeGeo),
+            new THREE.LineBasicMaterial({ color: 0xff6688, transparent: true, opacity: 0.15 })
+        );
+        heartMesh.add(wireframe);
+
+        // IKManipulator to rotate the organ
+        const anatomyModel = new IKManipulator3D(env.scene, env.camera, [0, 1.8, -2.5], {
+            targetMesh: heartMesh,
+            rotationSpeed: 0.5,
+            enableDamping: true
+        });
+        env.add(anatomyModel.group);
+        env.updatables.push(anatomyModel);
+
+        // Pulse animation for the heart
+        let heartPulse = 0;
+        env.updatables.push({
+            update: (delta) => {
+                heartPulse += delta * 1.2;
+                const scale = 1 + Math.sin(heartPulse) * 0.03;
+                heartMesh.scale.setScalar(scale);
+            }
+        });
+
+        // ── 4. DataVolume3D — Vital Signs Volumetric Display ──
+        const vitalsVolume = new DataVolume3D(env.scene, env.camera, [4.0, 1.5, -3], {
+            width: 2.0,
+            height: 2.5,
+            depth: 1.5,
+            data: [
+                { value: 72, label: 'BPM', color: 0xe63757 },
+                { value: 98, label: 'SpO₂', color: 0x00d97e },
+                { value: 120, label: 'Sys', color: 0x2c7be5 },
+                { value: 80, label: 'Dia', color: 0x4d94ff }
+            ],
+            color: 0x2c7be5
+        });
+        vitalsVolume.group.rotation.y = -0.4;
+        env.add(vitalsVolume.group);
+        env.updatables.push(vitalsVolume);
+
+        // ── 5. ECG Chart ──
+        const ecgChart = new Chart3D(env.scene, env.camera, [-4.0, 1.8, -3], {
+            width: 2.5,
+            height: 1.5,
+            chartType: 'line',
             data: {
-                labels: ['T1', 'T2', 'T3', 'T4', 'T5'],
+                labels: ['0s', '2s', '4s', '6s', '8s', '10s'],
                 datasets: [{
-                    label: 'BPM',
-                    data: [70, 72, 68, 75, 71],
-                    borderColor: '#5cb85c',
-                    backgroundColor: 'rgba(92, 184, 92, 0.1)'
+                    label: 'ECG',
+                    data: [0, 0, 0.1, 1.0, -0.3, 0, 0, 0.1, 0.9, -0.2, 0],
+                    borderColor: '#e63757',
+                    borderWidth: 2,
+                    backgroundColor: 'transparent',
+                    tension: 0,
+                    pointRadius: 0
                 }]
             }
         });
-        vitalsHub.add(heartChart.group);
-        env.updatables.push(heartChart);
+        ecgChart.group.rotation.y = 0.4;
+        env.add(ecgChart.group);
+        env.updatables.push(ecgChart);
 
-        // Float labels
-        const labels = ["Heart Rate: 72", "O2: 98%", "Temp: 37.1°C"];
-        labels.forEach((text, i) => {
-            const h = new HaloCard3D(env.scene, env.camera, [0, 0, 0], {
-                title: text, width: 1.8, height: 0.35,
-                offset: [0, 0.8 + i * 0.5, 0], anchorObject: heartChart.group,
-                color: 0x5cb85c
-            });
-            env.add(h.group);
-            env.updatables.push(h);
+        // ── 6. Zoom Slider (organ examination depth) ──
+        const zoomSlider = new Slider3D(env.scene, env.camera, [-4.0, 0.3, -3], {
+            label: 'SCAN DEPTH',
+            width: 2.2,
+            min: 10,
+            max: 100,
+            value: 50,
+            step: 1,
+            color: 0x2c7be5,
+            onChange: (ctrl, val) => {
+                const s = val / 100;
+                heartMaterial.opacity = 0.5 + s * 0.5;
+                wireframe.material.opacity = 0.05 + s * 0.3;
+                medAI.updatePanelText(`Scan depth: ${val}%. ${val > 70 ? 'Microvascular level.' : 'Surface morphology.'}`);
+            }
         });
+        zoomSlider.group.rotation.y = 0.4;
+        env.add(zoomSlider.group);
+        env.updatables.push(zoomSlider);
 
-
-        // 4. SCANNER DISPLAY
-        const scanner = new VolumetricCard3D(env.scene, env.camera, [0, 0.5, -1], {
-            width: 1.5, height: 1.5, baseColor: 0x4a90e2, title: "ORGAN_SCAN", popHeight: 0.8
+        // ── 7. Patient Record Card ──
+        const patientCard = new MagneticCard3D(env.scene, env.camera, [4.0, 0.5, -3], {
+            width: 2.0,
+            height: 1.8,
+            color: 0xffffff,
+            title: 'PATIENT #4521',
+            description: 'Name: J. Doe\nAge: 45 · Male\nAdmitted: 2050-03-12\nProcedure: Aortic Valve\nStatus: Post-Op Day 2'
         });
-        env.add(scanner.group);
-        env.updatables.push(scanner);
+        patientCard.group.rotation.y = -0.4;
+        env.add(patientCard.group);
+        env.updatables.push(patientCard);
 
+        // ── 8. Monitoring Toggle ──
+        const monitorToggle = new Toggle3D(env.scene, env.camera, [0, 0.0, -1.0], {
+            label: 'CONTINUOUS MONITOR',
+            width: 2.5,
+            isOn: true,
+            onColor: 0x00d97e,
+            offColor: 0x888888,
+            onClick: (t) => {
+                const bpmEl = document.getElementById('bpmVal');
+                const o2El = document.getElementById('o2Val');
+                if (t.isOn) {
+                    bpmEl.textContent = '72'; o2El.textContent = '98';
+                    medAI.updatePanelText('Monitoring active. All vitals within normal range.');
+                } else {
+                    bpmEl.textContent = '--'; o2El.textContent = '--';
+                    medAI.updatePanelText('⚠️ Monitoring paused. Manual check required.');
+                }
+            }
+        });
+        env.add(monitorToggle.group);
+        env.updatables.push(monitorToggle);
 
-        // 5. START
+        // ── 9. Start ──
         env.start();
 
+        // ── 10. Guide text sync ──
+        const guideText = document.getElementById('guideText');
+        const origUpdate = medAI.updatePanelText.bind(medAI);
+        medAI.updatePanelText = (text) => {
+            guideText.textContent = text;
+            origUpdate(text);
+        };
     </script>
+
+    <script src="../scripts/mobile-controls.js"></script>
 </body>
 
 </html>

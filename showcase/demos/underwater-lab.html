@@ -4,62 +4,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neptune Deep: Underwater Research Station</title>
+    <title>Neptune Deep — Spatial UI 3D</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/mobile-panel.css">
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background: #000c1a;
-            font-family: 'Consolas', monospace;
+            background: #000510;
+            font-family: 'Share Tech Mono', 'Inter', monospace;
         }
 
-        #hud {
-            position: absolute;
+        .depth-hud {
+            position: fixed;
             top: 20px;
             left: 20px;
             pointer-events: none;
+            z-index: 10;
             color: #00d4ff;
-            text-shadow: 0 0 8px rgba(0, 212, 255, 0.6);
+            text-shadow: 0 0 12px rgba(0, 212, 255, 0.5);
         }
-
-        h1 {
+        .depth-hud h1 {
             margin: 0;
-            font-size: 1.4rem;
-            letter-spacing: 2px;
+            font-size: 1.3rem;
+            letter-spacing: 3px;
         }
-
-        .sub {
-            font-size: 0.8rem;
-            opacity: 0.8;
+        .depth-hud .depth-reading {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 4px 0;
+            color: #00ff88;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.6);
+            transition: color 0.5s;
         }
+        .depth-hud .depth-reading.deep { color: #ff4444; }
+        .depth-hud .sub { font-size: 0.7rem; opacity: 0.7; }
 
         /* Abyssal vignette */
-        #abyss {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, transparent 40%, rgba(0, 10, 20, 0.9) 100%);
+        #abyss-vignette {
+            position: fixed;
+            inset: 0;
             pointer-events: none;
             z-index: 5;
+            background: radial-gradient(ellipse, transparent 40%, rgba(0, 5, 15, 0.85) 100%);
+        }
+
+        /* Hull integrity indicator */
+        .hull-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            pointer-events: none;
+            z-index: 10;
+            font-size: 0.8rem;
+            color: #00ff88;
+            text-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+        }
+
+        /* Info panel (mobile toggle) */
+        .depth-panel.demo-controls {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            background: rgba(0, 10, 30, 0.92);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            color: #aaccff;
+            font-size: 0.85rem;
+            max-width: 300px;
+            z-index: 20;
+            backdrop-filter: blur(10px);
+        }
+        .depth-panel h3 { margin: 0 0 6px 0; color: #00d4ff; font-size: 0.95rem; }
+
+        @media (max-width: 768px) {
+            .depth-hud { top: 12px; left: 12px; }
+            .depth-hud h1 { font-size: 1rem; }
+            .depth-hud .depth-reading { font-size: 1.5rem; }
+            .hull-status { top: 12px; right: 12px; font-size: 0.7rem; }
+            .depth-panel.demo-controls {
+                left: 0; right: 0; bottom: 0;
+                max-width: none;
+                border-radius: 20px 20px 0 0;
+            }
         }
     </style>
     <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
         }
+    }
     </script>
 </head>
 
 <body>
-    <div id="abyss"></div>
-    <div id="hud">
-        <h1>NEPTUNE DEEP STATION</h1>
-        <div class="sub">3,200m Below Surface • Hull Intact</div>
+    <div id="abyss-vignette"></div>
+
+    <div class="depth-hud">
+        <h1>◆ NEPTUNE DEEP ◆</h1>
+        <div class="depth-reading" id="depthReading">3,200m</div>
+        <div class="sub">Hadopelagic Zone · Mariana Sector</div>
+    </div>
+
+    <div class="hull-status" id="hullStatus">🛡️ HULL: 98%</div>
+
+    <div class="depth-panel demo-controls" id="infoPanel">
+        <h3>🌊 SONAR LOG</h3>
+        <p id="guideText">Depth 3,200m. Sonar active. No anomalies detected.</p>
     </div>
 
     <script type="module">
@@ -67,127 +122,213 @@
         import { SpatialEnvironment } from '../../src/environments/SpatialEnvironment.js';
         import { SemanticGhost } from '../../src/ai/SemanticGhost.js';
         import { EchoInteraction3D } from '../../src/controls/EchoInteraction3D.js';
-
-        // Components
-        import { VolumetricCard3D } from '../../src/controls/VolumetricCard3D.js';
-        import { MagneticCard3D } from '../../src/controls/MagneticCard3D.js';
+        import { HoloMap3D } from '../../src/controls/HoloMap3D.js';
         import { Slider3D } from '../../src/controls/Slider3D.js';
         import { Toggle3D } from '../../src/controls/Toggle3D.js';
+        import { MagneticCard3D } from '../../src/controls/MagneticCard3D.js';
 
-        // 1. Setup
-        const env = new SpatialEnvironment(document.body, { cameraPos: [0, 1.5, 5] });
+        // ── 1. Environment ──
+        const env = new SpatialEnvironment(document.body, {
+            cameraPos: [0, 1.5, 5],
+            fogDensity: 0.06
+        });
         env.init();
-        env.scene.background = new THREE.Color(0x000c1a);
-        env.scene.fog = new THREE.FogExp2(0x000c1a, 0.08);
+        env.scene.background = new THREE.Color(0x000510);
+        env.scene.fog = new THREE.FogExp2(0x000510, 0.06);
 
-        // Undersea Lights
-        const amb = new THREE.AmbientLight(0x004466, 0.5);
+        // Underwater lighting
+        const amb = new THREE.AmbientLight(0x003355, 0.4);
         env.scene.add(amb);
-
-        const spot = new THREE.SpotLight(0x00d4ff, 2, 20, 0.6, 1);
-        spot.position.set(2, 5, 2);
+        const spot = new THREE.SpotLight(0x00aacc, 3, 15, 0.5, 0.8);
+        spot.position.set(1, 4, 3);
         env.scene.add(spot);
 
-        // 2. Bubble Particles
+        // Caustic light that sways
+        const caustic = new THREE.PointLight(0x44aacc, 1.5, 8);
+        caustic.position.set(0, 2, 0);
+        env.scene.add(caustic);
+
+        // ── 2. Bubble Particles ──
         const bubbleGeo = new THREE.BufferGeometry();
-        const bubbleCount = 200;
-        const bubblePos = new Float32Array(bubbleCount * 3);
+        const bubbleCount = 250;
+        const bubblePositions = new Float32Array(bubbleCount * 3);
         const bubbleSpeeds = new Float32Array(bubbleCount);
         for (let i = 0; i < bubbleCount; i++) {
-            bubblePos[i * 3] = (Math.random() - 0.5) * 20;
-            bubblePos[i * 3 + 1] = Math.random() * 10;
-            bubblePos[i * 3 + 2] = (Math.random() - 0.5) * 20;
-            bubbleSpeeds[i] = 0.01 + Math.random() * 0.03;
+            bubblePositions[i * 3] = (Math.random() - 0.5) * 18;
+            bubblePositions[i * 3 + 1] = Math.random() * 8 - 4;
+            bubblePositions[i * 3 + 2] = (Math.random() - 0.5) * 14;
+            bubbleSpeeds[i] = 0.3 + Math.random() * 0.8;
         }
-        bubbleGeo.setAttribute('position', new THREE.BufferAttribute(bubblePos, 3));
-        const bubbleMat = new THREE.PointsMaterial({ size: 0.1, color: 0x88ccff, transparent: true, opacity: 0.4 });
+        bubbleGeo.setAttribute('position', new THREE.BufferAttribute(bubblePositions, 3));
+        const bubbleMat = new THREE.PointsMaterial({
+            size: 0.08,
+            color: 0x88ccff,
+            transparent: true,
+            opacity: 0.35
+        });
         const bubbles = new THREE.Points(bubbleGeo, bubbleMat);
         env.scene.add(bubbles);
 
-        env.updatables.push({
-            update: (d) => {
-                const pos = bubbleGeo.attributes.position.array;
-                for (let i = 0; i < bubbleCount; i++) {
-                    pos[i * 3 + 1] += bubbleSpeeds[i];
-                    if (pos[i * 3 + 1] > 5) pos[i * 3 + 1] = -5;
-                }
-                bubbleGeo.attributes.position.needsUpdate = true;
-            }
-        });
-
-
-        // 3. AI & Sonar
+        // ── 3. Semantic Ghost — Dive AI ──
         const ghost = new SemanticGhost(env.camera, env.scene, env.renderer);
         env.add(ghost);
         env.updatables.push(ghost);
 
+        // ── 4. EchoInteraction3D — UNIQUE MECHANIC: Sonar Pulse ──
         const sonar = new EchoInteraction3D(env.scene, env.camera, {
-            pulseSpeed: 12, maxRadius: 40, glowColor: 0x00ff88
+            pulseSpeed: 10,
+            maxRadius: 35,
+            glowColor: 0x00ff88
         });
         env.updatables.push({ update: () => sonar.update() });
 
-
-        // 4. SPECIMENS (Hidden until Ping)
-
-        // Specimen 1: Giant Squid
-        const specimen1 = new VolumetricCard3D(env.scene, env.camera, [-3, 1.2, -3], {
-            width: 2.5, height: 1.5, baseColor: 0x112233,
-            title: "Architeuthis dux", popHeight: 0.8
-        });
-        sonar.registerObject(specimen1.baseMesh, {
-            onReveal: () => {
-                ghost.updatePanelText("ANALYSIS: CEPHALOPOD DETECTED");
-                ghost.guideTo(specimen1.group, "Giant Squid Specimen");
+        // ── 5. HoloMap3D — Ocean Floor Topography ──
+        const oceanMap = new HoloMap3D(env.scene, env.camera, [0, 1.2, -2.5], {
+            width: 3.5,
+            height: 2.2,
+            data: {
+                markers: [
+                    { lat: 11, lng: 142, label: 'Challenger Deep', type: 'trench' },
+                    { lat: 12, lng: 143, label: 'Hydrothermal Vent A', type: 'vent' },
+                    { lat: 10, lng: 141, label: 'Abyssal Plain', type: 'plain' },
+                    { lat: 13, lng: 144, label: 'Seamount K-7', type: 'peak' }
+                ]
             }
         });
-        env.add(specimen1.group);
-        env.updatables.push(specimen1);
+        env.add(oceanMap.group);
+        env.updatables.push(oceanMap);
 
-        // Specimen 2: Bioluminescent Species
-        const specimen2 = new VolumetricCard3D(env.scene, env.camera, [3, 1.2, -3], {
-            width: 2.5, height: 1.5, baseColor: 0x113322,
-            title: "Abyssal Flare", popHeight: 0.8
-        });
-        sonar.registerObject(specimen2.baseMesh, {
+        // Register map with sonar for pulse interaction
+        sonar.registerObject(oceanMap.group, {
             onReveal: () => {
-                ghost.updatePanelText("ANALYSIS: PHOSPHORESCENCE DETECTED");
-                ghost.guideTo(specimen2.group, "Unnamed Abyssal Organism");
+                ghost.updatePanelText("SONAR: Ocean floor topography mapped. Challenger Deep confirmed.");
+                ghost.guideTo(oceanMap.group, "Ocean Floor Map");
             }
         });
-        env.add(specimen2.group);
-        env.updatables.push(specimen2);
 
+        // ── 6. Depth Control Slider — UNIQUE MECHANIC: Simulates depth change ──
+        let currentDepth = 3200; // meters
 
-        // 5. CMD CONTROLS
+        const depthSlider = new Slider3D(env.scene, env.camera, [4.0, 0.6, -2.5], {
+            label: "DEPTH (m)",
+            width: 2.2,
+            min: 0,
+            max: 11000,
+            value: 3200,
+            step: 100,
+            color: 0x00d4ff,
+            onChange: (ctrl, val) => {
+                currentDepth = val;
+                const depthEl = document.getElementById('depthReading');
+                depthEl.textContent = val.toLocaleString() + 'm';
 
-        const diveLog = new MagneticCard3D(env.scene, env.camera, [0, 0.8, -2], {
-            width: 2, height: 1.2, color: 0x001a33,
-            title: "DIVE LOG: DAY 89", description: "All systems nominal. Sonar active."
+                // Simulate depth: more fog, darker, higher pressure
+                const depthRatio = val / 11000;
+                const fogDensity = 0.02 + depthRatio * 0.12;
+                env.scene.fog.density = fogDensity;
+
+                // Darker at depth
+                const bg = new THREE.Color().setHSL(0.6, 0.8, 0.08 - depthRatio * 0.06);
+                env.scene.background = bg;
+
+                // Hull integrity drops at extreme depth
+                const hullEl = document.getElementById('hullStatus');
+                const hullPct = Math.max(40, 100 - depthRatio * 60);
+                hullEl.textContent = '🛡️ HULL: ' + Math.round(hullPct) + '%';
+                hullEl.style.color = hullPct > 70 ? '#00ff88' : hullPct > 50 ? '#ffaa00' : '#ff4444';
+
+                // Depth indicator class
+                depthEl.className = val > 6000 ? 'depth-reading deep' : 'depth-reading';
+
+                // Ghost commentary
+                if (val > 8000) {
+                    ghost.updatePanelText("⚠️ HADAL ZONE — Extreme pressure. Hull at critical tolerance.");
+                } else if (val > 4000) {
+                    ghost.updatePanelText("ABYSSAL ZONE — No natural light. Bioluminescent organisms may appear.");
+                } else if (val > 1000) {
+                    ghost.updatePanelText("BATHYAL ZONE — Twilight region. Sonar scanning active.");
+                } else {
+                    ghost.updatePanelText("EPIPELAGIC ZONE — Surface light penetrates. Marine life abundant.");
+                }
+            }
         });
+        depthSlider.group.rotation.y = -0.3;
+        env.add(depthSlider.group);
+        env.updatables.push(depthSlider);
+
+        // ── 7. Sonar Toggle ──
+        const sonarToggle = new Toggle3D(env.scene, env.camera, [4.0, -0.4, -2.5], {
+            label: "ACTIVE SONAR",
+            width: 2.2,
+            isOn: true,
+            onColor: 0x00ff88,
+            offColor: 0x334455,
+            onClick: (t) => {
+                if (t.isOn) {
+                    sonar.triggerPulse(new THREE.Vector3(0, 0, -2));
+                    ghost.updatePanelText("SONAR: Active pinging. Scanning for objects in range.");
+                } else {
+                    ghost.updatePanelText("SONAR: Silent running. Passive hydrophones only.");
+                }
+            }
+        });
+        sonarToggle.group.rotation.y = -0.3;
+        env.add(sonarToggle.group);
+        env.updatables.push(sonarToggle);
+
+        // ── 8. Dive Log Card ──
+        const diveLog = new MagneticCard3D(env.scene, env.camera, [-4.0, 1.0, -2.5], {
+            width: 2.2,
+            height: 1.5,
+            color: 0x001133,
+            title: "DIVE LOG · MISSION 89",
+            description: "Depth: 3,200m\nHull: Nominal\nLife Support: 72h remaining\nCrew: 3 aboard"
+        });
+        diveLog.group.rotation.y = 0.3;
         env.add(diveLog.group);
         env.updatables.push(diveLog);
 
-        const lightSlider = new Slider3D(env.scene, env.camera, [0, -0.2, -2], {
-            label: "SONAR FREQUENCY", width: 2, color: 0x00ff88,
-            onChange: (c, v) => {
-                sonar.pulseSpeed = 5 + (v * 20);
+        // ── 9. Animation ── */
+        env.updatables.push({
+            update: (delta) => {
+                // Bubble animation
+                const pos = bubbleGeo.attributes.position.array;
+                for (let i = 0; i < bubbleCount; i++) {
+                    const idx = i * 3;
+                    pos[idx + 1] += bubbleSpeeds[i] * delta;
+                    pos[idx] += Math.sin(Date.now() * 0.001 + i) * delta * 0.5;
+                    if (pos[idx + 1] > 5) {
+                        pos[idx + 1] = -5;
+                        pos[idx] = (Math.random() - 0.5) * 18;
+                    }
+                }
+                bubbleGeo.attributes.position.needsUpdate = true;
+
+                // Sway caustic light
+                caustic.intensity = 1.2 + Math.sin(Date.now() * 0.003) * 0.5;
             }
         });
-        env.add(lightSlider.group);
-        env.updatables.push(lightSlider);
 
-
-        // 6. START
+        // ── 10. Start ──
         env.start();
 
+        // Initial sonar ping
         setTimeout(() => {
-            ghost.updatePanelText("DIVE SYSTEM READY");
-            ghost.guideTo(diveLog.group, "Initial Briefing");
-            // Initial Ping
-            sonar.triggerPulse(new THREE.Vector3(0, 0, 0));
+            ghost.updatePanelText("DIVE SYSTEM ONLINE. Sonar calibrated. Welcome to Neptune Deep.");
+            ghost.guideTo(oceanMap.group, "Ocean Floor Topography");
+            sonar.triggerPulse(new THREE.Vector3(0, 0, -2.5));
         }, 1500);
 
+        // ── 11. Guide text sync ──
+        const guideText = document.getElementById('guideText');
+        const origUpdate = ghost.updatePanelText.bind(ghost);
+        ghost.updatePanelText = (text) => {
+            guideText.textContent = text;
+            origUpdate(text);
+        };
     </script>
+
+    <script src="../scripts/mobile-controls.js"></script>
 </body>
 
 </html>

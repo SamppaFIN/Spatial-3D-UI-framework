@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Skenaario 3: The Neural Architect</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/mobile-panel.css">
     <style>
         body {
             margin: 0;
@@ -73,6 +76,11 @@
 
     <div id="story-overlay">
         <div class="story-text" id="story-msg">Initializing Neural Link...</div>
+    </div>
+
+    <div class="story-panel demo-controls" id="infoPanel" style="position:fixed;bottom:24px;left:24px;background:rgba(0,20,10,0.92);border:1px solid rgba(51,255,136,0.3);border-radius:12px;padding:16px;color:#cfc;font-size:0.85rem;max-width:300px;z-index:20;">
+        <h3 style="color:#33ff88;margin:0 0 6px 0;font-size:0.95rem;">🧠 Neural Status</h3>
+        <p id="guideText">System Online. Press SEARCH to begin neural link.</p>
     </div>
 
     <script type="module">
@@ -273,6 +281,7 @@
         }, 1000);
 
     </script>
+    <script src="../scripts/mobile-controls.js"></script>
 </body>
 
 </html>

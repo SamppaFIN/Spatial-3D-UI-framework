@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chronos Protocol: Temporal Command</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/mobile-panel.css">
     <style>
         body {
             margin: 0;
@@ -61,6 +64,11 @@
     <div id="time-hud">
         <h1>CHRONOS_CONTROL</h1>
         <div class="sub">Epoch: 2077 CE • Stability: 87%</div>
+    </div>
+
+    <div class="time-panel demo-controls" id="infoPanel" style="position:fixed;bottom:24px;left:24px;background:rgba(5,2,16,0.92);border:1px solid rgba(128,128,255,0.3);border-radius:12px;padding:16px;color:#aaf;font-size:0.85rem;max-width:300px;z-index:20;">
+        <h3 style="color:#8080ff;margin:0 0 6px 0;font-size:0.95rem;">⏰ Chronos Log</h3>
+        <p id="guideText">Temporal anchor established. Epoch 2077 CE. Navigate the timeline.</p>
     </div>
 
     <script type="module">
@@ -150,6 +158,7 @@
         env.start();
 
     </script>
+    <script src="../scripts/mobile-controls.js"></script>
 </body>
 
 </html>

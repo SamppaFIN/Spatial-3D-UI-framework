@@ -4,7 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Space Station Aurora-7: Command Deck</title>
+    <title>Aurora-7 Command — Spatial UI 3D</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/mobile-panel.css">
     <style>
         body {
             margin: 0;
@@ -13,221 +16,281 @@
             font-family: 'Inter', sans-serif;
         }
 
-        #hud-overlay {
-            position: absolute;
+        .aurora-hud {
+            position: fixed;
             top: 20px;
             left: 20px;
             pointer-events: none;
-            color: #00ffff;
-            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+            z-index: 10;
+            color: #00e5ff;
+            text-shadow: 0 0 15px rgba(0, 229, 255, 0.5);
         }
-
-        h1 {
+        .aurora-hud h1 {
             margin: 0;
-            font-size: 1.5rem;
-            letter-spacing: 2px;
+            font-family: 'Orbitron', monospace;
+            font-size: 1.2rem;
+            letter-spacing: 3px;
         }
-
-        .sub {
-            font-size: 0.8rem;
+        .aurora-hud .sub {
+            font-size: 0.7rem;
             opacity: 0.7;
+            letter-spacing: 1px;
         }
 
-        /* Cinematic vignettes */
+        /* Timeline indicator */
+        .timeline-label {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: none;
+            z-index: 10;
+            color: #00e5ff;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.8rem;
+            text-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+            opacity: 0.6;
+        }
+
         #vignette {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, transparent 60%, rgba(0, 10, 20, 0.8) 100%);
+            position: fixed;
+            inset: 0;
             pointer-events: none;
             z-index: 5;
+            background: radial-gradient(ellipse, transparent 60%, rgba(0, 5, 15, 0.7) 100%);
+        }
+
+        .aurora-panel.demo-controls {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            background: rgba(5, 10, 25, 0.92);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            color: #aaccff;
+            font-size: 0.85rem;
+            max-width: 300px;
+            z-index: 20;
+            backdrop-filter: blur(10px);
+        }
+        .aurora-panel h3 { margin: 0 0 6px 0; color: #00e5ff; font-size: 0.95rem; }
+
+        @media (max-width: 768px) {
+            .aurora-hud { top: 12px; left: 12px; }
+            .aurora-hud h1 { font-size: 0.95rem; letter-spacing: 2px; }
+            .timeline-label { bottom: 80px; font-size: 0.65rem; }
+            .aurora-panel.demo-controls {
+                left: 0; right: 0; bottom: 0;
+                max-width: none;
+                border-radius: 20px 20px 0 0;
+            }
         }
     </style>
     <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
         }
+    }
     </script>
 </head>
 
 <body>
     <div id="vignette"></div>
-    <div id="hud-overlay">
-        <h1>AURORA-7 COMMAND</h1>
-        <div class="sub">Sector 9 • Deep Orbit</div>
+
+    <div class="aurora-hud">
+        <h1>◆ AURORA-7 ◆ FLEET COMMAND</h1>
+        <div class="sub">SECTOR 9 · DEEP ORBIT · 14 VESSELS</div>
+    </div>
+    <div class="timeline-label" id="timelineLabel">T: NOW</div>
+
+    <div class="aurora-panel demo-controls" id="infoPanel">
+        <h3>🛰️ Fleet Network Monitor</h3>
+        <p id="guideText">14 vessels tracked. Network topology stable. Use timeline to review past formations.</p>
+        <p style="font-size:0.7rem;opacity:0.4;margin-top:8px;">← Swipe down on mobile</p>
     </div>
 
     <script type="module">
         import * as THREE from 'three';
         import { SpatialEnvironment } from '../../src/environments/SpatialEnvironment.js';
-        import { SpaceRoom } from '../../src/environments/SpaceRoom.js'; // Re-using existing environment logic
         import { SemanticGhost } from '../../src/ai/SemanticGhost.js';
-
-        // Components
-        import { HaloCard3D } from '../../src/controls/HaloCard3D.js';
-        import { VolumetricCard3D } from '../../src/controls/VolumetricCard3D.js';
+        import { NetworkGraph3D } from '../../src/controls/NetworkGraph3D.js';
+        import { ChronoLens3D } from '../../src/controls/ChronoLens3D.js';
         import { Toggle3D } from '../../src/controls/Toggle3D.js';
         import { Slider3D } from '../../src/controls/Slider3D.js';
         import { Button3D } from '../../src/controls/Button3D.js';
-        import { Chart3D } from '../../src/controls/Chart3D.js';
-        import { MagneticCard3D } from '../../src/controls/MagneticCard3D.js';
 
-        // 1. Init
-        const env = new SpatialEnvironment(document.body, { cameraPos: [0, 1.5, 4] });
+        // ── 1. Environment ──
+        const env = new SpatialEnvironment(document.body, { cameraPos: [0, 2.2, 6], fogDensity: 0.01 });
         env.init();
-        env.scene.background = new THREE.Color(0x020205);
+        env.scene.background = new THREE.Color(0x010515);
 
-        // 2. Space Environment
-        // We can simulate what SpaceRoom does or use it if adaptable.
-        // Let's manually create a nice starfield to be sure compatible with SpatialEnv structure
+        // Starfield
         const starsGeo = new THREE.BufferGeometry();
-        const starsCount = 2000;
-        const posArray = new Float32Array(starsCount * 3);
-        const colArray = new Float32Array(starsCount * 3);
+        const starsCount = 1500;
+        const starsPositions = new Float32Array(starsCount * 3);
         for (let i = 0; i < starsCount; i++) {
-            posArray[i * 3] = (Math.random() - 0.5) * 100;
-            posArray[i * 3 + 1] = (Math.random() - 0.5) * 100;
-            posArray[i * 3 + 2] = (Math.random() - 0.5) * 100;
-
-            const c = new THREE.Color().setHSL(0.6 + Math.random() * 0.1, 0.8, 0.8);
-            colArray[i * 3] = c.r; colArray[i * 3 + 1] = c.g; colArray[i * 3 + 2] = c.b;
+            starsPositions[i * 3] = (Math.random() - 0.5) * 80;
+            starsPositions[i * 3 + 1] = (Math.random() - 0.5) * 50 + 8;
+            starsPositions[i * 3 + 2] = (Math.random() - 0.5) * 40 - 10;
         }
-        starsGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-        starsGeo.setAttribute('color', new THREE.BufferAttribute(colArray, 3));
+        starsGeo.setAttribute('position', new THREE.BufferAttribute(starsPositions, 3));
         const stars = new THREE.Points(starsGeo, new THREE.PointsMaterial({
-            size: 0.15, vertexColors: true, transparent: true, opacity: 0.8
+            size: 0.1, color: 0x8899cc, transparent: true, opacity: 0.7
         }));
         env.scene.add(stars);
 
-        // Rotating Loop
-        env.updatables.push({
-            update: (d) => {
-                stars.rotation.y += d * 0.05;
-            }
-        });
-
-
-        // 3. AI: Semantic Ghost (AURORA)
+        // ── 2. Fleet AI ──
         const ghost = new SemanticGhost(env.camera, env.scene, env.renderer);
         env.add(ghost);
         env.updatables.push(ghost);
 
-        setTimeout(() => {
-            ghost.updatePanelText("AURORA SYSTEM ONLINE");
-            ghost.guideTo(statusHub.group, "Monitoring Station Stats");
-        }, 1000);
+        // ── 3. NetworkGraph3D — UNIQUE: Fleet Topology ──
+        const fleetNodes = [
+            { id: 'AURORA', x: 0, y: 0, z: 0, group: 'command', label: 'AURORA-7' },
+            { id: 'SENTINEL', x: 4, y: 1.5, z: -2, group: 'cruiser', label: 'USS Sentinel' },
+            { id: 'VALIANT', x: -3, y: -0.5, z: -3, group: 'frigate', label: 'USS Valiant' },
+            { id: 'HORIZON', x: 2, y: -2, z: -1, group: 'science', label: 'USS Horizon' },
+            { id: 'DAUNTLESS', x: -4, y: 1, z: -2, group: 'cruiser', label: 'USS Dauntless' },
+            { id: 'PATROL-A', x: 6, y: -1, z: -4, group: 'frigate', label: 'Patrol A' },
+            { id: 'PATROL-B', x: -5, y: -2, z: -3, group: 'frigate', label: 'Patrol B' },
+            { id: 'RESUPPLY', x: 1, y: 3, z: -5, group: 'supply', label: 'USNS Resupply' }
+        ];
 
+        const fleetEdges = [
+            { from: 'AURORA', to: 'SENTINEL' },
+            { from: 'AURORA', to: 'VALIANT' },
+            { from: 'AURORA', to: 'HORIZON' },
+            { from: 'AURORA', to: 'DAUNTLESS' },
+            { from: 'SENTINEL', to: 'PATROL-A' },
+            { from: 'DAUNTLESS', to: 'PATROL-B' },
+            { from: 'AURORA', to: 'RESUPPLY' }
+        ];
 
-        // 4. UI SECTORS
-
-        // A. STATUS HUB (Center) - HaloCard
-        const statusHub = new MagneticCard3D(env.scene, env.camera, [0, 1.5, -2], {
-            width: 3, height: 2, color: 0x001133, cornerRadius: 0.2
+        const fleetGraph = new NetworkGraph3D(env.scene, env.camera, [0, 1.5, -3], {
+            width: 8,
+            height: 5,
+            depth: 4,
+            nodes: fleetNodes,
+            edges: fleetEdges,
+            nodeScale: 0.3,
+            edgeColor: 0x00e5ff
         });
-        env.add(statusHub.group);
-        env.updatables.push(statusHub);
+        env.add(fleetGraph.group);
+        env.updatables.push(fleetGraph);
 
-        // Charts on the Hub
-        const powerChart = new Chart3D(env.scene, env.camera, [0, 0, 0], {
-            width: 2.5, height: 1.5, chartType: 'line',
-            data: {
-                labels: ['A', 'B', 'C', 'D', 'E'],
-                datasets: [{
-                    label: 'Reactor Output',
-                    data: [80, 85, 82, 90, 88],
-                    borderColor: '#00ffff',
-                    backgroundColor: 'rgba(0, 255, 255, 0.1)'
-                }]
+        // ── 4. ChronoLens3D — UNIQUE: Timeline Replay ──
+        const chronoLens = new ChronoLens3D(env.scene, env.camera, [0, -0.5, -1.5], {
+            width: 5,
+            height: 0.8,
+            timeRange: 24, // 24 hours of history
+            currentTime: 0  // 0 = now, 24 = 24h ago
+        });
+        env.add(chronoLens.group);
+        env.updatables.push(chronoLens);
+
+        let timelineOffset = 0; // hours ago
+
+        // ── 5. Shield Toggle ──
+        const shieldToggle = new Toggle3D(env.scene, env.camera, [-4.5, 2.0, -1.5], {
+            label: 'FLEET SHIELDS',
+            width: 2.2,
+            isOn: true,
+            onColor: 0x00e5ff,
+            offColor: 0x334455,
+            onClick: (t) => {
+                ghost.updatePanelText(t.isOn
+                    ? 'Fleet shields: ACTIVE. All vessels protected.'
+                    : '⚠️ Fleet shields: OFFLINE. Vessels running on individual deflectors.');
             }
         });
-        // Attach chart to card content group manually or just position in front
-        // MagneticCard contentGroup is offset z=0.03
-        statusHub.addContent(powerChart.group);
-        // Note: Chart3D might need updates. Let's register it.
-        env.updatables.push(powerChart);
-
-
-        // B. LEFT WING: SHIELDS & DEFENSE
-        const leftPanel = new THREE.Group();
-        leftPanel.position.set(-3.5, 1.5, -1.5);
-        leftPanel.rotation.y = 0.3;
-        env.scene.add(leftPanel);
-
-        const shieldToggle = new Toggle3D(env.scene, env.camera, [0, 0, 0], {
-            label: "DEFLECTOR SHIELDS", width: 2.5, isOn: true, onColor: 0x00ff00
-        });
-        leftPanel.add(shieldToggle.group); // Watch out for raycasting offset issues if nested deeply without world matrix updat
-        // Ideally add to env directly but position carefully.
-        // Let's stick to env.add for reliability of controls
-        shieldToggle.group.position.set(-3.5, 2.0, -1.5);
-        shieldToggle.group.rotation.y = 0.3;
+        shieldToggle.group.rotation.y = 0.4;
         env.add(shieldToggle.group);
         env.updatables.push(shieldToggle);
 
-        const shieldSlider = new Slider3D(env.scene, env.camera, [-3.5, 1.2, -1.5], {
-            label: "SHIELD POWER", width: 2.5, value: 0.65, color: 0x4488ff,
-            onChange: (c, v) => {
-                // Update ghost
-                ghost.updatePanelText(`SHIELDS: ${Math.round(v * 100)}%`);
+        // ── 6. Timeline Scrubber ──
+        const timeSlider = new Slider3D(env.scene, env.camera, [4.5, 1.5, -1.5], {
+            label: 'TIMELINE (h)',
+            width: 2.2,
+            min: 0,
+            max: 24,
+            value: 0,
+            step: 0.5,
+            color: 0x00e5ff,
+            onChange: (ctrl, val) => {
+                timelineOffset = val;
+                const label = document.getElementById('timelineLabel');
+                if (val === 0) {
+                    label.textContent = 'T: NOW';
+                } else {
+                    label.textContent = `T: -${val.toFixed(1)}h`;
+                }
+
+                // Shift fleet nodes based on historical position
+                const timeFactor = val / 24;
+                fleetGraph.nodes.forEach((node, i) => {
+                    if (node.id !== 'AURORA') {
+                        // Simulate orbital drift over time
+                        const angle = i * Math.PI / 4 + timeFactor * Math.PI;
+                        node.x = Math.cos(angle) * (3 + i);
+                        node.z = Math.sin(angle) * (2 + i * 0.5) - 3;
+                    }
+                });
+                fleetGraph.refresh();
+
+                ghost.updatePanelText(val > 0
+                    ? `Replaying fleet positions from ${val.toFixed(1)} hours ago.`
+                    : 'Live fleet positions. All vessels at current stations.');
             }
         });
-        shieldSlider.group.rotation.y = 0.3;
-        env.add(shieldSlider.group);
-        env.updatables.push(shieldSlider);
+        timeSlider.group.rotation.y = -0.4;
+        env.add(timeSlider.group);
+        env.updatables.push(timeSlider);
 
-
-        // C. RIGHT WING: LIFE SUPPORT
-        const lifeToggle = new Toggle3D(env.scene, env.camera, [3.5, 2.0, -1.5], {
-            label: "OXYGEN RECYCLER", width: 2.5, isOn: true, onColor: 0x00ff00
-        });
-        lifeToggle.group.rotation.y = -0.3;
-        env.add(lifeToggle.group);
-        env.updatables.push(lifeToggle);
-
-        const emergencyBtn = new Button3D(env.scene, env.camera, [3.5, 1.2, -1.5], {
-            label: "EMERGENCY VENT", width: 2.5, color: 0xff0000,
+        // ── 7. Emergency Broadcast Button ──
+        const broadcastBtn = new Button3D(env.scene, env.camera, [0, -1.2, -1], {
+            label: '📡 FLEET BROADCAST',
+            width: 3,
+            height: 0.8,
+            color: 0xffaa00,
+            mode: 1,
             onClick: () => {
-                triggerAlarm();
+                ghost.updatePanelText('📡 BROADCAST: All fleet vessels, report status. Aurora-7 command standing by.');
+                // Flash the network edges
+                fleetGraph.edgeColor = 0xffffff;
+                setTimeout(() => { fleetGraph.edgeColor = 0x00e5ff; fleetGraph.refresh(); }, 800);
             }
         });
-        emergencyBtn.group.rotation.y = -0.3;
-        env.add(emergencyBtn.group);
-        env.updatables.push(emergencyBtn);
+        env.add(broadcastBtn.group);
+        env.updatables.push(broadcastBtn);
 
-
-        // 5. ALERT SYSTEM (Volumetric Popup)
-        const alertCard = new VolumetricCard3D(env.scene, env.camera, [0, 1.5, -1], {
-            width: 2, height: 1, baseColor: 0xff0000, popScale: 0.5
-        });
-        alertCard.group.visible = false;
-        env.add(alertCard.group);
-        env.updatables.push(alertCard);
-
-        // Add text to alert
-        // Simple HTML canvas texture on it?
-        // Or Semantic Ghost handles the alert.
-
-        function triggerAlarm() {
-            alertCard.group.visible = !alertCard.group.visible;
-            if (alertCard.group.visible) {
-                ghost.updatePanelText("WARNING: VENTING");
-                env.scene.background = new THREE.Color(0x220000); // Red alert bg
-            } else {
-                ghost.updatePanelText("SYSTEM NORMAL");
-                env.scene.background = new THREE.Color(0x020205);
+        // ── 8. Animation ──
+        env.updatables.push({
+            update: (delta) => {
+                stars.rotation.y += delta * 0.03;
             }
-        }
+        });
 
-
-        // 6. Start
+        // ── 9. Start ──
         env.start();
 
+        setTimeout(() => {
+            ghost.updatePanelText("FLEET COMMAND ONLINE. 14 vessels tracked. Network topology stable.");
+            ghost.guideTo(fleetGraph.group, "Fleet Formation Network");
+        }, 1500);
+
+        // ── 10. Guide text sync ──
+        const guideText = document.getElementById('guideText');
+        const origUpdate = ghost.updatePanelText.bind(ghost);
+        ghost.updatePanelText = (text) => {
+            guideText.textContent = text;
+            origUpdate(text);
+        };
     </script>
+
+    <script src="../scripts/mobile-controls.js"></script>
 </body>
 
 </html>

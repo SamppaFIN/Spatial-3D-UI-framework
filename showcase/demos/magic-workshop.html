@@ -4,155 +4,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Merlin's Workshop: Arcane Interface</title>
+    <title>Merlin's Workshop — Spatial UI 3D</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital@0;1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/mobile-panel.css">
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: #0a0515;
-            font-family: 'Georgia', serif;
-        }
-
-        #magic-hud {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            pointer-events: none;
-            color: #d4a5ff;
-            text-shadow: 0 0 12px rgba(212, 165, 255, 0.7);
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 1.6rem;
-            letter-spacing: 3px;
-        }
-
-        .sub {
-            font-size: 0.8rem;
-            font-style: italic;
-            opacity: 0.8;
-        }
-
-        /* Aetheric fog */
-        #aether {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, transparent 30%, rgba(20, 0, 40, 0.8) 100%);
-            pointer-events: none;
-            z-index: 5;
-        }
+        body { margin: 0; overflow: hidden; background: #0a0515; font-family: 'Playfair Display', 'Inter', serif; }
+        .magic-hud { position: fixed; top: 20px; left: 20px; pointer-events: none; z-index: 10; color: #d4a5ff; text-shadow: 0 0 15px rgba(212,165,255,0.6); }
+        .magic-hud h1 { margin: 0; font-size: 1.4rem; letter-spacing: 3px; font-style: italic; }
+        .magic-hud .sub { font-size: 0.75rem; opacity: 0.8; margin-top: 2px; }
+        .mana-bar { position: fixed; top: 20px; right: 20px; pointer-events: none; z-index: 10; color: #d4a5ff; font-size: 0.7rem; }
+        .mana-bar .fill-bar { width: 80px; height: 6px; background: rgba(212,165,255,0.2); border-radius: 3px; margin: 4px 0; overflow: hidden; }
+        .mana-bar .fill { height: 100%; background: #d4a5ff; border-radius: 3px; transition: width 0.5s; }
+        #aether { position: fixed; inset: 0; pointer-events: none; z-index: 5; background: radial-gradient(ellipse, transparent 30%, rgba(20,0,40,0.8) 100%); }
+        .magic-panel.demo-controls { position: fixed; bottom: 24px; left: 24px; background: rgba(10,5,20,0.95); border: 1px solid rgba(212,165,255,0.3); border-radius: 12px; padding: 16px; color: #dca; font-size: 0.85rem; max-width: 300px; z-index: 20; }
+        .magic-panel h3 { margin: 0 0 6px 0; color: #d4a5ff; font-size: 0.95rem; }
+        @media (max-width: 768px) { .magic-hud { top:12px; left:12px; } .magic-hud h1 { font-size:1rem; } .mana-bar { top:12px; right:8px; } .magic-panel.demo-controls { left:0;right:0;bottom:0;max-width:none;border-radius:20px 20px 0 0; } }
     </style>
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
-        }
-    </script>
+    <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
 
 <body>
     <div id="aether"></div>
-    <div id="magic-hud">
-        <h1>THE ARCANE WORKSHOP</h1>
-        <div class="sub">Level 7 Mana Chamber • Sanctum Active</div>
-    </div>
+    <div class="magic-hud"><h1>✦ Merlin's Workshop ✦</h1><div class="sub">Level 7 Mana Chamber · Sanctum Active</div></div>
+    <div class="mana-bar">MANA<div class="fill-bar"><div class="fill" id="manaFill" style="width:70%"></div></div><span id="manaPct">70%</span></div>
+    <div class="magic-panel demo-controls" id="infoPanel"><h3>🔮 Arcane Grimoire</h3><p id="guideText">The spell book awaits. Open its pages to study the arcane arts.</p></div>
 
     <script type="module">
         import * as THREE from 'three';
         import { SpatialEnvironment } from '../../src/environments/SpatialEnvironment.js';
         import { SemanticGhost } from '../../src/ai/SemanticGhost.js';
-
-        // Components
-        import { VolumetricCard3D } from '../../src/controls/VolumetricCard3D.js';
-        import { MagneticCard3D } from '../../src/controls/MagneticCard3D.js';
-        import { RadialMenu3D } from '../../src/controls/RadialMenu3D.js';
-        import { AIPortal3D } from '../../src/controls/AIPortal3D.js';
+        import { Accordion3D } from '../../src/controls/Accordion3D.js';
+        import { Slider3D } from '../../src/controls/Slider3D.js';
         import { Toggle3D } from '../../src/controls/Toggle3D.js';
 
-        // 1. Setup
-        const env = new SpatialEnvironment(document.body, { cameraPos: [0, 1.8, 5] });
+        const env = new SpatialEnvironment(document.body, { cameraPos: [0, 2.0, 5], fogDensity: 0.04 });
         env.init();
         env.scene.background = new THREE.Color(0x0a0515);
-        env.scene.fog = new THREE.FogExp2(0x0a0515, 0.06);
+        env.scene.fog = new THREE.FogExp2(0x0a0515, 0.04);
+        env.scene.add(new THREE.AmbientLight(0x332244, 0.3));
+        const crystalLight = new THREE.PointLight(0xd4a5ff, 3, 12); crystalLight.position.set(0, 4, -1); env.scene.add(crystalLight);
 
-        // Mystical Lights
-        const amb = new THREE.AmbientLight(0xd4a5ff, 0.3);
-        env.scene.add(amb);
+        const ghost = new SemanticGhost(env.camera, env.scene, env.renderer); env.add(ghost); env.updatables.push(ghost);
 
-        const crystalLight = new THREE.PointLight(0x00ffff, 2, 10);
-        crystalLight.position.set(0, 4, -2);
-        env.scene.add(crystalLight);
-
-        // 2. AI Familiar (Ghost)
-        const familiar = new SemanticGhost(env.camera, env.scene, env.renderer);
-        env.add(familiar);
-        env.updatables.push(familiar);
-
-        setTimeout(() => {
-            familiar.updatePanelText("RECEPTACLE READY: CHOOSE ELEMENT");
-            familiar.guideTo(elementalMenu.group, "Select Arcane Path");
-        }, 1500);
-
-
-        // 3. ARCANE TOOLS
-
-        // Elemental Menu
-        const elementalMenu = new RadialMenu3D(env.scene, env.camera, [0, 1.5, -2], {
+        // ── Accordion3D — UNIQUE: Spell Book ──
+        const spellBook = new Accordion3D(env.scene, env.camera, [0, 1.5, -2.5], {
             items: [
-                { label: "Fire", icon: "🔥" },
-                { label: "Ice", icon: "❄️" },
-                { label: "Aether", icon: "🌀" }
+                { title: '🔥 Ignis Arcanum', content: 'Channel raw fire essence. Effective against ice wards. Mana cost: 30.' },
+                { title: '❄️ Glacies Aeterna', content: 'Freeze time in a localized field. Duration: 3 heartbeats. Mana cost: 45.' },
+                { title: '🌀 Aetherius Flux', content: 'Bend space to teleport short distances. Unstable beyond 10 paces. Mana cost: 60.' },
+                { title: '🌿 Vita Restorata', content: 'Heal wounds and restore vitality. Strongest under moonlight. Mana cost: 25.' }
             ],
-            onSelect: (m, idx, item) => {
-                familiar.updatePanelText(`CHANNELING: ${item.label.toUpperCase()}`);
-                if (item.label === "Fire") portal.setTheme('fire');
-                if (item.label === "Ice") portal.setTheme('ice');
-                if (item.label === "Aether") portal.setTheme('cyber'); // Use cyber for aether look
+            openItems: [0],
+            onItemToggle: (acc, idx, isOpen) => {
+                const spell = acc.config.items[idx].title;
+                ghost.updatePanelText(isOpen ? `📖 Studying: ${spell}` : `📖 Closed: ${spell}`);
             }
         });
-        env.add(elementalMenu.group);
-        env.updatables.push(elementalMenu);
+        env.add(spellBook.group); env.updatables.push(spellBook);
 
-        // Dimensional Portal
-        const portal = new AIPortal3D(env.scene, env.camera, [3.5, 1.8, -3], {
-            width: 2.5, height: 3.5, label: "CONJURE REACH", theme: 'cosmic'
+        // Mana slider
+        let mana = 70;
+        const manaSlider = new Slider3D(env.scene, env.camera, [4.5, 1.2, -2.5], {
+            label: 'MANA FLOW', width: 2.2, min: 0, max: 100, value: 70, color: 0xd4a5ff,
+            onChange: (c,v) => {
+                mana = v;
+                document.getElementById('manaFill').style.width = v + '%';
+                document.getElementById('manaPct').textContent = v + '%';
+                crystalLight.intensity = 1 + (v/100)*5;
+                ghost.updatePanelText(v<20?'⚠️ Mana critically low. Meditation required.':'Mana flowing at ' + v + '%. Crystals resonating.');
+            }
         });
-        env.add(portal.group);
-        env.updatables.push(portal);
+        manaSlider.group.rotation.y = -0.3; env.add(manaSlider.group); env.updatables.push(manaSlider);
 
-        // Grimoire Log
-        const grimoire = new MagneticCard3D(env.scene, env.camera, [-3.5, 1.8, -3], {
-            width: 2.2, height: 3.2, color: 0x1a0a2e,
-            title: "THE GRIMOIRE", description: "Incantations logged. Mana flowing."
+        // Sanctum ward toggle
+        const wardToggle = new Toggle3D(env.scene, env.camera, [4.5, -0.3, -2.5], {
+            label: 'SANCTUM WARD', width: 2.2, isOn: true, onColor: 0xd4a5ff, offColor: 0x443355,
+            onClick: (t) => {
+                if(t.isOn){ env.scene.fog.density = 0.04; ghost.updatePanelText('🛡️ Sanctum ward active. Uninvited spirits repelled.'); }
+                else{ env.scene.fog.density = 0.02; ghost.updatePanelText('⚠️ Ward deactivated. The workshop is vulnerable.'); }
+            }
         });
-        env.add(grimoire.group);
-        env.updatables.push(grimoire);
+        wardToggle.group.rotation.y = -0.3; env.add(wardToggle.group); env.updatables.push(wardToggle);
 
+        // Floating rune particles
+        const runeGeo = new THREE.BufferGeometry(); const rCount = 100; const rPos = new Float32Array(rCount*3);
+        for(let i=0;i<rCount;i++){ rPos[i*3]=(Math.random()-0.5)*8; rPos[i*3+1]=Math.random()*5; rPos[i*3+2]=(Math.random()-0.5)*5-2; }
+        runeGeo.setAttribute('position',new THREE.BufferAttribute(rPos,3));
+        const runes = new THREE.Points(runeGeo,new THREE.PointsMaterial({size:0.06,color:0xd4a5ff,transparent:true,opacity:0.5}));
+        env.scene.add(runes);
 
-        // 4. ESSENCE DISPLAYS
-        const essence1 = new VolumetricCard3D(env.scene, env.camera, [-1.5, 0.5, -1], {
-            width: 1, height: 1, baseColor: 0xff4400, title: "SOL", popHeight: 0.5
-        });
-        env.add(essence1.group);
-        env.updatables.push(essence1);
+        env.updatables.push({ update: (d) => {
+            const pos = runeGeo.attributes.position.array;
+            for(let i=0;i<rCount;i++){ pos[i*3+1]+=d*0.3; if(pos[i*3+1]>5)pos[i*3+1]=0; pos[i*3]+=Math.sin(Date.now()*0.001+i)*d*0.2; }
+            runeGeo.attributes.position.needsUpdate = true;
+            crystalLight.intensity += Math.sin(Date.now()*0.004)*d*0.5;
+        }});
 
-        const essence2 = new VolumetricCard3D(env.scene, env.camera, [1.5, 0.5, -1], {
-            width: 1, height: 1, baseColor: 0x00ccff, title: "LUNA", popHeight: 0.5
-        });
-        env.add(essence2.group);
-        env.updatables.push(essence2);
-
-
-        // 5. START
         env.start();
+        setTimeout(()=>{ ghost.updatePanelText('🔮 Welcome to the Arcane Workshop. Open the spell book to study.'); ghost.guideTo(spellBook.group, 'Arcane Grimoire'); },1500);
 
+        const guideText = document.getElementById('guideText');
+        const orig = ghost.updatePanelText.bind(ghost); ghost.updatePanelText = (t) => { guideText.textContent = t; orig(t); };
     </script>
+    <script src="../scripts/mobile-controls.js"></script>
 </body>
 
 </html>

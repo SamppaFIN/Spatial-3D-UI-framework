@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USS Aurora Bridge — Spatial UI 3D</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/mobile-panel.css">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* ── Main HUD ── */
+        .bridge-hud {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            pointer-events: none;
+            z-index: 10;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .bridge-title {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.2rem;
+            font-weight: 900;
+            letter-spacing: 4px;
+            color: #4ecdc4;
+            text-shadow: 0 0 20px rgba(78, 205, 196, 0.6);
+            text-transform: uppercase;
+        }
+
+        .bridge-status {
+            display: flex;
+            gap: 20px;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+            color: rgba(255, 255, 255, 0.6);
+            text-shadow: 0 0 8px rgba(78, 205, 196, 0.3);
+        }
+
+        .bridge-status .alert-indicator {
+            color: #00ff88;
+            transition: color 0.3s;
+        }
+
+        .bridge-status .alert-indicator.red {
+            color: #ff3333;
+            animation: alert-blink 0.5s infinite;
+        }
+
+        @keyframes alert-blink {
+            50% { opacity: 0.3; }
+        }
+
+        /* ── Red Alert Overlay ── */
+        .red-alert-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 8;
+            background: radial-gradient(ellipse at center, transparent 50%, rgba(255, 0, 0, 0.15) 100%);
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+
+        .red-alert-overlay.active {
+            opacity: 1;
+            animation: alert-pulse 1.5s infinite;
+        }
+
+        @keyframes alert-pulse {
+            0%, 100% { background: radial-gradient(ellipse at center, transparent 50%, rgba(255, 0, 0, 0.15) 100%); }
+            50% { background: radial-gradient(ellipse at center, transparent 40%, rgba(255, 0, 0, 0.3) 100%); }
+        }
+
+        /* ── Info Panel (mobile toggle target) ── */
+        .bridge-info-panel.demo-controls {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            background: rgba(10, 10, 30, 0.9);
+            border: 1px solid rgba(78, 205, 196, 0.3);
+            border-radius: 12px;
+            padding: 16px 20px;
+            color: #ccc;
+            font-size: 0.85rem;
+            max-width: 320px;
+            pointer-events: auto;
+            backdrop-filter: blur(10px);
+            z-index: 20;
+        }
+
+        .bridge-info-panel h3 {
+            margin: 0 0 8px 0;
+            color: #4ecdc4;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 768px) {
+            .bridge-hud {
+                padding: 10px 16px;
+                flex-direction: column;
+                gap: 4px;
+            }
+            .bridge-title { font-size: 1rem; letter-spacing: 2px; }
+            .bridge-status { font-size: 0.65rem; gap: 12px; }
+            .bridge-info-panel.demo-controls {
+                left: 0; right: 0; bottom: 0;
+                max-width: none;
+                border-radius: 20px 20px 0 0;
+                padding: 20px;
+            }
+        }
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+
+<body>
+    <!-- Red Alert cinematic overlay -->
+    <div class="red-alert-overlay" id="redAlertOverlay"></div>
+
+    <!-- Top HUD -->
+    <div class="bridge-hud">
+        <div class="bridge-title">◆ USS AURORA ◆ BRIDGE</div>
+        <div class="bridge-status">
+            <span>STARDATE 2247.3</span>
+            <span>SECTOR 7-G</span>
+            <span class="alert-indicator" id="alertIndicator">● CONDITION GREEN</span>
+        </div>
+    </div>
+
+    <!-- Info / Guide panel -->
+    <div class="bridge-info-panel demo-controls" id="infoPanel">
+        <h3>🖖 Captain's Log</h3>
+        <p id="guideText">All systems nominal. Fleet reports steady. Tactical display shows sector patrol positions.</p>
+        <p style="font-size:0.7rem;opacity:0.5;margin-top:8px;">← Swipe down to dismiss on mobile</p>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { SpatialEnvironment } from '../../src/environments/SpatialEnvironment.js';
+        import { SemanticGhost } from '../../src/ai/SemanticGhost.js';
+        import { Chart3D } from '../../src/controls/Chart3D.js';
+        import { HoloMap3D } from '../../src/controls/HoloMap3D.js';
+        import { Toggle3D } from '../../src/controls/Toggle3D.js';
+        import { Button3D } from '../../src/controls/Button3D.js';
+        import { Slider3D } from '../../src/controls/Slider3D.js';
+        import { HapticHorizon3D } from '../../src/controls/HapticHorizon3D.js';
+
+        // ── 1. Environment ──
+        const env = new SpatialEnvironment(document.body, {
+            cameraPos: [0, 2.0, 5.5],
+            fogDensity: 0.015
+        });
+        env.init();
+        env.scene.background = new THREE.Color(0x020210);
+        env.scene.fog = new THREE.FogExp2(0x020210, 0.015);
+
+        // Grid floor (bridge deck)
+        const gridHelper = new THREE.PolarGridHelper(8, 32, 24, 64, 0x113344, 0x113344);
+        gridHelper.position.y = -2;
+        env.scene.add(gridHelper);
+
+        // Ambient bridge lights
+        const bridgeLight = new THREE.PointLight(0x4488cc, 2, 15);
+        bridgeLight.position.set(0, 3, 0);
+        env.scene.add(bridgeLight);
+
+        // ── 2. Starfield ──
+        const starsGeo = new THREE.BufferGeometry();
+        const starsCount = 1500;
+        const posArray = new Float32Array(starsCount * 3);
+        for (let i = 0; i < starsCount; i++) {
+            posArray[i * 3] = (Math.random() - 0.5) * 80;
+            posArray[i * 3 + 1] = (Math.random() - 0.5) * 40 + 5;
+            posArray[i * 3 + 2] = (Math.random() - 0.5) * 40 - 10;
+        }
+        starsGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const stars = new THREE.Points(starsGeo, new THREE.PointsMaterial({
+            size: 0.08, color: 0xaaccff, transparent: true, opacity: 0.6
+        }));
+        env.scene.add(stars);
+
+        // ── 3. Semantic Ghost (First Officer) ──
+        const ghost = new SemanticGhost(env.camera, env.scene, env.renderer);
+        env.add(ghost);
+        env.updatables.push(ghost);
+
+        setTimeout(() => {
+            ghost.updatePanelText("BRIDGE OFFICER: All stations report ready, Captain.");
+        }, 1500);
+
+        // ── 4. Tactical Display Arc (3 Charts in a curve) ──
+        const chartConfigs = [
+            {
+                label: 'SHIELD GRID',
+                data: [92, 88, 95, 91, 89, 94, 90],
+                borderColor: '#4ecdc4',
+                position: [-3.0, 2.0, -2.5],
+                rotation: 0.4
+            },
+            {
+                label: 'WEAPON SYSTEMS',
+                data: [78, 82, 76, 85, 80, 83, 87],
+                borderColor: '#ff6b9d',
+                position: [0, 2.2, -3.0],
+                rotation: 0
+            },
+            {
+                label: 'WARP CORE',
+                data: [95, 97, 94, 96, 98, 95, 97],
+                borderColor: '#f9ca24',
+                position: [3.0, 2.0, -2.5],
+                rotation: -0.4
+            }
+        ];
+
+        const tacticalCharts = chartConfigs.map(cfg => {
+            const chart = new Chart3D(env.scene, env.camera, cfg.position, {
+                width: 2.2,
+                height: 1.4,
+                chartType: 'line',
+                data: {
+                    labels: ['T-6', 'T-5', 'T-4', 'T-3', 'T-2', 'T-1', 'NOW'],
+                    datasets: [{
+                        label: cfg.label,
+                        data: cfg.data,
+                        borderColor: cfg.borderColor,
+                        backgroundColor: cfg.borderColor + '22',
+                        borderWidth: 2,
+                        tension: 0.3
+                    }]
+                }
+            });
+            chart.group.rotation.y = cfg.rotation;
+            env.add(chart.group);
+            env.updatables.push(chart);
+            return chart;
+        });
+
+        // ── 5. HoloMap — Fleet Positions ──
+        const holoMap = new HoloMap3D(env.scene, env.camera, [0, 0.3, -1.0], {
+            width: 4.0,
+            height: 2.0,
+            data: {
+                markers: [
+                    { lat: 40, lng: -74, label: 'USS Aurora', type: 'command' },
+                    { lat: 42, lng: -70, label: 'USS Sentinel', type: 'cruiser' },
+                    { lat: 38, lng: -78, label: 'USS Valiant', type: 'frigate' },
+                    { lat: 41, lng: -76, label: 'USS Horizon', type: 'science' },
+                    { lat: 39, lng: -72, label: 'USS Dauntless', type: 'cruiser' }
+                ]
+            }
+        });
+        holoMap.group.position.set(0, 0.5, -1.0);
+        env.add(holoMap.group);
+        env.updatables.push(holoMap);
+
+        // ── 6. Haptic Horizon ──
+        const hapticHorizon = new HapticHorizon3D(env.scene, env.camera, [0, -0.8, -1.5], {
+            width: 5.0,
+            height: 0.4,
+            intensity: 0.3
+        });
+        env.add(hapticHorizon.group);
+        env.updatables.push(hapticHorizon);
+
+        // ── 7. RED ALERT Toggle ──
+        const redAlertToggle = new Toggle3D(env.scene, env.camera, [-4.5, -0.5, -1.5], {
+            label: 'RED ALERT',
+            width: 2.0,
+            isOn: false,
+            onColor: 0xff0000,
+            offColor: 0x224444,
+            onClick: (toggle) => {
+                setRedAlert(toggle.isOn);
+            }
+        });
+        redAlertToggle.group.rotation.y = 0.5;
+        env.add(redAlertToggle.group);
+        env.updatables.push(redAlertToggle);
+
+        // ── 8. Shield Modulation Slider ──
+        const shieldSlider = new Slider3D(env.scene, env.camera, [4.5, 0.5, -1.5], {
+            label: 'SHIELD FREQ',
+            width: 2.0,
+            min: 0,
+            max: 100,
+            value: 72,
+            step: 1,
+            color: 0x4ecdc4,
+            onChange: (ctrl, val) => {
+                ghost.updatePanelText(`Shield frequency modulated to ${val}%. Harmonics stable.`);
+            }
+        });
+        shieldSlider.group.rotation.y = -0.5;
+        env.add(shieldSlider.group);
+        env.updatables.push(shieldSlider);
+
+        // ── 9. Fire Phasers Button ──
+        const fireButton = new Button3D(env.scene, env.camera, [4.5, -0.5, -1.5], {
+            label: '⚡ FIRE',
+            width: 2.0,
+            color: 0xff8800,
+            onClick: () => {
+                ghost.updatePanelText("PHASERS: Target locked. Firing sequence initiated.");
+                // Trigger haptic pulse
+                hapticHorizon.pulse(0.8);
+            }
+        });
+        fireButton.group.rotation.y = -0.5;
+        env.add(fireButton.group);
+        env.updatables.push(fireButton);
+
+        // ── 10. Red Alert System ──
+        let isRedAlert = false;
+        const overlay = document.getElementById('redAlertOverlay');
+        const alertIndicator = document.getElementById('alertIndicator');
+        const guideText = document.getElementById('guideText');
+
+        function setRedAlert(active) {
+            isRedAlert = active;
+
+            if (active) {
+                // Scene turns red
+                env.scene.background = new THREE.Color(0x1a0000);
+                env.scene.fog = new THREE.FogExp2(0x1a0000, 0.02);
+
+                // Overlay pulses
+                overlay.classList.add('active');
+
+                // Status indicator
+                alertIndicator.textContent = '● RED ALERT';
+                alertIndicator.classList.add('red');
+
+                // Ghost warns
+                ghost.updatePanelText("🚨 RED ALERT: All hands to battle stations! Shields up, weapons hot.");
+
+                // Guide panel updates
+                guideText.textContent = "RED ALERT ACTIVE — Tactical displays show threat vectors. Shield modulator ready. Phasers charged.";
+
+                // Haptic pulse
+                hapticHorizon.pulse(1.0);
+
+                // Bridge light turns red
+                bridgeLight.color.set(0xff2222);
+                bridgeLight.intensity = 4;
+            } else {
+                // Return to normal
+                env.scene.background = new THREE.Color(0x020210);
+                env.scene.fog = new THREE.FogExp2(0x020210, 0.015);
+
+                overlay.classList.remove('active');
+
+                alertIndicator.textContent = '● CONDITION GREEN';
+                alertIndicator.classList.remove('red');
+
+                ghost.updatePanelText("Red Alert cancelled. Returning to Condition Green. All stations stand down.");
+
+                guideText.textContent = "All systems nominal. Fleet reports steady. Tactical display shows sector patrol positions.";
+
+                bridgeLight.color.set(0x4488cc);
+                bridgeLight.intensity = 2;
+            }
+        }
+
+        // ── 11. Animation ──
+        env.updatables.push({
+            update: (delta) => {
+                stars.rotation.y += delta * 0.02;
+                stars.rotation.x += delta * 0.005;
+
+                // Haptic horizon subtle idle animation
+                if (!isRedAlert && hapticHorizon.mesh) {
+                    hapticHorizon.mesh.material.emissiveIntensity = 0.15 + Math.sin(Date.now() * 0.002) * 0.05;
+                }
+            }
+        });
+
+        // ── 12. Launch ──
+        env.start();
+    </script>
+
+    <script src="../scripts/mobile-controls.js"></script>
+</body>
+
+</html>

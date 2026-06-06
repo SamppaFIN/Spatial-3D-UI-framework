@@ -4,52 +4,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mars 2100: The Red Gate - Spatial UI 3D</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Mars 2100: The Red Gate — Spatial UI 3D</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/mobile-panel.css">
     <style>
         body {
             margin: 0;
             overflow: hidden;
             background: #000;
+            font-family: 'Inter', sans-serif;
         }
 
-        #canvas {
+        #mars-canvas {
             width: 100vw;
             height: 100vh;
+            display: block;
         }
 
-        .hud {
+        /* ── HUD ── */
+        .mars-hud {
             position: fixed;
             top: 20px;
             left: 20px;
-            color: #4ecdc4;
-            font-family: 'Inter', sans-serif;
             pointer-events: none;
-            text-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
-            z-index: 100;
+            z-index: 10;
+            transition: color 2s;
+        }
+        .mars-hud.earth-side { color: #4ecdc4; text-shadow: 0 0 12px rgba(78, 205, 196, 0.5); }
+        .mars-hud.mars-side  { color: #ff6633; text-shadow: 0 0 12px rgba(255, 102, 51, 0.5); }
+
+        .mars-hud h1 {
+            margin: 0;
+            font-family: 'Orbitron', monospace;
+            font-size: 1.2rem;
+            letter-spacing: 3px;
+        }
+        .mars-hud .sub {
+            font-size: 0.75rem;
+            opacity: 0.8;
+            margin-top: 4px;
         }
 
+        /* ── Traversal flash ── */
+        .traversal-flash {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0;
+            transition: opacity 0.1s;
+        }
+        .traversal-flash.active {
+            opacity: 1;
+            background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, transparent 70%);
+            transition: opacity 0s;
+        }
+
+        /* ── Info Panel (mobile toggle) ── */
+        .mars-panel.demo-controls {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            background: rgba(10, 10, 30, 0.92);
+            border: 1px solid rgba(78, 205, 196, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            color: #bcd;
+            font-size: 0.85rem;
+            max-width: 300px;
+            z-index: 20;
+            backdrop-filter: blur(10px);
+            transition: border-color 2s;
+        }
+        .mars-panel.mars-active { border-color: rgba(255, 102, 51, 0.5); }
+        .mars-panel h3 { margin: 0 0 6px 0; font-size: 0.95rem; }
+
         @media (max-width: 768px) {
-            .hud {
-                top: auto;
-                bottom: 20px;
-                left: 20px;
-                right: 20px;
-                text-align: center;
-                background: rgba(0, 0, 0, 0.5);
-                padding: 10px;
-                border-radius: 8px;
-            }
-
-            .hud h1 {
-                font-size: 1.2rem;
-                margin: 0;
-            }
-
-            .hud p {
-                font-size: 0.9rem;
-                margin: 5px 0 0 0;
+            .mars-hud { top: 12px; left: 12px; }
+            .mars-hud h1 { font-size: 1rem; letter-spacing: 2px; }
+            .mars-panel.demo-controls {
+                left: 0; right: 0; bottom: 0;
+                max-width: none;
+                border-radius: 20px 20px 0 0;
             }
         }
     </style>
@@ -64,11 +101,20 @@
 </head>
 
 <body>
-    <div class="hud">
-        <h1>🚀 Mars 2100: The Red Gate</h1>
-        <p>Approach the portal to initiate transfer.</p>
+    <div class="traversal-flash" id="traversalFlash"></div>
+
+    <div class="mars-hud earth-side" id="marsHud">
+        <h1>◆ MARS 2100 ◆ THE RED GATE</h1>
+        <div class="sub" id="hudSub">Earth Orbit · Approach the portal</div>
     </div>
-    <canvas id="canvas"></canvas>
+
+    <div class="mars-panel demo-controls" id="infoPanel">
+        <h3 id="panelTitle">🌍 Mission Control</h3>
+        <p id="guideText">Portal stabilized. Walk through to begin Mars transfer.</p>
+        <p style="font-size:0.7rem;opacity:0.4;margin-top:8px;">Use WASD or drag to move. Walk into the portal.</p>
+    </div>
+
+    <canvas id="mars-canvas"></canvas>
 
     <script type="module">
         import * as THREE from 'three';
@@ -76,165 +122,393 @@
         import { AIPortal3D } from '../../src/controls/AIPortal3D.js';
         import { Button3D } from '../../src/controls/Button3D.js';
         import { Slider3D } from '../../src/controls/Slider3D.js';
+        import { Chart3D } from '../../src/controls/Chart3D.js';
+        import { Toggle3D } from '../../src/controls/Toggle3D.js';
         import { ControlRegistry } from '../../src/core/ControlRegistry.js';
 
-        // 1. Setup Scene
-        const canvas = document.getElementById('canvas');
+        // ── 1. Scene Setup ──
+        const canvas = document.getElementById('mars-canvas');
         const scene3D = new Scene3D(canvas);
         const scene = scene3D.getScene();
         const camera = scene3D.getCamera();
         const renderer = scene3D.getRenderer();
 
-        // 2. Initial "Airlock" Environment
-        scene.background = new THREE.Color(0x050510); // Deep space blue/black
-        scene.fog = new THREE.FogExp2(0x050510, 0.02);
+        // Start camera further back so user can see the portal
+        camera.position.set(0, 1.8, 8);
+        camera.lookAt(0, 1.5, -4);
 
-        // Airlock Lighting
-        const airlockAmbient = new THREE.AmbientLight(0x4040a0, 0.5);
-        scene.add(airlockAmbient);
-        const airlockSpot = new THREE.SpotLight(0x4ecdc4, 2);
-        airlockSpot.position.set(0, 5, 5);
-        scene.add(airlockSpot);
+        // ── 2. EARTH Environment (visible initially) ──
+        const earthGroup = new THREE.Group();
+        scene.add(earthGroup);
 
-        // 3. The Portal
-        const portal = new AIPortal3D(scene, camera, [0, 1.5, -4], {
-            width: 4, height: 6,
-            portalRadius: 3.0,
-            color: 0xff3300, // Mars Red
-            content: "TERRAFORM COMMAND",
-            onTraverse: () => enterMarsRealm()
-        });
+        // Earth background: deep space blue
+        scene.background = new THREE.Color(0x020518);
+        scene.fog = new THREE.FogExp2(0x020518, 0.015);
 
-        // 4. Mars Environment (Hidden initially)
+        // Space station grid floor
+        const stationGrid = new THREE.PolarGridHelper(10, 32, 20, 64, 0x224466, 0x224466);
+        stationGrid.position.y = -2;
+        earthGroup.add(stationGrid);
+
+        // Earth-side starfield
+        const earthStarsGeo = new THREE.BufferGeometry();
+        const earthStarsCount = 1000;
+        const earthStarsPos = new Float32Array(earthStarsCount * 3);
+        for (let i = 0; i < earthStarsCount; i++) {
+            earthStarsPos[i * 3] = (Math.random() - 0.5) * 60;
+            earthStarsPos[i * 3 + 1] = (Math.random() - 0.5) * 30 + 5;
+            earthStarsPos[i * 3 + 2] = (Math.random() - 0.5) * 30 - 15;
+        }
+        earthStarsGeo.setAttribute('position', new THREE.BufferAttribute(earthStarsPos, 3));
+        const earthStars = new THREE.Points(earthStarsGeo, new THREE.PointsMaterial({
+            size: 0.1, color: 0x8899cc, transparent: true, opacity: 0.8
+        }));
+        earthGroup.add(earthStars);
+
+        // Earth-side lighting
+        const earthAmbient = new THREE.AmbientLight(0x334466, 0.5);
+        earthGroup.add(earthAmbient);
+        const earthSpot = new THREE.SpotLight(0x4ecdc4, 3, 20, 0.4, 0.5);
+        earthSpot.position.set(0, 8, 8);
+        earthGroup.add(earthSpot);
+
+        // ── 3. MARS Environment (hidden initially) ──
         const marsGroup = new THREE.Group();
         marsGroup.visible = false;
         scene.add(marsGroup);
 
-        // Mars Terrain (Simple Grid)
-        const gridHelper = new THREE.GridHelper(100, 100, 0xff3300, 0x551100);
-        marsGroup.add(gridHelper);
+        // Mars terrain — large red grid
+        const marsGrid = new THREE.PolarGridHelper(30, 48, 60, 64, 0xff4411, 0x661100);
+        marsGrid.position.y = -2.5;
+        marsGroup.add(marsGrid);
 
-        // Mars Lighting
-        const marsSun = new THREE.DirectionalLight(0xffaa33, 3);
-        marsSun.position.set(-10, 20, -10);
-        marsGroup.add(marsSun);
-
-        // Mars Dust Particles
-        const dustGeometry = new THREE.BufferGeometry();
-        const dustCount = 2000;
-        const dustPos = new Float32Array(dustCount * 3);
-
-        for (let i = 0; i < dustCount * 3; i++) {
-            dustPos[i] = (Math.random() - 0.5) * 50;
-        }
-        dustGeometry.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
-        const dustMaterial = new THREE.PointsMaterial({
-            color: 0xff4400,
-            size: 0.05,
-            transparent: true,
-            opacity: 0.6
+        // Rocky ground plane
+        const groundGeo = new THREE.PlaneGeometry(40, 40);
+        const groundMat = new THREE.MeshStandardMaterial({
+            color: 0x3a1a0a,
+            roughness: 0.95,
+            metalness: 0.1
         });
-        const dustSystem = new THREE.Points(dustGeometry, dustMaterial);
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -2.6;
+        ground.receiveShadow = true;
+        marsGroup.add(ground);
+
+        // Mars dust storm particles
+        const dustGeo = new THREE.BufferGeometry();
+        const dustCount = 1500;
+        const dustPositions = new Float32Array(dustCount * 3);
+        for (let i = 0; i < dustCount; i++) {
+            dustPositions[i * 3] = (Math.random() - 0.5) * 35;
+            dustPositions[i * 3 + 1] = Math.random() * 10 - 2;
+            dustPositions[i * 3 + 2] = (Math.random() - 0.5) * 20;
+        }
+        dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
+        const dustMat = new THREE.PointsMaterial({
+            size: 0.06,
+            color: 0xff5522,
+            transparent: true,
+            opacity: 0.5
+        });
+        const dustSystem = new THREE.Points(dustGeo, dustMat);
         marsGroup.add(dustSystem);
 
-        // 5. Mars Controls
-        const terraformBtn = new Button3D(scene, camera, [0, 1, -8], {
-            label: "INITIATE TERRAFORM",
-            width: 3, height: 1,
-            color: 0x00ff00,
-            onClick: () => triggerTerraform()
+        // Mars lighting
+        const marsSun = new THREE.DirectionalLight(0xff8844, 2.5);
+        marsSun.position.set(-8, 15, -5);
+        marsGroup.add(marsSun);
+        const marsAmbient = new THREE.AmbientLight(0x442211, 0.6);
+        marsGroup.add(marsAmbient);
+
+        // Mars sky glow (point light simulating atmosphere)
+        const marsSkyGlow = new THREE.PointLight(0xff5522, 3, 25);
+        marsSkyGlow.position.set(0, 5, -5);
+        marsGroup.add(marsSkyGlow);
+
+        // ── 4. THE PORTAL (bidirectional gateway) ──
+        let isOnMars = false;
+        let isTransitioning = false;
+
+        const portal = new AIPortal3D(scene, camera, [0, 1.8, -3], {
+            width: 4,
+            height: 6,
+            portalRadius: 2.8,
+            color: 0xff4400, // Mars red — invitation to step through
+            content: "TERRAFORM GATEWAY",
+            onTraverse: () => {
+                if (isTransitioning) return;
+                toggleRealm();
+            }
         });
-        marsGroup.add(terraformBtn.getGroup()); // Add manually to group logic
-        // Register manually since we added to a group not scene directly (usually handled by control)
-        ControlRegistry.register(terraformBtn);
 
-        const atmosphereSlider = new Slider3D(scene, camera, [3, 1, -7], {
-            label: "Atmosphere Density",
-            width: 3, height: 0.3,
-            value: 50,
-            color: 0x4ecdc4
+        // ── 5. Earth-side UI Controls ──
+        const earthChart = new Chart3D(scene, camera, [-4.5, 2.0, -2], {
+            width: 2.5,
+            height: 1.5,
+            chartType: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Colony Readiness %',
+                    data: [45, 52, 61, 68, 74, 82],
+                    borderColor: '#4ecdc4',
+                    backgroundColor: 'rgba(78,205,196,0.1)'
+                }]
+            }
         });
-        marsGroup.add(atmosphereSlider.getGroup());
-        ControlRegistry.register(atmosphereSlider);
+        earthChart.group.rotation.y = 0.5;
+        earthGroup.add(earthChart.group);
+        ControlRegistry.register(earthChart);
 
-        // 6. Transition Logic
-        let isMars = false;
-        let transitionTime = 0;
+        // Earth instruction label
+        const earthLabel = new Button3D(scene, camera, [0, -0.5, -1.5], {
+            label: 'WALK INTO PORTAL →',
+            width: 2.5,
+            height: 0.6,
+            color: 0x4ecdc4,
+            mode: 0
+        });
+        earthGroup.add(earthLabel.group);
+        ControlRegistry.register(earthLabel);
 
-        function enterMarsRealm() {
-            if (isMars) return;
-            isMars = true;
-            console.log("Welcome to Mars.");
-
-            // Visual transition
-            marsGroup.visible = true;
-
-            // Fade fog to red
-            const startColor = new THREE.Color(0x050510);
-            const targetColor = new THREE.Color(0x330500); // Dark Red
-
-            let progress = 0;
-            const duration = 2000; // 2s transition
-            const startTime = Date.now();
-
-            function transition() {
-                const elapsed = Date.now() - startTime;
-                progress = Math.min(elapsed / duration, 1.0);
-
-                // Lerp fog color
-                scene.fog.color.lerpColors(startColor, targetColor, progress);
-                scene.background.lerpColors(startColor, targetColor, progress);
-                scene.fog.density = 0.02 + (progress * 0.03); // Thicker fog on Mars
-
-                if (progress < 1) {
-                    requestAnimationFrame(transition);
+        // ── 6. Mars-side UI Controls ──
+        // Terraform button
+        let terraformActive = false;
+        const terraformBtn = new Button3D(scene, camera, [0, 0.3, -7], {
+            label: 'INITIATE TERRAFORM',
+            width: 3,
+            height: 1,
+            color: 0x00ff66,
+            mode: 1,
+            onClick: () => {
+                terraformActive = !terraformActive;
+                if (terraformActive) {
+                    marsSun.color.set(0xccffcc);  // Green-tinted sun
+                    dustMat.color.set(0x88ff88);   // Green dust
+                    marsSkyGlow.color.set(0x44ff88);
+                    terraformBtn.set('label', 'TERRAFORMING...');
+                    updateGuide('🌱 Terraforming initiated. Atmosphere conversion in progress.');
                 } else {
-                    // Hide airlock elements to save performance?
-                    // portal.group.visible = false;
+                    marsSun.color.set(0xff8844);
+                    dustMat.color.set(0xff5522);
+                    marsSkyGlow.color.set(0xff5522);
+                    terraformBtn.set('label', 'INITIATE TERRAFORM');
+                    updateGuide('Terraforming halted. Mars returned to natural state.');
                 }
             }
-            transition();
+        });
+        marsGroup.add(terraformBtn.group);
+        ControlRegistry.register(terraformBtn);
+
+        // Atmosphere density slider
+        const atmoSlider = new Slider3D(scene, camera, [4.5, 1.2, -6], {
+            label: 'ATMOSPHERE',
+            width: 2.5,
+            min: 0,
+            max: 100,
+            value: 8,
+            step: 1,
+            color: 0xff8844,
+            onChange: (ctrl, val) => {
+                // Thicker atmosphere = less dust visibility
+                dustMat.opacity = 0.6 - (val / 100) * 0.4;
+                marsSkyGlow.intensity = 1 + (val / 100) * 4;
+                updateGuide(`Atmosphere: ${val}%. ${val > 50 ? 'Breathable levels approaching.' : 'Thin Martian air.'}`);
+            }
+        });
+        atmoSlider.group.rotation.y = -0.35;
+        marsGroup.add(atmoSlider.group);
+        ControlRegistry.register(atmoSlider);
+
+        // Oxygen generator toggle
+        const o2Toggle = new Toggle3D(scene, camera, [4.5, 0.2, -6], {
+            label: 'O₂ GENERATOR',
+            width: 2.5,
+            isOn: false,
+            onColor: 0x44ff44,
+            offColor: 0x553322,
+            onClick: (t) => {
+                updateGuide(t.isOn
+                    ? 'O₂ Generator: ONLINE. Oxygen levels rising.'
+                    : 'O₂ Generator: OFFLINE. Using reserve tanks.');
+                // Green glow when on
+                marsSkyGlow.intensity = t.isOn ? 5 : 3;
+            }
+        });
+        o2Toggle.group.rotation.y = -0.35;
+        marsGroup.add(o2Toggle.group);
+        ControlRegistry.register(o2Toggle);
+
+        // Mars colony chart
+        const colonyChart = new Chart3D(scene, camera, [-4.5, 1.5, -6], {
+            width: 2.5,
+            height: 1.5,
+            chartType: 'bar',
+            data: {
+                labels: ['Sol 1', 'Sol 30', 'Sol 60', 'Sol 90', 'Sol 120'],
+                datasets: [{
+                    label: 'Colonists',
+                    data: [4, 12, 28, 52, 89],
+                    backgroundColor: ['#ff6633', '#ff7744', '#ff8855', '#ff9966', '#ffaa77']
+                }]
+            }
+        });
+        colonyChart.group.rotation.y = 0.35;
+        marsGroup.add(colonyChart.group);
+        ControlRegistry.register(colonyChart);
+
+        // Return portal label (Mars side)
+        const marsReturnLabel = new Button3D(scene, camera, [0, 0.0, -1.5], {
+            label: '← RETURN TO ORBIT',
+            width: 2.5,
+            height: 0.6,
+            color: 0x4ecdc4,
+            mode: 0
+        });
+        marsGroup.add(marsReturnLabel.group);
+        ControlRegistry.register(marsReturnLabel);
+
+        // ── 7. REALM TRANSITION ──
+        function toggleRealm() {
+            if (isTransitioning) return;
+            isTransitioning = true;
+
+            const fromMars = isOnMars;
+            const target = fromMars ? 'earth' : 'mars';
+
+            // Flash effect
+            const flash = document.getElementById('traversalFlash');
+            flash.classList.add('active');
+            setTimeout(() => flash.classList.remove('active'), 300);
+
+            // Update state
+            isOnMars = !isOnMars;
+
+            if (isOnMars) {
+                // → Entering Mars
+                marsGroup.visible = true;
+                earthGroup.visible = false;
+
+                // Transition: blue → red over 2s
+                animateTransition(
+                    new THREE.Color(0x020518), new THREE.Color(0x1a0500),  // background
+                    0.015, 0.035,  // fog density
+                    () => {
+                        // On complete
+                        updateHud('mars');
+                        updateGuide('📍 Mars surface · Sol 247. Terraform controls active. Walk back through portal to return.');
+                        portal.config.color = 0x4ecdc4; // Blue portal = return to Earth
+                        portal.create(); // Rebuild portal with new color
+                    }
+                );
+            } else {
+                // ← Returning to Earth
+                marsGroup.visible = false;
+                earthGroup.visible = true;
+
+                // Transition: red → blue
+                animateTransition(
+                    new THREE.Color(0x1a0500), new THREE.Color(0x020518),
+                    0.035, 0.015,
+                    () => {
+                        updateHud('earth');
+                        updateGuide('🌍 Earth orbit · Portal stabilized. Colony readiness at 82%.');
+                        portal.config.color = 0xff4400; // Red portal = go to Mars
+                        portal.create();
+                    }
+                );
+            }
+
+            // Allow re-traversal after transition completes
+            setTimeout(() => { isTransitioning = false; }, 2500);
         }
 
-        function triggerTerraform() {
-            // Explosion of green particles
-            console.log("Terraforming...");
-            marsSun.color.setHex(0xccffcc); // Greenish sun
-            scene.fog.color.setHex(0xaaffaa); // Green fog
-            dustMaterial.color.setHex(0x88ff88); // Green dust
+        function animateTransition(fromColor, toColor, fromFog, toFog, onComplete) {
+            const duration = 2000;
+            const startTime = Date.now();
+
+            function step() {
+                const elapsed = Date.now() - startTime;
+                const t = Math.min(elapsed / duration, 1.0);
+                // Ease in-out
+                const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+
+                scene.background.copy(fromColor).lerp(toColor, ease);
+                scene.fog.density = fromFog + (toFog - fromFog) * ease;
+
+                if (t < 1) {
+                    requestAnimationFrame(step);
+                } else {
+                    scene.background.copy(toColor);
+                    scene.fog.density = toFog;
+                    if (onComplete) onComplete();
+                }
+            }
+            requestAnimationFrame(step);
         }
 
-        // 7. Loop
+        // ── 8. HUD Helpers ──
+        function updateHud(side) {
+            const hud = document.getElementById('marsHud');
+            const sub = document.getElementById('hudSub');
+            const panel = document.getElementById('infoPanel');
+            const panelTitle = document.getElementById('panelTitle');
+
+            if (side === 'mars') {
+                hud.className = 'mars-hud mars-side';
+                sub.textContent = 'Mars Surface · Sol 247';
+                panel.classList.add('mars-active');
+                panelTitle.textContent = '🔴 Mars Colony Control';
+                panelTitle.style.color = '#ff6633';
+            } else {
+                hud.className = 'mars-hud earth-side';
+                sub.textContent = 'Earth Orbit · Approach the portal';
+                panel.classList.remove('mars-active');
+                panelTitle.textContent = '🌍 Mission Control';
+                panelTitle.style.color = '#4ecdc4';
+            }
+        }
+
+        function updateGuide(text) {
+            document.getElementById('guideText').textContent = text;
+        }
+
+        // ── 9. Animation Loop ──
+        const allControls = [portal, earthChart, earthLabel, terraformBtn, atmoSlider, o2Toggle, colonyChart, marsReturnLabel];
+
         function animate() {
             requestAnimationFrame(animate);
 
-            portal.update();
+            // Update all controls
+            allControls.forEach(c => c.update());
 
-            if (isMars) {
-                dustSystem.rotation.y += 0.001;
-                terraformBtn.update();
-                atmosphereSlider.update();
+            // Animate dust on Mars
+            if (isOnMars) {
+                dustSystem.rotation.y += 0.0005;
+                const pos = dustGeo.attributes.position.array;
+                for (let i = 0; i < dustCount; i++) {
+                    const idx = i * 3;
+                    pos[idx] += Math.sin(Date.now() * 0.0003 + i) * 0.003;
+                    pos[idx + 1] += (Math.sin(Date.now() * 0.0007 + i * 0.7) * 0.002);
+                }
+                dustGeo.attributes.position.needsUpdate = true;
+            }
+
+            // Animate stars on Earth side
+            if (!isOnMars) {
+                earthStars.rotation.y += 0.0003;
             }
 
             scene3D.render();
         }
         animate();
 
-        // 8. Auto-move camera for demo (optional, user can walk)
-        // Let user walk with WASD (default in Scene3D/SpatialControls if enabled)
-        // Or we simulate "approaching"
-
-        window.addEventListener('keydown', (e) => {
-            // Simple forward movement for testing
-            if (e.key === 'w') {
-                camera.position.z -= 0.1;
-            }
-            if (e.key === 's') {
-                camera.position.z += 0.1;
-            }
-        });
-
+        // ── 10. Keyboard hint ──
+        updateGuide('🌍 Earth orbit · Walk into the red portal (press W or drag forward). Colony readiness: 82%.');
     </script>
+
+    <script src="../scripts/mobile-controls.js"></script>
 </body>
 
 </html>

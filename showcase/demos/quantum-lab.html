@@ -4,156 +4,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantum Processor: Q-Aurora Core</title>
+    <title>Q-Aurora Core — Spatial UI 3D</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/mobile-panel.css">
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: #000510;
-            font-family: 'Courier New', monospace;
-        }
-
-        #quantum-hud {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            pointer-events: none;
-            color: #00ccff;
-            text-shadow: 0 0 10px rgba(0, 204, 255, 0.6);
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 1.4rem;
-            letter-spacing: 2px;
-        }
-
-        .sub {
-            font-size: 0.8rem;
-            opacity: 0.8;
-        }
-
-        /* Sub-zero vignette */
-        #cryo-wash {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, transparent 40%, rgba(0, 10, 30, 0.8) 100%);
-            pointer-events: none;
-            z-index: 5;
-        }
+        body { margin: 0; overflow: hidden; background: #000510; font-family: 'Share Tech Mono', 'Inter', monospace; }
+        .quantum-hud { position: fixed; top: 20px; left: 20px; pointer-events: none; z-index: 10; color: #aa66ff; text-shadow: 0 0 15px rgba(170,102,255,0.5); }
+        .quantum-hud h1 { margin: 0; font-size: 1.2rem; letter-spacing: 3px; }
+        .quantum-hud .sub { font-size: 0.7rem; opacity: 0.8; margin-top: 2px; }
+        .q-stats { position: fixed; top: 20px; right: 20px; pointer-events: none; z-index: 10; font-size: 0.7rem; color: #cc88ff; }
+        .q-stats span { display: block; margin-bottom: 4px; }
+        #cryo-wash { position: fixed; inset: 0; pointer-events: none; z-index: 5; background: radial-gradient(ellipse, transparent 45%, rgba(0,5,20,0.8) 100%); }
+        .quantum-panel.demo-controls { position: fixed; bottom: 24px; left: 24px; background: rgba(0,5,20,0.95); border: 1px solid rgba(170,102,255,0.3); border-radius: 12px; padding: 16px; color: #ccaaff; font-size: 0.85rem; max-width: 300px; z-index: 20; }
+        .quantum-panel h3 { margin: 0 0 6px 0; color: #aa66ff; font-size: 0.95rem; }
+        @media (max-width: 768px) { .quantum-hud { top:12px; left:12px; } .quantum-hud h1 { font-size:0.9rem; } .q-stats { top:12px; right:8px; font-size:0.6rem; } .quantum-panel.demo-controls { left:0;right:0;bottom:0;max-width:none;border-radius:20px 20px 0 0; } }
     </style>
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
-        }
-    </script>
+    <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
 
 <body>
     <div id="cryo-wash"></div>
-    <div id="quantum-hud">
-        <h1>Q-AURORA PROCESSOR</h1>
-        <div class="sub">Temp: 15mK • Coherence: Stable</div>
-    </div>
+    <div class="quantum-hud"><h1>◆ Q-AURORA ◆ QUANTUM CORE</h1><div class="sub">Temp: 15mK · 1024 Qubits · Coherence: Stable</div></div>
+    <div class="q-stats"><span>ENTROPY: <b id="qEntropy">0.03</b></span><span>FIDELITY: <b id="qFidelity">99.7%</b></span><span>GATES: <b id="qGates">144</b></span></div>
+    <div class="quantum-panel demo-controls" id="infoPanel"><h3>⚛️ Quantum State Monitor</h3><p id="guideText">Qubit superposition volume active. Adjust entanglement to explore quantum states.</p></div>
 
     <script type="module">
         import * as THREE from 'three';
         import { SpatialEnvironment } from '../../src/environments/SpatialEnvironment.js';
         import { SemanticGhost } from '../../src/ai/SemanticGhost.js';
-
-        // Components
         import { DataVolume3D } from '../../src/controls/DataVolume3D.js';
-        import { Chart3D } from '../../src/controls/Chart3D.js';
+        import { Slider3D } from '../../src/controls/Slider3D.js';
+        import { Toggle3D } from '../../src/controls/Toggle3D.js';
         import { Button3D } from '../../src/controls/Button3D.js';
-        import { HaloCard3D } from '../../src/controls/HaloCard3D.js';
-        import { MagneticCard3D } from '../../src/controls/MagneticCard3D.js';
 
-        // 1. Setup
-        const env = new SpatialEnvironment(document.body, { cameraPos: [0, 1.8, 5] });
+        const env = new SpatialEnvironment(document.body, { cameraPos: [0, 2.0, 5], fogDensity: 0.008 });
         env.init();
         env.scene.background = new THREE.Color(0x000510);
-        env.scene.fog = new THREE.Fog(0x000510, 5, 20);
+        env.scene.fog = new THREE.FogExp2(0x000510, 0.008);
+        env.scene.add(new THREE.AmbientLight(0x220044, 0.4));
+        const cryoLight = new THREE.PointLight(0xaa66ff, 3, 12); cryoLight.position.set(0, 4, -1); env.scene.add(cryoLight);
 
-        // Cryogenic Lighting
-        const amb = new THREE.AmbientLight(0x00ccff, 0.4);
-        env.scene.add(amb);
+        const ghost = new SemanticGhost(env.camera, env.scene, env.renderer); env.add(ghost); env.updatables.push(ghost);
 
-        const point = new THREE.PointLight(0xaa00ff, 2, 10);
-        point.position.set(0, 4, -2);
-        env.scene.add(point);
+        // ── DataVolume3D — UNIQUE: Qubit Superposition Cloud ──
+        const qVolume = new DataVolume3D(env.scene, env.camera, [0, 1.8, -2.5], { width: 3.5, height: 3, depth: 3, pointCount: 1024, color: 0xaa66ff });
+        env.add(qVolume.group); env.updatables.push(qVolume);
 
-        // 2. Quantum AI (Ghost)
-        const qLink = new SemanticGhost(env.camera, env.scene, env.renderer);
-        env.add(qLink);
-        env.updatables.push(qLink);
-
-        setTimeout(() => {
-            qLink.updatePanelText("QUANTUM_ENTANGLEMENT_ESTABLISHED");
-            qLink.guideTo(volume.group, "The Qubit Superposition Volume");
-        }, 1500);
-
-
-        // 3. QUANTUM TOOLS
-
-        // Qubit Cloud (Data Volume)
-        const volume = new DataVolume3D(env.scene, env.camera, [0, 1.8, -2], {
-            width: 3, height: 3, depth: 3, pointCount: 1024, pointSize: 0.05,
-            color: 0x00ccff
-        });
-        env.add(volume.group);
-        env.updatables.push(volume);
-
-        // Probability Chart
-        const probChart = new Chart3D(env.scene, env.camera, [4, 2.0, -3], {
-            width: 3, height: 2, chartType: 'line',
-            data: {
-                labels: ['ψ1', 'ψ2', 'ψ3', 'ψ4', 'ψ5'],
-                datasets: [{
-                    label: 'Amplitude',
-                    data: [80, 20, 45, 10, 95],
-                    borderColor: '#aa00ff',
-                    backgroundColor: 'rgba(170, 0, 255, 0.1)'
-                }]
+        let entanglement = 50;
+        // Entanglement slider
+        const entSlider = new Slider3D(env.scene, env.camera, [4.5, 1.5, -2.5], {
+            label: 'ENTANGLEMENT', width: 2.2, min: 0, max: 100, value: 50, step: 1, color: 0xaa66ff,
+            onChange: (c,v) => {
+                entanglement = v;
+                qVolume.group.scale.setScalar(0.5 + (v/100)*1.5);
+                document.getElementById('qEntropy').textContent = (v/100*0.1).toFixed(2);
+                document.getElementById('qFidelity').textContent = (99.9 - (v/100)*0.5).toFixed(1) + '%';
+                ghost.updatePanelText(v>80?'⚠️ High entanglement. Decoherence risk increasing.':'Quantum state stable. Entanglement at ' + v + '%.');
             }
         });
-        probChart.group.rotation.y = -0.4;
-        env.add(probChart.group);
-        env.updatables.push(probChart);
+        entSlider.group.rotation.y = -0.3; env.add(entSlider.group); env.updatables.push(entSlider);
 
-        // Lab Log
-        const log = new MagneticCard3D(env.scene, env.camera, [-4, 2.0, -3], {
-            width: 2.2, height: 2.5, color: 0x0a1a3a,
-            title: "EXP_LOG_77", description: "Hadamard gates applied.\nBell state confirmed.\nDecoding protein folding..."
+        // Superposition toggle
+        const superToggle = new Toggle3D(env.scene, env.camera, [4.5, -0.2, -2.5], {
+            label: 'SUPERPOSITION', width: 2.2, isOn: true, onColor: 0xcc44ff, offColor: 0x332244,
+            onClick: (t) => {
+                if(t.isOn){ qVolume.group.visible=true; ghost.updatePanelText('Superposition active. Qubits in all states simultaneously.'); }
+                else{ qVolume.group.visible=false; ghost.updatePanelText('Superposition collapsed. Qubits in definite states.'); }
+            }
         });
-        log.group.rotation.y = 0.4;
-        env.add(log.group);
-        env.updatables.push(log);
+        entSlider.group.rotation.y = -0.3; env.add(superToggle.group); env.updatables.push(superToggle);
 
-
-        // 4. INTERACTIVES
-
-        const runBtn = new Button3D(env.scene, env.camera, [0, 0.2, -1], {
-            label: "RUN_GROVER", width: 2.2, color: 0x00ff00,
+        // Run algorithm button
+        const runBtn = new Button3D(env.scene, env.camera, [0, -1.2, -1.5], {
+            label: '⚡ RUN SHOR ALGORITHM', width: 3.5, height: 0.8, color: 0xcc44ff, mode: 1,
             onClick: () => {
-                qLink.updatePanelText("ITERATING_QUANTUM_SEARCH...");
-                volume.group.scale.set(1.5, 1.5, 1.5);
-                setTimeout(() => volume.group.scale.set(1, 1, 1), 500);
+                document.getElementById('qGates').textContent = Math.floor(100 + Math.random()*200);
+                cryoLight.intensity = 6; qVolume.group.rotation.y += 0.5;
+                ghost.updatePanelText('⚛️ Shor algorithm executing. Factoring 2048-bit integer... 15 qubits entangled.');
+                setTimeout(()=>{ cryoLight.intensity = 3; }, 1200);
             }
         });
-        env.add(runBtn.group);
-        env.updatables.push(runBtn);
+        env.add(runBtn.group); env.updatables.push(runBtn);
 
+        env.updatables.push({ update: (d) => { qVolume.group.rotation.y += d*0.15; cryoLight.intensity += Math.sin(Date.now()*0.003)*d*0.5; } });
 
-        // 5. START
         env.start();
+        setTimeout(()=>{ ghost.updatePanelText('QUANTUM CORE ONLINE. 1024 qubits at 15mK. Superposition volume rendered.'); ghost.guideTo(qVolume.group, 'Qubit Superposition Cloud'); },1500);
 
+        const guideText = document.getElementById('guideText');
+        const orig = ghost.updatePanelText.bind(ghost); ghost.updatePanelText = (t) => { guideText.textContent = t; orig(t); };
     </script>
+    <script src="../scripts/mobile-controls.js"></script>
 </body>
 
 </html>

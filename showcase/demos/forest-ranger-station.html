@@ -4,176 +4,325 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ranger Station Alpha: Nature Hub</title>
+    <title>Ranger Station Alpha — Spatial UI 3D</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/mobile-panel.css">
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background: #e8f5e9;
+            background: #0a1a0a;
             font-family: 'Inter', sans-serif;
         }
 
-        #ranger-hud {
-            position: absolute;
+        .ranger-hud {
+            position: fixed;
             top: 20px;
             left: 20px;
             pointer-events: none;
-            color: #2e7d32;
-            text-shadow: 0 0 5px rgba(46, 125, 50, 0.3);
+            z-index: 10;
         }
-
-        h1 {
+        .ranger-hud h1 {
             margin: 0;
-            font-size: 1.4rem;
-            letter-spacing: 1px;
+            font-size: 1.3rem;
+            letter-spacing: 2px;
+            color: #7ecb76;
+            text-shadow: 0 0 15px rgba(126, 203, 118, 0.5);
+        }
+        .ranger-hud .sub {
+            font-size: 0.75rem;
+            color: #5a9e52;
+            margin-top: 2px;
         }
 
-        .sub {
+        /* Fire danger indicator */
+        .fire-danger {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            pointer-events: none;
+            z-index: 10;
             font-size: 0.8rem;
+            font-weight: 600;
             color: #4caf50;
+            text-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
+            transition: color 0.5s;
+        }
+        .fire-danger.warning { color: #ff9800; }
+        .fire-danger.critical { color: #f44336; animation: danger-pulse 0.8s infinite; }
+
+        @keyframes danger-pulse {
+            50% { text-shadow: 0 0 20px rgba(244, 67, 54, 0.8); }
         }
 
-        /* Forest canopy vignette */
-        #canopy {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, transparent 50%, rgba(46, 125, 50, 0.2) 100%);
+        /* Forest vignette */
+        #canopy-vignette {
+            position: fixed;
+            inset: 0;
             pointer-events: none;
             z-index: 5;
+            background: radial-gradient(ellipse at center, transparent 50%, rgba(10, 30, 5, 0.7) 100%);
+        }
+
+        /* Info panel (mobile toggle) */
+        .ranger-panel.demo-controls {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            background: rgba(10, 25, 10, 0.92);
+            border: 1px solid rgba(126, 203, 118, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            color: #bcd;
+            font-size: 0.85rem;
+            max-width: 300px;
+            z-index: 20;
+            backdrop-filter: blur(10px);
+        }
+        .ranger-panel h3 { margin: 0 0 6px 0; color: #7ecb76; font-size: 0.95rem; }
+
+        @media (max-width: 768px) {
+            .ranger-hud { top: 12px; left: 12px; }
+            .ranger-hud h1 { font-size: 1.1rem; }
+            .fire-danger { top: 12px; right: 12px; font-size: 0.7rem; }
+            .ranger-panel.demo-controls {
+                left: 0; right: 0; bottom: 0;
+                max-width: none;
+                border-radius: 20px 20px 0 0;
+            }
         }
     </style>
     <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
         }
+    }
     </script>
 </head>
 
 <body>
-    <div id="canopy"></div>
-    <div id="ranger-hud">
-        <h1>RANGER STATION ALPHA</h1>
-        <div class="sub">Redwood Sector 7 • Fire Risk: LOW</div>
+    <div id="canopy-vignette"></div>
+
+    <div class="ranger-hud">
+        <h1>🌲 RANGER STATION ALPHA</h1>
+        <div class="sub">Redwood Sector 7 · Northern Cascades</div>
+    </div>
+
+    <div class="fire-danger" id="fireDanger">🔥 FIRE RISK: LOW</div>
+
+    <!-- Info Panel -->
+    <div class="ranger-panel demo-controls" id="infoPanel">
+        <h3>🦊 Ranger AI · STATUS</h3>
+        <p id="guideText">Wind calm. All sensors nominal. Wildlife activity normal.</p>
     </div>
 
     <script type="module">
         import * as THREE from 'three';
         import { SpatialEnvironment } from '../../src/environments/SpatialEnvironment.js';
         import { SemanticGhost } from '../../src/ai/SemanticGhost.js';
-
-        // Components
-        import { MagneticCard3D } from '../../src/controls/MagneticCard3D.js';
+        import { FlowFieldController3D } from '../../src/controls/FlowFieldController3D.js';
         import { Chart3D } from '../../src/controls/Chart3D.js';
         import { Toggle3D } from '../../src/controls/Toggle3D.js';
-        import { VolumetricCard3D } from '../../src/controls/VolumetricCard3D.js';
+        import { MagneticCard3D } from '../../src/controls/MagneticCard3D.js';
+        import { Slider3D } from '../../src/controls/Slider3D.js';
 
-        // 1. Setup
-        const env = new SpatialEnvironment(document.body, { cameraPos: [0, 1.8, 5] });
+        // ── 1. Environment ──
+        const env = new SpatialEnvironment(document.body, {
+            cameraPos: [0, 2.2, 5.5],
+            fogDensity: 0.012
+        });
         env.init();
-        env.scene.background = new THREE.Color(0xdcedc8);
-        env.scene.fog = new THREE.Fog(0xdcedc8, 5, 25);
+        env.scene.background = new THREE.Color(0x0a1a0a);
+        env.scene.fog = new THREE.FogExp2(0x0a1a0a, 0.012);
 
-        // Natural Sun Lighting
-        const amb = new THREE.AmbientLight(0xffffff, 0.6);
+        // Ground plane
+        const groundGeo = new THREE.PlaneGeometry(30, 30);
+        const groundMat = new THREE.MeshStandardMaterial({
+            color: 0x1a3a1a,
+            roughness: 0.9
+        });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -2.5;
+        ground.receiveShadow = true;
+        env.scene.add(ground);
+
+        // Natural lighting
+        const amb = new THREE.AmbientLight(0x446644, 0.5);
         env.scene.add(amb);
-
-        const sun = new THREE.DirectionalLight(0xfffde7, 1);
-        sun.position.set(5, 10, 5);
+        const sun = new THREE.DirectionalLight(0xfffde7, 0.8);
+        sun.position.set(8, 12, 3);
         env.scene.add(sun);
 
-        // 3D Leaf Particles
+        // ── 2. Falling Leaves Particles ──
         const leafGeo = new THREE.BufferGeometry();
-        const leafCount = 100;
-        const leafPos = new Float32Array(leafCount * 3);
+        const leafCount = 200;
+        const leafPositions = new Float32Array(leafCount * 3);
+        const leafVelocities = new Float32Array(leafCount * 3); // wind influence
         for (let i = 0; i < leafCount; i++) {
-            leafPos[i * 3] = (Math.random() - 0.5) * 20;
-            leafPos[i * 3 + 1] = Math.random() * 10;
-            leafPos[i * 3 + 2] = (Math.random() - 0.5) * 20;
+            leafPositions[i * 3] = (Math.random() - 0.5) * 16;
+            leafPositions[i * 3 + 1] = Math.random() * 10 + 1;
+            leafPositions[i * 3 + 2] = (Math.random() - 0.5) * 10;
+            leafVelocities[i * 3] = 0;
+            leafVelocities[i * 3 + 1] = -0.3 - Math.random() * 0.5;
+            leafVelocities[i * 3 + 2] = 0;
         }
-        leafGeo.setAttribute('position', new THREE.BufferAttribute(leafPos, 3));
-        const leafMat = new THREE.PointsMaterial({ size: 0.15, color: 0x4caf50, transparent: true, opacity: 0.6 });
+        leafGeo.setAttribute('position', new THREE.BufferAttribute(leafPositions, 3));
+        const leafMat = new THREE.PointsMaterial({
+            size: 0.12,
+            color: 0x7ecb76,
+            transparent: true,
+            opacity: 0.7
+        });
         const leaves = new THREE.Points(leafGeo, leafMat);
         env.scene.add(leaves);
 
+        // ── 3. Semantic Ghost (Ranger AI) ──
+        const ghost = new SemanticGhost(env.camera, env.scene, env.renderer);
+        env.add(ghost);
+        env.updatables.push(ghost);
+
+        setTimeout(() => {
+            ghost.updatePanelText("RANGER AI: Good morning. Forest sensors active. 247 acres monitored.");
+            ghost.guideTo(windController.group, "Wind Flow Controller");
+        }, 1500);
+
+        // ── 4. FlowFieldController3D — UNIQUE MECHANIC: Wind/Weather Simulation ──
+        const windController = new FlowFieldController3D(env.scene, env.camera, [0, 1.0, -2.5], {
+            width: 3.5,
+            height: 2.0,
+            particleCount: 300,
+            flowSpeed: 0.4
+        });
+        env.add(windController.group);
+        env.updatables.push(windController);
+
+        // Wind speed affects leaf particle drift
+        let windStrength = 0.4;
+        let windDirection = 1; // +1 right, -1 left
+
+        // ── 5. Wildlife Population Chart ──
+        const wildlifeChart = new Chart3D(env.scene, env.camera, [-3.5, 1.8, -3.0], {
+            width: 2.5,
+            height: 1.6,
+            chartType: 'bar',
+            data: {
+                labels: ['Deer', 'Bear', 'Wolf', 'Eagle', 'Salmon'],
+                datasets: [{
+                    label: 'Population',
+                    data: [142, 23, 8, 47, 890],
+                    backgroundColor: [
+                        '#8bc34a', '#795548', '#607d8b', '#ff9800', '#2196f3'
+                    ]
+                }]
+            }
+        });
+        wildlifeChart.group.rotation.y = 0.35;
+        env.add(wildlifeChart.group);
+        env.updatables.push(wildlifeChart);
+
+        // ── 6. MagneticCard — Recent Sightings ──
+        const sightingsCard = new MagneticCard3D(env.scene, env.camera, [-3.5, 0.5, -3.0], {
+            width: 2.2,
+            height: 1.2,
+            color: 0x1a3a1a,
+            title: "RECENT SIGHTINGS",
+            description: "🐻 Grizzly: Trail 4 (2h ago)\n🦅 Bald Eagle: Summit Rock\n🦌 Elk herd: Meadow 2"
+        });
+        sightingsCard.group.rotation.y = 0.35;
+        env.add(sightingsCard.group);
+        env.updatables.push(sightingsCard);
+
+        // ── 7. Fire Sensor Toggle ──
+        const sensorToggle = new Toggle3D(env.scene, env.camera, [3.5, 1.8, -3.0], {
+            label: "FIRE SENSORS",
+            width: 2.2,
+            isOn: true,
+            onColor: 0xff9800,
+            offColor: 0x444444,
+            onClick: (t) => {
+                const status = t.isOn ? "ACTIVE — monitoring 24 sensors" : "OFFLINE — manual patrol required";
+                ghost.updatePanelText("SENSORS: " + status);
+                const dangerEl = document.getElementById('fireDanger');
+                dangerEl.textContent = t.isOn ? '🔥 FIRE RISK: LOW' : '⚠️ FIRE RISK: UNKNOWN';
+                dangerEl.className = t.isOn ? 'fire-danger' : 'fire-danger warning';
+            }
+        });
+        sensorToggle.group.rotation.y = -0.35;
+        env.add(sensorToggle.group);
+        env.updatables.push(sensorToggle);
+
+        // ── 8. Wind Strength Slider ──
+        const windSlider = new Slider3D(env.scene, env.camera, [3.5, 0.5, -3.0], {
+            label: "WIND STRENGTH",
+            width: 2.2,
+            min: 0,
+            max: 100,
+            value: 40,
+            step: 1,
+            color: 0x7ecb76,
+            onChange: (ctrl, val) => {
+                windStrength = val / 100;
+                windController.setFlowSpeed(windStrength * 2);
+                ghost.updatePanelText(`Wind strength: ${val}%. ${val > 70 ? 'Gale warning in effect!' : 'Conditions stable.'}`);
+
+                // Update fire danger
+                const dangerEl = document.getElementById('fireDanger');
+                if (val > 70) {
+                    dangerEl.textContent = '🔥 FIRE RISK: EXTREME';
+                    dangerEl.className = 'fire-danger critical';
+                    ghost.updatePanelText("⚠️ HIGH WINDS — Fire risk elevated. Evacuation readiness: STAGE 2.");
+                } else if (val > 40) {
+                    dangerEl.textContent = '🔥 FIRE RISK: MODERATE';
+                    dangerEl.className = 'fire-danger warning';
+                } else {
+                    dangerEl.textContent = '🔥 FIRE RISK: LOW';
+                    dangerEl.className = 'fire-danger';
+                }
+            }
+        });
+        windSlider.group.rotation.y = -0.35;
+        env.add(windSlider.group);
+        env.updatables.push(windSlider);
+
+        // ── 9. Animation ──
         env.updatables.push({
-            update: (d) => {
+            update: (delta) => {
+                // Animate leaves with wind influence
                 const pos = leafGeo.attributes.position.array;
                 for (let i = 0; i < leafCount; i++) {
-                    pos[i * 3 + 1] -= 0.02;
-                    pos[i * 3] += Math.sin(Date.now() * 0.001 + i) * 0.01;
-                    if (pos[i * 3 + 1] < -2) pos[i * 3 + 1] = 8;
+                    const idx = i * 3;
+                    // Fall
+                    pos[idx + 1] += leafVelocities[idx + 1] * delta * 3;
+                    // Wind drift (proportional to windStrength)
+                    pos[idx] += windStrength * windDirection * delta * 2 + Math.sin(Date.now() * 0.0005 + i) * delta * 0.5;
+                    // Reset if fallen below ground
+                    if (pos[idx + 1] < -3) {
+                        pos[idx + 1] = 8 + Math.random() * 4;
+                        pos[idx] = (Math.random() - 0.5) * 16;
+                        pos[idx + 2] = (Math.random() - 0.5) * 10;
+                    }
                 }
                 leafGeo.attributes.position.needsUpdate = true;
             }
         });
 
-
-        // 2. Ranger AI (Ghost)
-        const guardian = new SemanticGhost(env.camera, env.scene, env.renderer);
-        env.add(guardian);
-        env.updatables.push(guardian);
-
-        setTimeout(() => {
-            guardian.updatePanelText("MONITORING FOREST INTEGRITY");
-            guardian.guideTo(wildlifeLog.group, "New Wildlife Sightings");
-        }, 1500);
-
-
-        // 3. RANGER TOOLS
-
-        // Wildlife Log
-        const wildlifeLog = new MagneticCard3D(env.scene, env.camera, [-3, 1.5, -3], {
-            width: 2.2, height: 3, color: 0xffffff,
-            title: "WILDLIFE LOG", description: "Bears: 1 (Trail 7)\nDeer: 8 (Meadow 3)\nPack: Grey Wolf tracked."
-        });
-        wildlifeLog.group.rotation.y = 0.4;
-        env.add(wildlifeLog.group);
-        env.updatables.push(wildlifeLog);
-
-        // Weather Chart
-        const weather = new Chart3D(env.scene, env.camera, [3, 2, -3], {
-            width: 3, height: 2, chartType: 'line',
-            data: {
-                labels: ['8AM', '10AM', '12PM', '2PM', '4PM'],
-                datasets: [{
-                    label: 'Humidity %',
-                    data: [65, 62, 58, 60, 63],
-                    borderColor: '#2196f3',
-                    backgroundColor: 'rgba(33, 150, 243, 0.1)'
-                }]
-            }
-        });
-        weather.group.rotation.y = -0.4;
-        env.add(weather.group);
-        env.updatables.push(weather);
-
-        // Sensor Toggle
-        const sensorToggle = new Toggle3D(env.scene, env.camera, [3, 0.8, -3], {
-            label: "FIRE SENSORS", width: 2.5, isOn: true, onColor: 0xff9800
-        });
-        sensorToggle.group.rotation.y = -0.4;
-        env.add(sensorToggle.group);
-        env.updatables.push(sensorToggle);
-
-
-        // 4. SPECIMEN SCANNER
-        const specimen = new VolumetricCard3D(env.scene, env.camera, [0, 0.5, -1.5], {
-            width: 1.5, height: 1.5, baseColor: 0x8bc34a, title: "FLORA_SCAN", popHeight: 0.8
-        });
-        env.add(specimen.group);
-        env.updatables.push(specimen);
-
-
-        // 5. START
+        // ── 10. Start ──
         env.start();
 
+        // ── 11. Guide text sync ──
+        const guideText = document.getElementById('guideText');
+        const origUpdate = ghost.updatePanelText.bind(ghost);
+        ghost.updatePanelText = (text) => {
+            guideText.textContent = text;
+            origUpdate(text);
+        };
     </script>
+
+    <script src="../scripts/mobile-controls.js"></script>
 </body>
 
 </html>

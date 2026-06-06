@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dream Architect: Neural Weaving</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/mobile-panel.css">
     <style>
         body {
             margin: 0;
@@ -61,6 +64,11 @@
     <div id="dream-hud">
         <h1>DREAM_ARCHITECT</h1>
         <div class="sub">Lucidity: 92% • Depth: Level 3</div>
+    </div>
+
+    <div class="dream-panel demo-controls" id="infoPanel" style="position:fixed;bottom:24px;left:24px;background:rgba(15,5,32,0.92);border:1px solid rgba(212,165,255,0.3);border-radius:12px;padding:16px;color:#dca;font-size:0.85rem;max-width:300px;z-index:20;">
+        <h3 style="color:#d4a5ff;margin:0 0 6px 0;font-size:0.95rem;">💭 Dreamweaver</h3>
+        <p id="guideText">Neural latent scenes weaving. Adjust lucidity to deepen the dream.</p>
     </div>
 
     <script type="module">
@@ -146,6 +154,7 @@
         env.start();
 
     </script>
+    <script src="../scripts/mobile-controls.js"></script>
 </body>
 
 </html>

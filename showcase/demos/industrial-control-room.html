@@ -4,184 +4,238 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plant #7: Industrial Control Center</title>
+    <title>Plant #7 — Spatial UI 3D</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/mobile-panel.css">
     <style>
         body {
             margin: 0;
             overflow: hidden;
             background: #1a1a1a;
-            font-family: 'Consolas', monospace;
+            font-family: 'Share Tech Mono', 'Inter', monospace;
         }
-
-        #plant-hud {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            pointer-events: none;
+        .plant-hud {
+            position: fixed;
+            top: 20px; left: 20px;
+            pointer-events: none; z-index: 10;
             color: #f39c12;
-            text-shadow: 0 0 10px rgba(243, 156, 18, 0.5);
+            text-shadow: 0 0 12px rgba(243,156,18,0.4);
         }
+        .plant-hud h1 { margin: 0; font-size: 1.2rem; letter-spacing: 3px; }
+        .plant-hud .sub { font-size: 0.7rem; opacity: 0.8; margin-top: 2px; }
 
-        h1 {
-            margin: 0;
-            font-size: 1.4rem;
-            letter-spacing: 2px;
+        .gauge-cluster {
+            position: fixed;
+            top: 20px; right: 20px;
+            pointer-events: none; z-index: 10;
+            display: flex; gap: 12px;
+            font-size: 0.7rem; color: #f39c12;
         }
+        .gauge { text-align: center; }
+        .gauge .val { font-size: 1.2rem; font-weight: 700; }
 
-        .sub {
-            font-size: 0.8rem;
-            opacity: 0.8;
-        }
-
-        /* Industrial grit vignette */
         #grit {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, transparent 60%, rgba(20, 20, 20, 0.8) 100%);
-            pointer-events: none;
-            z-index: 5;
+            position: fixed; inset: 0;
+            pointer-events: none; z-index: 5;
+            background: radial-gradient(ellipse, transparent 60%, rgba(20,20,20,0.8) 100%);
+        }
+
+        .plant-panel.demo-controls {
+            position: fixed; bottom: 24px; left: 24px;
+            background: rgba(20,20,20,0.95);
+            border: 1px solid rgba(243,156,18,0.3);
+            border-radius: 12px; padding: 16px;
+            color: #ccc; font-size: 0.85rem;
+            max-width: 300px; z-index: 20;
+        }
+        .plant-panel h3 { margin: 0 0 6px 0; color: #f39c12; font-size: 0.95rem; }
+
+        @media (max-width: 768px) {
+            .plant-hud { top: 12px; left: 12px; }
+            .plant-hud h1 { font-size: 0.95rem; }
+            .gauge-cluster { top: 12px; right: 8px; gap: 6px; font-size: 0.6rem; }
+            .gauge .val { font-size: 0.9rem; }
+            .plant-panel.demo-controls { left:0; right:0; bottom:0; max-width:none; border-radius:20px 20px 0 0; }
         }
     </style>
     <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
         }
+    }
     </script>
 </head>
 
 <body>
     <div id="grit"></div>
-    <div id="plant-hud">
-        <h1>MANUFACTURING PLANT #7</h1>
-        <div class="sub">Production: 94% • All Systems Nominal</div>
+
+    <div class="plant-hud">
+        <h1>◆ PLANT #7 ◆ PRODUCTION CONTROL</h1>
+        <div class="sub">Line A: 94% · Line B: 87% · Line C: 96%</div>
+    </div>
+
+    <div class="gauge-cluster">
+        <div class="gauge"><div class="val" id="gTemp">142</div>°C</div>
+        <div class="gauge"><div class="val" id="gPress">3.2</div>bar</div>
+        <div class="gauge"><div class="val" id="gRPM">1847</div>RPM</div>
+        <div class="gauge"><div class="val" id="gFlow">82</div>L/s</div>
+    </div>
+
+    <div class="plant-panel demo-controls" id="infoPanel">
+        <h3>🏭 Plant AI · Status</h3>
+        <p id="guideText">All lines nominal. Gesture controller active. Use sliders to adjust line parameters.</p>
     </div>
 
     <script type="module">
         import * as THREE from 'three';
         import { SpatialEnvironment } from '../../src/environments/SpatialEnvironment.js';
         import { SemanticGhost } from '../../src/ai/SemanticGhost.js';
-
-        // Components
-        import { MagneticCard3D } from '../../src/controls/MagneticCard3D.js';
-        import { Chart3D } from '../../src/controls/Chart3D.js';
+        import { GestureLoom3D } from '../../src/controls/GestureLoom3D.js';
         import { Slider3D } from '../../src/controls/Slider3D.js';
         import { Toggle3D } from '../../src/controls/Toggle3D.js';
-        import { HaloCard3D } from '../../src/controls/HaloCard3D.js';
+        import { Chart3D } from '../../src/controls/Chart3D.js';
 
-        // 1. Setup
-        const env = new SpatialEnvironment(document.body, { cameraPos: [0, 1.8, 5] });
+        // ── 1. Environment ──
+        const env = new SpatialEnvironment(document.body, { cameraPos: [0, 2.0, 5.5], fogDensity: 0.012 });
         env.init();
-        env.scene.background = new THREE.Color(0x1a1a1a);
-        env.scene.fog = new THREE.Fog(0x1a1a1a, 5, 20);
+        env.scene.background = new THREE.Color(0x181818);
+        env.scene.fog = new THREE.FogExp2(0x181818, 0.012);
 
-        // Warning/Industrial Lighting
-        const amb = new THREE.AmbientLight(0x404040, 0.5);
+        const amb = new THREE.AmbientLight(0x444444, 0.5);
         env.scene.add(amb);
+        const warnLight = new THREE.PointLight(0xf39c12, 3, 14);
+        warnLight.position.set(-4, 4, 2);
+        env.scene.add(warnLight);
 
-        const cautionLight = new THREE.PointLight(0xf39c12, 2, 12);
-        cautionLight.position.set(-5, 4, 0);
-        env.scene.add(cautionLight);
-
-        // Grid for floor
-        const grid = new THREE.GridHelper(20, 20, 0x444444, 0x222222);
+        // Factory floor grid
+        const grid = new THREE.PolarGridHelper(10, 32, 20, 64, 0x444444, 0x222222);
         grid.position.y = -2;
         env.scene.add(grid);
 
-
-        // 2. Plant AI (Ghost)
-        const foreman = new SemanticGhost(env.camera, env.scene, env.renderer);
-        env.add(foreman);
-        env.updatables.push(foreman);
+        // ── 2. Plant AI ──
+        const ghost = new SemanticGhost(env.camera, env.scene, env.renderer);
+        env.add(ghost);
+        env.updatables.push(ghost);
 
         setTimeout(() => {
-            foreman.updatePanelText("PRODUCTION_LINE_MONITOR_ACTIVE");
-            foreman.guideTo(outputChart.group, "Analyzing Units/Hr Throughput");
+            ghost.updatePanelText("PRODUCTION LINE MONITOR ACTIVE. All 3 lines in sync.");
+            ghost.guideTo(gestureLoom.group, "Gesture Controller");
         }, 1500);
 
+        // ── 3. GestureLoom3D — UNIQUE: Machinery Control ──
+        const gestureLoom = new GestureLoom3D(env.scene, env.camera, [0, 1.2, -2.5], {
+            width: 3.5,
+            height: 2.5
+        });
+        env.add(gestureLoom.group);
+        env.updatables.push(gestureLoom);
 
-        // 3. CONTROL TOOLS
+        // ── 4. Slider Matrix (Gauge Cluster) — UNIQUE: 4 simultaneous parameter controls ──
+        const sliderDefs = [
+            { id: 'temp', label: 'TEMP °C', x: 4.5, y: 2.2, min: 80, max: 300, val: 142, color: 0xe74c3c, unit: '°C' },
+            { id: 'press', label: 'PRESS bar', x: 4.5, y: 1.0, min: 0.5, max: 8, val: 3.2, color: 0x3498db, unit: 'bar', step: 0.1 },
+            { id: 'rpm', label: 'RPM', x: 4.5, y: -0.2, min: 500, max: 3000, val: 1847, color: 0x2ecc71, unit: 'RPM' },
+            { id: 'flow', label: 'FLOW L/s', x: 4.5, y: -1.4, min: 10, max: 150, val: 82, color: 0xf39c12, unit: 'L/s' }
+        ];
 
-        // Output Chart
-        const outputChart = new Chart3D(env.scene, env.camera, [0, 1.5, -2.5], {
-            width: 4, height: 2.5, chartType: 'line',
+        const sliders = sliderDefs.map(def => {
+            const s = new Slider3D(env.scene, env.camera, [def.x, def.y, -3], {
+                label: def.label,
+                width: 2.2,
+                min: def.min,
+                max: def.max,
+                value: def.val,
+                step: def.step || 1,
+                color: def.color,
+                onChange: (ctrl, val) => {
+                    document.getElementById('g' + def.id.charAt(0).toUpperCase() + def.id.slice(1)).textContent =
+                        def.step === 0.1 ? val.toFixed(1) : Math.round(val);
+
+                    if (def.id === 'temp' && val > 250) {
+                        warnLight.color.set(0xff0000);
+                        ghost.updatePanelText(`⚠️ TEMPERATURE CRITICAL: ${Math.round(val)}°C. Reduce immediately.`);
+                    } else if (def.id === 'press' && val > 6) {
+                        ghost.updatePanelText(`⚠️ PRESSURE WARNING: ${val.toFixed(1)} bar. Relief valve standing by.`);
+                    } else if (def.id === 'rpm' && val < 800) {
+                        ghost.updatePanelText(`⚠️ RPM TOO LOW: ${Math.round(val)}. Line may stall.`);
+                    } else {
+                        ghost.updatePanelText(`Parameter adjusted: ${def.label} = ${def.step === 0.1 ? val.toFixed(1) : Math.round(val)}${def.unit}`);
+                    }
+                }
+            });
+            s.group.rotation.y = -0.3;
+            env.add(s.group);
+            env.updatables.push(s);
+            return s;
+        });
+
+        // ── 5. Output Chart ──
+        const outputChart = new Chart3D(env.scene, env.camera, [-4.5, 1.8, -3], {
+            width: 3,
+            height: 2,
+            chartType: 'line',
             data: {
-                labels: ['01', '02', '03', '04', '05'],
+                labels: ['06:00', '08:00', '10:00', '12:00', '14:00', '16:00'],
                 datasets: [{
-                    label: 'Output Rate',
-                    data: [1800, 1850, 1790, 1920, 1847],
+                    label: 'Units/hr',
+                    data: [1800, 1850, 1790, 1920, 1847, 1902],
                     borderColor: '#f39c12',
-                    backgroundColor: 'rgba(243, 156, 18, 0.1)'
+                    backgroundColor: 'rgba(243,156,18,0.1)',
+                    borderWidth: 2,
+                    tension: 0.3
                 }]
             }
         });
+        outputChart.group.rotation.y = 0.3;
         env.add(outputChart.group);
         env.updatables.push(outputChart);
 
-        // Maintenance Log
-        const log = new MagneticCard3D(env.scene, env.camera, [-4, 1.5, -3], {
-            width: 2.2, height: 3.2, color: 0x222222,
-            title: "MAINTENANCE_LOG", description: "Line A: Routine Check\nLine B: Serviced\nFilter: Replaced"
-        });
-        log.group.rotation.y = 0.5;
-        env.add(log.group);
-        env.updatables.push(log);
-
-        // Performance Stats
-        const perf = new Chart3D(env.scene, env.camera, [4, 1.5, -3], {
-            width: 3, height: 2, chartType: 'bar',
-            data: {
-                labels: ['A', 'B', 'C', 'D'],
-                datasets: [{
-                    label: 'Eff %',
-                    data: [94, 87, 96, 91],
-                    backgroundColor: 'rgba(39, 174, 96, 0.8)'
-                }]
+        // ── 6. Emergency Stop Toggle ──
+        const emerToggle = new Toggle3D(env.scene, env.camera, [-4.5, -0.2, -3], {
+            label: 'EMERGENCY STOP',
+            width: 2.2,
+            isOn: false,
+            onColor: 0xff0000,
+            offColor: 0x444444,
+            onClick: (t) => {
+                if (t.isOn) {
+                    env.scene.background = new THREE.Color(0x330000);
+                    warnLight.color.set(0xff0000);
+                    warnLight.intensity = 6;
+                    ghost.updatePanelText("🚨 EMERGENCY STOP ACTIVATED. All lines halted. Awaiting reset.");
+                } else {
+                    env.scene.background = new THREE.Color(0x181818);
+                    warnLight.color.set(0xf39c12);
+                    warnLight.intensity = 3;
+                    ghost.updatePanelText("Production lines restarting. All parameters nominal.");
+                }
             }
         });
-        perf.group.rotation.y = -0.5;
-        env.add(perf.group);
-        env.updatables.push(perf);
-
-
-        // 4. INTERACTIVES
-
-        const speedSlider = new Slider3D(env.scene, env.camera, [4, 0, -3], {
-            label: "LINE_SPEED", width: 2.5, color: 0x3498db,
-            onChange: (c, v) => {
-                foreman.updatePanelText(`SPEED_ADJUSTED: ${Math.round(v * 100)}%`);
-            }
-        });
-        speedSlider.group.rotation.y = -0.5;
-        env.add(speedSlider.group);
-        env.updatables.push(speedSlider);
-
-        const emerToggle = new Toggle3D(env.scene, env.camera, [-4, 0, -3], {
-            label: "ALARM_SYST", width: 2.2, isOn: true, onColor: 0xe74c3c
-        });
-        emerToggle.group.rotation.y = 0.5;
+        emerToggle.group.rotation.y = 0.3;
         env.add(emerToggle.group);
         env.updatables.push(emerToggle);
 
-
-        // 5. STATUS HALOS
-        const status1 = new HaloCard3D(env.scene, env.camera, [0, 0, 0], {
-            title: "LINE_A: OPTIMAL", width: 1.5, height: 0.35,
-            offset: [0, 1.8, 0], anchorObject: log.group, color: 0x27ae60
+        // ── 7. Animation ──
+        env.updatables.push({
+            update: (delta) => {
+                warnLight.intensity += Math.sin(Date.now() * 0.005) * delta * 0.3;
+                warnLight.intensity = THREE.MathUtils.clamp(warnLight.intensity, 2, 4);
+            }
         });
-        env.add(status1.group);
-        env.updatables.push(status1);
 
-
-        // 6. START
+        // ── 8. Start ──
         env.start();
 
+        // Guide sync
+        const guideText = document.getElementById('guideText');
+        const orig = ghost.updatePanelText.bind(ghost);
+        ghost.updatePanelText = (t) => { guideText.textContent = t; orig(t); };
     </script>
+
+    <script src="../scripts/mobile-controls.js"></script>
 </body>
 
 </html>

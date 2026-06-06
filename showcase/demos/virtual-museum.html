@@ -4,150 +4,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Aurora Museum: Echoes of Infinity</title>
+    <title>Aurora Museum — Spatial UI 3D</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital@0;1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles/showcase.css">
+    <link rel="stylesheet" href="../styles/mobile-panel.css">
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background: #0a0806;
-            font-family: 'Georgia', serif;
-        }
-
-        #museum-hud {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            pointer-events: none;
-            color: #d4af37;
-            text-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 1.8rem;
-            letter-spacing: 1px;
-        }
-
-        .sub {
-            font-size: 0.9rem;
-            font-style: italic;
-            opacity: 0.8;
-        }
+        body { margin: 0; overflow: hidden; background: #0a0806; font-family: 'Playfair Display', 'Inter', serif; }
+        .museum-hud { position: fixed; top: 20px; left: 20px; pointer-events: none; z-index: 10; color: #d4af37; text-shadow: 0 0 10px rgba(212,175,55,0.4); }
+        .museum-hud h1 { margin: 0; font-size: 1.4rem; letter-spacing: 2px; font-style: italic; }
+        .museum-hud .sub { font-size: 0.75rem; opacity: 0.7; margin-top: 2px; }
+        .era-label { position: fixed; top: 20px; right: 20px; pointer-events: none; z-index: 10; color: #d4af37; font-size: 0.8rem; }
+        .museum-panel.demo-controls { position: fixed; bottom: 24px; left: 24px; background: rgba(10,8,6,0.95); border: 1px solid rgba(212,175,55,0.3); border-radius: 12px; padding: 16px; color: #cb9; font-size: 0.85rem; max-width: 300px; z-index: 20; }
+        .museum-panel h3 { margin: 0 0 6px 0; color: #d4af37; font-size: 0.95rem; }
+        @media (max-width: 768px) { .museum-hud { top:12px; left:12px; } .museum-hud h1 { font-size:1rem; } .era-label { top:60px; right:8px; } .museum-panel.demo-controls { left:0;right:0;bottom:0;max-width:none;border-radius:20px 20px 0 0; } }
     </style>
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
-        }
-    </script>
+    <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 </head>
 
 <body>
-    <div id="museum-hud">
-        <h1>THE AURORA MUSEUM</h1>
-        <div class="sub">Infinite Gallery • Sector Alpha</div>
-    </div>
+    <div class="museum-hud"><h1>🏛️ The Aurora Museum</h1><div class="sub">Infinite Gallery · Sector Alpha</div></div>
+    <div class="era-label" id="eraLabel">ERA: Renaissance</div>
+    <div class="museum-panel demo-controls" id="infoPanel"><h3>🎨 Curator's Guide</h3><p id="guideText">Welcome to the Infinite Gallery. Scrub through eras to explore art across time.</p></div>
 
     <script type="module">
         import * as THREE from 'three';
         import { SpatialEnvironment } from '../../src/environments/SpatialEnvironment.js';
         import { SemanticGhost } from '../../src/ai/SemanticGhost.js';
+        import { SpatialScrubber3D } from '../../src/controls/SpatialScrubber3D.js';
+        import { PortalCard3D } from '../../src/controls/PortalCard3D.js';
+        import { Slider3D } from '../../src/controls/Slider3D.js';
 
-        // Components
-        import { VolumetricCard3D } from '../../src/controls/VolumetricCard3D.js';
-        import { MagneticCard3D } from '../../src/controls/MagneticCard3D.js';
-        import { RadialMenu3D } from '../../src/controls/RadialMenu3D.js';
-        import { TextDisplay3D } from '../../src/controls/TextDisplay3D.js';
-
-        // 1. Init
-        const env = new SpatialEnvironment(document.body, { cameraPos: [0, 1.8, 6] });
+        const env = new SpatialEnvironment(document.body, { cameraPos: [0, 2.0, 5.5], fogDensity: 0.008 });
         env.init();
         env.scene.background = new THREE.Color(0x0a0806);
-        env.scene.fog = new THREE.Fog(0x0a0806, 5, 25);
+        env.scene.fog = new THREE.FogExp2(0x0a0806, 0.008);
+        env.scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+        const galleryLight = new THREE.PointLight(0xffeebb, 3, 15); galleryLight.position.set(0, 5, 3); env.scene.add(galleryLight);
 
-        // Ambience
-        const amb = new THREE.AmbientLight(0xffffff, 0.4);
-        env.scene.add(amb);
+        // Floor
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(20,20), new THREE.MeshStandardMaterial({color:0x1a1510,roughness:0.6}));
+        floor.rotation.x = -Math.PI/2; floor.position.y = -2.5; env.scene.add(floor);
 
-        // 2. AI Curator (Ghost)
-        const curator = new SemanticGhost(env.camera, env.scene, env.renderer);
-        env.add(curator);
-        env.updatables.push(curator);
+        const ghost = new SemanticGhost(env.camera, env.scene, env.renderer); env.add(ghost); env.updatables.push(ghost);
 
-        setTimeout(() => {
-            curator.updatePanelText("CURATOR LOG: EXHIBIT ACTIVE");
-            curator.guideTo(exhibit1.group, "Classical Masterpiece");
-        }, 1500);
+        // ── SpatialScrubber3D — UNIQUE: Era Navigation ──
+        const eras = ['Renaissance','Impressionist','Modern','Post-Modern','Digital Age'];
+        const eraColors = [0xd4af37,0x7eb8da,0xff6644,0xaa44ff,0x00e5ff];
+        let currentEra = 0;
 
+        const eraScrubber = new SpatialScrubber3D(env.scene, env.camera, [0, 0.6, -1.5], { width: 5, height: 0.8 });
+        env.add(eraScrubber.group); env.updatables.push(eraScrubber);
 
-        // 3. EXHIBITS
-
-        // --- Exhibit 1: Renaissance ---
-        const exhibit1 = new VolumetricCard3D(env.scene, env.camera, [-3, 1.5, -2], {
-            width: 2.2, height: 3, baseColor: 0x221105,
-            title: "Classical Ideal", popScale: 0.4
+        // Era exhibit cards
+        const exhibitCards = eras.map((era, i) => {
+            const c = new PortalCard3D(env.scene, env.camera, [(i-2)*3.5, 1.8, -3], {
+                width: 2.2, height: 2.8, title: era, color: eraColors[i]
+            });
+            c.group.visible = (i === 0);
+            env.add(c.group); env.updatables.push(c);
+            return c;
         });
-        // Add a "Frame" look
-        const frameGeo = new THREE.BoxGeometry(2.4, 3.2, 0.1);
-        const frameMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.2, metalness: 0.8 });
-        const frame = new THREE.Mesh(frameGeo, frameMat);
-        frame.position.z = -0.06;
-        exhibit1.group.add(frame);
 
-        env.add(exhibit1.group);
-        env.updatables.push(exhibit1);
-
-        const info1 = new MagneticCard3D(env.scene, env.camera, [-3, 0.5, -1.8], {
-            width: 1.2, height: 0.8, color: 0x221105,
-            title: "Renaissance", description: "Oil on canvas, c. 1503"
-        });
-        env.add(info1.group);
-        env.updatables.push(info1);
-
-
-        // --- Exhibit 2: Modernist ---
-        const exhibit2 = new VolumetricCard3D(env.scene, env.camera, [3, 1.5, -2], {
-            width: 2.2, height: 3, baseColor: 0x051122,
-            title: "Neural Vision", popScale: 0.4
-        });
-        const frame2 = new THREE.Mesh(frameGeo, frameMat);
-        frame2.position.z = -0.06;
-        exhibit2.group.add(frame2);
-
-        env.add(exhibit2.group);
-        env.updatables.push(exhibit2);
-
-        const info2 = new MagneticCard3D(env.scene, env.camera, [3, 0.5, -1.8], {
-            width: 1.2, height: 0.8, color: 0x051122,
-            title: "AI Artifact", description: "Synthetic reality, 2026"
-        });
-        env.add(info2.group);
-        env.updatables.push(info2);
-
-
-        // 4. NAVIGATION TOOLS
-
-        const menu = new RadialMenu3D(env.scene, env.camera, [0, 1.5, -3], {
-            items: [
-                { label: "Classic", icon: "🏛️" },
-                { label: "Modern", icon: "🌌" },
-                { label: "Exit", icon: "🚪" }
-            ],
-            onSelect: (m, idx, item) => {
-                if (item.label === "Classic") curator.guideTo(exhibit1.group, "Analyzing Renaissance Brushwork");
-                if (item.label === "Modern") curator.guideTo(exhibit2.group, "Decoding Neural Latent Space");
+        // Era selector slider
+        const eraSlider = new Slider3D(env.scene, env.camera, [4.5, 0.0, -2], {
+            label: 'ERA', width: 2.2, min: 0, max: 4, value: 0, step: 1, color: 0xd4af37,
+            onChange: (c,v) => {
+                currentEra = Math.round(v);
+                exhibitCards.forEach((card,i) => { card.group.visible = (i === currentEra); });
+                document.getElementById('eraLabel').textContent = 'ERA: ' + eras[currentEra];
+                galleryLight.color.set(eraColors[currentEra]);
+                ghost.updatePanelText(`📜 Navigating to: ${eras[currentEra]}. ${currentEra===4?'Welcome to the future of art.':''}`);
             }
         });
-        env.add(menu.group);
-        env.updatables.push(menu);
+        eraSlider.group.rotation.y = -0.3; env.add(eraSlider.group); env.updatables.push(eraSlider);
 
+        env.updatables.push({ update: (d) => { galleryLight.intensity += Math.sin(Date.now()*0.002)*d*0.3; } });
 
-        // 5. START
         env.start();
+        setTimeout(()=>{ ghost.updatePanelText('🎨 Welcome to the Aurora Museum. Use the era slider to explore art through time.'); ghost.guideTo(exhibitCards[0].group, 'Renaissance Exhibit'); },1500);
 
+        const guideText = document.getElementById('guideText');
+        const orig = ghost.updatePanelText.bind(ghost); ghost.updatePanelText = (t) => { guideText.textContent = t; orig(t); };
     </script>
+    <script src="../scripts/mobile-controls.js"></script>
 </body>
 
 </html>

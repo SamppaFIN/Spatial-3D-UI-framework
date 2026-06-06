@@ -46,5 +46,8 @@
     "happy-dom": "^20.6.1",
     "jsdom": "^28.1.0",
     "vitest": "^4.0.18"
+  },
+  "dependencies": {
+    "three": "^0.160.0"
   }
 }
