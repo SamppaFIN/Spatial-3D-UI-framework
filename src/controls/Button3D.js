@@ -77,27 +77,11 @@ export class Button3D extends BaseControl3D {
         this.particleSystems = [];
         this.ripples = []; // Active ripple effects
 
-
-
-        // Note: create() was already called by BaseControl3D constructor, so we need to call it again
-        // after initializing our properties, OR make create() defensive
-        // Since BaseControl3D already called create(), we'll recreate with proper initialization
-        if (this.group) {
-            // Clear any partially created mesh
-            while (this.group.children.length > 0) {
-                this.group.remove(this.group.children[0]);
-            }
-            // Now create properly
-            this.create();
-        }
+        // All properties initialized — create the 3D mesh now.
+        this.create();
     }
 
     create() {
-        // Early return if properties not initialized yet (called from BaseControl3D constructor)
-        if (!this.modes || this.mode === undefined) {
-            return; // Will be called again after initialization
-        }
-
         // Clear existing group children for a clean redraw
         while (this.group.children.length > 0) {
             const child = this.group.children[0];
@@ -172,7 +156,8 @@ export class Button3D extends BaseControl3D {
 
         // Create geometry based on main button mode (but smaller)
         let modeGeometry;
-        if (this.modes[this.mode] === 'sphere') {
+        const safeMode = this.modes?.[this.mode ?? 0] ?? 'box';
+        if (safeMode === 'sphere') {
             modeGeometry = new THREE.SphereGeometry(modeButtonSize / 2, 16, 16);
         } else {
             modeGeometry = new THREE.BoxGeometry(modeButtonSize, modeButtonSize, modeButtonDepth, 1, 1, 1);

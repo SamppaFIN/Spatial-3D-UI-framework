@@ -285,6 +285,38 @@
         env.add(hapticHorizon.group);
         env.updatables.push(hapticHorizon);
 
+        // ── RED ALERT System (defined BEFORE toggle to avoid TDZ) ──
+        let isRedAlert = false;
+        const overlay = document.getElementById('redAlertOverlay');
+        const alertIndicator = document.getElementById('alertIndicator');
+        const guideText = document.getElementById('guideText');
+
+        function setRedAlert(active) {
+            isRedAlert = active;
+            if (active) {
+                env.scene.background = new THREE.Color(0x1a0000);
+                env.scene.fog = new THREE.FogExp2(0x1a0000, 0.02);
+                overlay.classList.add('active');
+                alertIndicator.textContent = '● RED ALERT';
+                alertIndicator.classList.add('red');
+                ghost.updatePanelText("🚨 RED ALERT: All hands to battle stations! Shields up, weapons hot.");
+                guideText.textContent = "RED ALERT ACTIVE — Tactical displays show threat vectors. Shield modulator ready. Phasers charged.";
+                hapticHorizon.pulse(1.0);
+                bridgeLight.color.set(0xff2222);
+                bridgeLight.intensity = 4;
+            } else {
+                env.scene.background = new THREE.Color(0x020210);
+                env.scene.fog = new THREE.FogExp2(0x020210, 0.015);
+                overlay.classList.remove('active');
+                alertIndicator.textContent = '● CONDITION GREEN';
+                alertIndicator.classList.remove('red');
+                ghost.updatePanelText("Red Alert cancelled. Returning to Condition Green. All stations stand down.");
+                guideText.textContent = "All systems nominal. Fleet reports steady. Tactical display shows sector patrol positions.";
+                bridgeLight.color.set(0x4488cc);
+                bridgeLight.intensity = 2;
+            }
+        }
+
         // ── 7. RED ALERT Toggle ──
         const redAlertToggle = new Toggle3D(env.scene, env.camera, [-4.5, -0.5, -1.5], {
             label: 'RED ALERT',
@@ -292,9 +324,7 @@
             isOn: false,
             onColor: 0xff0000,
             offColor: 0x224444,
-            onClick: (toggle) => {
-                setRedAlert(toggle.isOn);
-            }
+            onClick: (toggle) => { setRedAlert(toggle.isOn); }
         });
         redAlertToggle.group.rotation.y = 0.5;
         env.add(redAlertToggle.group);
@@ -304,10 +334,7 @@
         const shieldSlider = new Slider3D(env.scene, env.camera, [4.5, 0.5, -1.5], {
             label: 'SHIELD FREQ',
             width: 2.0,
-            min: 0,
-            max: 100,
-            value: 72,
-            step: 1,
+            min: 0, max: 100, value: 72, step: 1,
             color: 0x4ecdc4,
             onChange: (ctrl, val) => {
                 ghost.updatePanelText(`Shield frequency modulated to ${val}%. Harmonics stable.`);
@@ -324,65 +351,12 @@
             color: 0xff8800,
             onClick: () => {
                 ghost.updatePanelText("PHASERS: Target locked. Firing sequence initiated.");
-                // Trigger haptic pulse
                 hapticHorizon.pulse(0.8);
             }
         });
         fireButton.group.rotation.y = -0.5;
         env.add(fireButton.group);
         env.updatables.push(fireButton);
-
-        // ── 10. Red Alert System ──
-        let isRedAlert = false;
-        const overlay = document.getElementById('redAlertOverlay');
-        const alertIndicator = document.getElementById('alertIndicator');
-        const guideText = document.getElementById('guideText');
-
-        function setRedAlert(active) {
-            isRedAlert = active;
-
-            if (active) {
-                // Scene turns red
-                env.scene.background = new THREE.Color(0x1a0000);
-                env.scene.fog = new THREE.FogExp2(0x1a0000, 0.02);
-
-                // Overlay pulses
-                overlay.classList.add('active');
-
-                // Status indicator
-                alertIndicator.textContent = '● RED ALERT';
-                alertIndicator.classList.add('red');
-
-                // Ghost warns
-                ghost.updatePanelText("🚨 RED ALERT: All hands to battle stations! Shields up, weapons hot.");
-
-                // Guide panel updates
-                guideText.textContent = "RED ALERT ACTIVE — Tactical displays show threat vectors. Shield modulator ready. Phasers charged.";
-
-                // Haptic pulse
-                hapticHorizon.pulse(1.0);
-
-                // Bridge light turns red
-                bridgeLight.color.set(0xff2222);
-                bridgeLight.intensity = 4;
-            } else {
-                // Return to normal
-                env.scene.background = new THREE.Color(0x020210);
-                env.scene.fog = new THREE.FogExp2(0x020210, 0.015);
-
-                overlay.classList.remove('active');
-
-                alertIndicator.textContent = '● CONDITION GREEN';
-                alertIndicator.classList.remove('red');
-
-                ghost.updatePanelText("Red Alert cancelled. Returning to Condition Green. All stations stand down.");
-
-                guideText.textContent = "All systems nominal. Fleet reports steady. Tactical display shows sector patrol positions.";
-
-                bridgeLight.color.set(0x4488cc);
-                bridgeLight.intensity = 2;
-            }
-        }
 
         // ── 11. Animation ──
         env.updatables.push({

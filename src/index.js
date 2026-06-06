@@ -59,3 +59,38 @@ export { AIPortal3D } from './controls/AIPortal3D.js';
 
 // ── Utilities ──────────────────────────────────────────────
 export { Logger, logger } from './utils/Logger.js';
+export { HTMLOverlay, getHTMLOverlay } from './utils/HTMLOverlay.js';
+export { MarkdownRenderer } from './utils/MarkdownRenderer.js';
+export { GeometryFactory } from './utils/GeometryFactory.js';
+export { MaterialFactory } from './utils/MaterialFactory.js';
+export { ButtonFactory } from './utils/ButtonFactory.js';
+export { ParticleSystem } from './utils/ParticleSystem.js';
+export { AudioHaptics } from './utils/AudioHaptics.js';
+
+// ── Environments ───────────────────────────────────────────
+export { SpatialEnvironment } from './environments/SpatialEnvironment.js';
+export { SpaceRoom } from './environments/SpaceRoom.js';
+export { LandscapeRoom } from './environments/LandscapeRoom.js';
+export { CoordinateRoom } from './environments/CoordinateRoom.js';
+export { StarfieldBackground } from './environments/StarfieldBackground.js';
+
+// ── AI ─────────────────────────────────────────────────────
+export { AIChatBot3D } from './controls/AIChatBot3D.js';
+export { AIPortal3D } from './controls/AIPortal3D.js';
+export { SemanticGhost } from './ai/SemanticGhost.js';
+
+// ── Interactions ───────────────────────────────────────────
+export { SpatialControls } from './controls/SpatialControls.js';
+
+// ── Core (additional) ──────────────────────────────────────
+export { RoomManager } from './core/RoomManager.js';
+
+// ── Game ───────────────────────────────────────────────────
+export { GameRenderer } from './game/GameRenderer.js';
+export { RoguelikeGame } from './game/RoguelikeGame.js';
+
+// ── Generative ─────────────────────────────────────────────
+export { LayoutEngine } from './generative/LayoutEngine.js';
+
+// ── Effects ────────────────────────────────────────────────
+export { GlassmorphismEffect } from './effects/ShaderEffects.js';

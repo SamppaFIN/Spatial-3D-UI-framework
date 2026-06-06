@@ -104,9 +104,6 @@ export class BaseControl3D {
         this.tooltipOverlayId = `tooltip_${this.controlId}`;
         this.labelOverlayId = `label_${this.controlId}`;
 
-        // Create the control mesh (override in subclasses)
-        this.create();
-
         // Add to scene
         this.scene.add(this.group);
 
@@ -123,6 +120,9 @@ export class BaseControl3D {
 
         // Setup tooltip and label overlays
         this.setupTooltipAndLabel();
+
+        // Note: create() is NOT called here — subclasses must call it explicitly
+        // at the END of their constructor, after all subclass properties are initialized.
     }
 
     update() {
@@ -248,6 +248,11 @@ export class BaseControl3D {
     }
 
     setupEventListeners() {
+        // Skip per-control window listeners when centralized raycaster is active
+        // (Scene3D handles all mouse/touch events centrally via _bindMouseRaycaster +
+        //  _bindTouchHover — one raycaster, not N per control)
+        if (ControlRegistry._centralizedRaycaster) return;
+
         // Store bound handlers for proper removal
         this._onMouseMove = this.onMouseMove.bind(this);
         this._onMouseClick = this.onMouseClick.bind(this);
