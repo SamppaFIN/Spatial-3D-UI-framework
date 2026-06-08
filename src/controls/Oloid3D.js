@@ -35,6 +35,8 @@ export class Oloid3D extends BaseControl3D {
         this.rotationAngle = 0;
         this.currentScale = 1.0;
         this.scaleVelocity = 0;
+
+        this.create();
     }
 
     create() {

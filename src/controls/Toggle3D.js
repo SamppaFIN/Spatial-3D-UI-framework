@@ -28,6 +28,8 @@ export class Toggle3D extends BaseControl3D {
         this.friction = config.friction || 0.82;
         this.currentScale = 1.0;
         this.scaleVelocity = 0;
+
+        this.create();
     }
 
     create() {

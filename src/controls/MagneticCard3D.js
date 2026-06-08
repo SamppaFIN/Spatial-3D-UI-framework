@@ -12,10 +12,12 @@ export class MagneticCard3D extends BaseControl3D {
         this.currentRotation = new THREE.Quaternion();
         this.targetParallax = new THREE.Vector3();
         this.velocity = new THREE.Vector3(0, 0, 0);
+
+        this.create();
     }
 
     create() {
-        // Initialize properties here because BaseControl3D calls create() in super()
+        // Called explicitly at end of constructor — builds all meshes
         const config = this.config || {};
         this.width = config.width || 2.0;
         this.height = config.height || 3.0;
